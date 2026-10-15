@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   QrCode,
   ShieldCheck,
@@ -8,6 +9,7 @@ import {
   XCircle,
   CheckCircle2,
   Camera,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,17 +75,27 @@ export default function GateScanPage() {
             </p>
           </div>
 
-          <div className="w-full sm:w-64">
-            <Select value={gate} onValueChange={setGate}>
-              <SelectTrigger className="bg-forest border-ivory/20 text-ivory text-xs">
-                <SelectValue placeholder="Select Gate" />
-              </SelectTrigger>
-              <SelectContent className="bg-forest text-ivory border-ivory/20">
-                <SelectItem value="Gate 1 - Royal & VIP Boulevard">Gate 1 - Royal & VIP Boulevard</SelectItem>
-                <SelectItem value="Gate 2 - General Turnstiles">Gate 2 - General Turnstiles</SelectItem>
-                <SelectItem value="Gate 3 - Media & Hospitality East">Gate 3 - Media & Hospitality East</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <Link
+              href="/scan/history"
+              className="inline-flex items-center gap-1.5 rounded-md border border-gold/40 bg-gold/15 px-3 py-2 text-xs font-semibold text-gold transition-colors hover:bg-gold/25"
+            >
+              <Clock className="h-3.5 w-3.5" />
+              <span>Ingress History</span>
+            </Link>
+
+            <div className="w-full sm:w-64">
+              <Select value={gate} onValueChange={setGate}>
+                <SelectTrigger className="bg-forest border-ivory/20 text-ivory text-xs">
+                  <SelectValue placeholder="Select Gate" />
+                </SelectTrigger>
+                <SelectContent className="bg-forest text-ivory border-ivory/20">
+                  <SelectItem value="Gate 1 - Royal & VIP Boulevard">Gate 1 - Royal & VIP Boulevard</SelectItem>
+                  <SelectItem value="Gate 2 - General Turnstiles">Gate 2 - General Turnstiles</SelectItem>
+                  <SelectItem value="Gate 3 - Media & Hospitality East">Gate 3 - Media & Hospitality East</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
