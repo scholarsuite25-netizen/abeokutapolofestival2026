@@ -225,10 +225,9 @@ begin
     (v_cont_id, v_edition_id, 'RSVP Protocol for 100 Traditional Rulers', 'Royal Liaison dispatch for palace protocol and Sovereign Dais seating.', 'in_progress', 'critical', '2026-11-18');
 
   -- 7. Seed Operational Meetings & Minutes
-  insert into public.committee_meetings (committee_id, edition_id, title, agenda, starts_at, location, status)
+  insert into public.committee_meetings (committee_id, title, agenda, starts_at, location, status)
   values (
     v_fin_id,
-    v_edition_id,
     'Sponsorship Council Review Session',
     'Review offline sponsor covenants, committee budget allocations, and audited bank wires.',
     '2026-10-12 10:00:00+01',
@@ -244,47 +243,49 @@ begin
   );
 
   -- 8. Seed Sample Accredited Guests and Credentials for Gate Scanner Demonstration
-  insert into public.registrations (
-    edition_id, first_name, last_name, email, phone, category, group_size, status
-  )
-  values (
-    v_edition_id,
-    'Oba Adedotun Aremu',
-    'Gbadebo, CFR',
-    'palace@egbaland.ng',
-    '+234 803 000 0001',
-    'Royal Patron',
-    4,
-    'confirmed'
-  )
-  returning id into v_reg_id;
+  if not exists (select 1 from public.credentials where pass_code = 'ABK-2026-ROYAL') then
+    insert into public.registrations (
+      edition_id, first_name, last_name, email, phone, category, group_size, status
+    )
+    values (
+      v_edition_id,
+      'Oba Adedotun Aremu',
+      'Gbadebo, CFR',
+      'palace@egbaland.ng',
+      '+234 803 000 0001',
+      'Royal Patron',
+      4,
+      'confirmed'
+    )
+    returning id into v_reg_id;
 
-  insert into public.credentials (
-    registration_id, holder_name, token_hash, pass_code, pass_type, zone_access,
-    status, check_in_count, first_checked_in_at, last_checked_in_at, last_check_in_gate
-  )
-  values (
-    v_reg_id,
-    'Kabiyesi Oba Adedotun Aremu Gbadebo, CFR',
-    'f3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4',
-    'ABK-2026-ROYAL',
-    'Royal Patron',
-    array['royal_dais', 'sovereign_pavilion', 'general_lawn'],
-    'active',
-    1,
-    now() - interval '1 hour',
-    now() - interval '1 hour',
-    'Gate 1 - Royal & VIP Boulevard'
-  )
-  returning id into v_cred_id;
+    insert into public.credentials (
+      registration_id, holder_name, token_hash, pass_code, pass_type, zone_access,
+      status, check_in_count, first_checked_in_at, last_checked_in_at, last_check_in_gate
+    )
+    values (
+      v_reg_id,
+      'Kabiyesi Oba Adedotun Aremu Gbadebo, CFR',
+      'f3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4',
+      'ABK-2026-ROYAL',
+      'Royal Patron',
+      array['royal_dais', 'sovereign_pavilion', 'general_lawn'],
+      'active',
+      1,
+      now() - interval '1 hour',
+      now() - interval '1 hour',
+      'Gate 1 - Royal & VIP Boulevard'
+    )
+    returning id into v_cred_id;
 
-  -- Add an initial admitted gate check-in event
-  insert into public.check_in_events (credential_id, gate, result, details)
-  values (
-    v_cred_id,
-    'Gate 1 - Royal & VIP Boulevard',
-    'admitted',
-    jsonb_build_object('gate', 'Gate 1 - Royal & VIP Boulevard', 'protocol', 'Sovereign Royal Dais Escort')
-  );
+    -- Add an initial admitted gate check-in event
+    insert into public.check_in_events (credential_id, gate, result, details)
+    values (
+      v_cred_id,
+      'Gate 1 - Royal & VIP Boulevard',
+      'admitted',
+      jsonb_build_object('gate', 'Gate 1 - Royal & VIP Boulevard', 'protocol', 'Sovereign Royal Dais Escort')
+    );
+  end if;
 
 end $$;
