@@ -1,10 +1,11 @@
 -- ============================================================================
--- 2026 Abeokuta Polo Festival — Complete Consolidated Database Schema
--- Migrations 0001 through 0007 (Idempotent & Self-Healing)
+-- 2026 ABEOKUTA POLO FESTIVAL - ALL MIGRATIONS CONSOLIDATED
+-- Run this in the Supabase Dashboard -> SQL Editor
 -- ============================================================================
 
-
--- >>> START: 0001_foundations.sql <<<
+-- ============================================================================
+-- FILE: 0001_foundations.sql
+-- ============================================================================
 
 -- 0001_foundations.sql
 -- 2026 Abeokuta Polo Festival — core foundations
@@ -149,10 +150,10 @@ create policy profiles_own_update
 -- audit_logs: no client policies at all → deny by default.
 -- Insertion happens only through SECURITY DEFINER functions / service role.
 
--- >>> END: 0001_foundations.sql <<<
 
-
--- >>> START: 0002_edition_and_audit_helpers.sql <<<
+-- ============================================================================
+-- FILE: 0002_edition_and_audit_helpers.sql
+-- ============================================================================
 
 -- 0002_edition_and_audit_helpers.sql
 -- 2026 Abeokuta Polo Festival — edition bootstrap + audit writer
@@ -206,10 +207,10 @@ values (
 )
 on conflict (slug) do nothing;
 
--- >>> END: 0002_edition_and_audit_helpers.sql <<<
 
-
--- >>> START: 0003_identity_and_grants.sql <<<
+-- ============================================================================
+-- FILE: 0003_identity_and_grants.sql
+-- ============================================================================
 
 -- 0003_identity_and_grants.sql
 -- Identity, role catalog and scoped grants.
@@ -311,13 +312,13 @@ from (values
   ('sponsorship_officer', array['content.read','sponsorship.manage','roster.read','directory.read_own','export.bulk']),
   ('security_checkin_officer', array['content.read','credential.validate','credential.override','directory.read_own'])
 ) as t(role_key, codes)
-cross join lateral unnest(t.codes) as code
+cross join lateral unnest(t.codes) as u(perm_code)
 join public.roles r on r.key = t.role_key
-join public.permissions p on p.code = code
+join public.permissions p on p.code = u.perm_code
 on conflict do nothing;
 
 insert into public.role_permissions (role_key, permission_code)
-select 'super_admin', code from public.permissions
+select 'super_admin', p.code from public.permissions p
 on conflict do nothing;
 
 -- ── Create a profile row for every auth user ────────────────────────────────
@@ -364,10 +365,10 @@ drop policy if exists user_role_assignments_own_read on public.user_role_assignm
 create policy user_role_assignments_own_read on public.user_role_assignments
   for select using (user_id = public.current_user_id());
 
--- >>> END: 0003_identity_and_grants.sql <<<
 
-
--- >>> START: 0004_committees.sql <<<
+-- ============================================================================
+-- FILE: 0004_committees.sql
+-- ============================================================================
 
 -- 0004_committees.sql
 -- Committee workspaces, people and memberships (Phase 2 — private governance).
@@ -612,10 +613,10 @@ create policy user_role_assignments_admin_write on public.user_role_assignments
   for all using (public.is_super_admin())
   with check (public.is_super_admin());
 
--- >>> END: 0004_committees.sql <<<
 
-
--- >>> START: 0005_committee_work.sql <<<
+-- ============================================================================
+-- FILE: 0005_committee_work.sql
+-- ============================================================================
 
 -- 0005_committee_work.sql
 -- Committee operating surface: tasks, meetings, minutes, decisions, documents,
@@ -889,10 +890,10 @@ drop policy if exists activity_log_officer_insert on public.committee_activity_l
 create policy activity_log_officer_insert on public.committee_activity_logs
   for insert with check (public.is_committee_member(committee_id));
 
--- >>> END: 0005_committee_work.sql <<<
 
-
--- >>> START: 0006_document_storage.sql <<<
+-- ============================================================================
+-- FILE: 0006_document_storage.sql
+-- ============================================================================
 
 -- 0006_document_storage.sql
 -- Private document vault bucket for committee documents.
@@ -942,10 +943,10 @@ create policy "committee documents officer delete"
     and (case when (storage.foldername(name))[1] ~ '^[0-9a-fA-F-]{36}$' then public.is_committee_officer(((storage.foldername(name))[1])::uuid) else false end)
   );
 
--- >>> END: 0006_document_storage.sql <<<
 
-
--- >>> START: 0007_registrations_and_credentials.sql <<<
+-- ============================================================================
+-- FILE: 0007_registrations_and_credentials.sql
+-- ============================================================================
 
 -- 0007_registrations_and_credentials.sql
 -- 2026 Abeokuta Polo Festival — Guest Registrations & QR Accreditation
@@ -1154,5 +1155,4 @@ begin
 end;
 $$;
 
--- >>> END: 0007_registrations_and_credentials.sql <<<
 

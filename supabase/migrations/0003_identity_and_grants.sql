@@ -98,13 +98,13 @@ from (values
   ('sponsorship_officer', array['content.read','sponsorship.manage','roster.read','directory.read_own','export.bulk']),
   ('security_checkin_officer', array['content.read','credential.validate','credential.override','directory.read_own'])
 ) as t(role_key, codes)
-cross join lateral unnest(t.codes) as code
+cross join lateral unnest(t.codes) as u(perm_code)
 join public.roles r on r.key = t.role_key
-join public.permissions p on p.code = code
+join public.permissions p on p.code = u.perm_code
 on conflict do nothing;
 
 insert into public.role_permissions (role_key, permission_code)
-select 'super_admin', code from public.permissions
+select 'super_admin', p.code from public.permissions p
 on conflict do nothing;
 
 -- ── Create a profile row for every auth user ────────────────────────────────
