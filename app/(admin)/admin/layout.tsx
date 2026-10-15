@@ -6,6 +6,7 @@ import {
   FolderKanban, 
   Landmark, 
   QrCode, 
+  FileSpreadsheet,
   ExternalLink
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: "Committees (7)", href: "/admin/committees", icon: FolderKanban },
     { label: "Member Roster", href: "/admin/members", icon: Users2 },
     { label: "Offline Finance", href: "/admin/finance", icon: Landmark },
+    { label: "Reports & Export", href: "/admin/reports", icon: FileSpreadsheet },
     { label: "Turnstile Scanner", href: "/scan", icon: QrCode },
   ];
 
