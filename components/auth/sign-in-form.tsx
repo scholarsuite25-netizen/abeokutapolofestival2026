@@ -35,9 +35,12 @@ export function SignInForm() {
       const next = searchParams.get("next");
       router.push(next && next.startsWith("/") ? next : "/dashboard");
       router.refresh();
-    } catch {
+    } catch (err) {
+      console.error("Sign-in error:", err);
       setError(
-        "Sign-in is unavailable until Supabase is configured (.env.local).",
+        err instanceof Error
+          ? err.message
+          : "Sign-in is unavailable until Supabase is configured (.env.local).",
       );
     } finally {
       setPending(false);

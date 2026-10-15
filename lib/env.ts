@@ -54,8 +54,15 @@ export function requireServerEnv() {
 
 /** Public env — safe to read anywhere. Missing values are tolerated during scaffold. */
 export function getPublicEnv(): PublicEnv {
-  const parsed = publicSchema.safeParse(process.env);
-  return parsed.success ? parsed.data : {};
+  const raw = {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_FEATURE_HOSPITALITY_ENQUIRY:
+      process.env.NEXT_PUBLIC_FEATURE_HOSPITALITY_ENQUIRY,
+  };
+  const parsed = publicSchema.safeParse(raw);
+  return parsed.success ? parsed.data : raw;
 }
 
 /** True when a complete Supabase pair is configured (used to soft-disable data features). */
