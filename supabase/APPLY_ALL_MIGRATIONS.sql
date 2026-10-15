@@ -1,6 +1,6 @@
 -- ============================================================================
 -- 2026 Abeokuta Polo Festival — Complete Consolidated Database Schema
--- Migrations 0001 through 0007
+-- Migrations 0001 through 0007 (Idempotent & Self-Healing)
 -- ============================================================================
 
 
@@ -49,22 +49,29 @@ stable
 security definer
 set search_path = public
 as $$
-  select nullif(auth.uid(), '')::uuid;
+  select auth.uid();
 $$;
 
 -- ── Enums ───────────────────────────────────────────────────────────────────
-create type public.festival_edition_status as enum ('planning', 'published', 'live', 'archived');
-create type public.app_role as enum (
-  'guest',
-  'committee_member',
-  'committee_officer',
-  'accreditation_officer',
-  'finance_officer',
-  'media_officer',
-  'sponsorship_officer',
-  'security_checkin_officer',
-  'super_admin'
-);
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'festival_edition_status') then
+    create type public.festival_edition_status as enum ('planning', 'published', 'live', 'archived');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'app_role') then
+    create type public.app_role as enum (
+      'guest',
+      'committee_member',
+      'committee_officer',
+      'accreditation_officer',
+      'finance_officer',
+      'media_officer',
+      'sponsorship_officer',
+      'security_checkin_officer',
+      'super_admin'
+    );
+  end if;
+end $$;
 
 -- ── Festival editions ───────────────────────────────────────────────────────
 create table public.festival_editions (
@@ -181,6 +188,7 @@ revoke execute on function public.write_audit(text, text, text, jsonb) from publ
 grant execute on function public.write_audit(text, text, text, jsonb) to authenticated, service_role;
 
 -- Clients may read only their own audit rows (e.g. "your pass was revoked at X").
+drop policy if exists audit_logs_own_read on public.audit_logs;
 create policy audit_logs_own_read
   on public.audit_logs
   for select
@@ -275,7 +283,8 @@ insert into public.permissions (code, description) values
   ('credential.override', 'Audited manual override at the gate'),
   ('cms.publish', 'Publish CMS content (with approver)'),
   ('grants.manage', 'Grant or revoke roles (super_admin only)'),
-  ('export.bulk', 'Bulk export (writes audit row)');
+  ('export.bulk', 'Bulk export (writes audit row)')
+on conflict (code) do nothing;
 
 insert into public.roles (key, description) values
   ('guest', 'Registered attendee — own records only'),
@@ -286,7 +295,8 @@ insert into public.roles (key, description) values
   ('media_officer', 'CMS and media library'),
   ('sponsorship_officer', 'Sponsor pipeline and agreements'),
   ('security_checkin_officer', 'Gate validation and overrides'),
-  ('super_admin', 'All permissions, audited');
+  ('super_admin', 'All permissions, audited')
+on conflict (key) do nothing;
 
 -- Mirror of matrix.ts role grants (matrix.ts stays authoritative in the app).
 insert into public.role_permissions (role_key, permission_code)
@@ -329,6 +339,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
@@ -339,11 +350,17 @@ alter table public.roles enable row level security;
 alter table public.role_permissions enable row level security;
 alter table public.user_role_assignments enable row level security;
 
+drop policy if exists permissions_read_all on public.permissions;
 create policy permissions_read_all on public.permissions for select using (true);
+
+drop policy if exists roles_read_all on public.roles;
 create policy roles_read_all on public.roles for select using (true);
+
+drop policy if exists role_permissions_read_all on public.role_permissions;
 create policy role_permissions_read_all on public.role_permissions for select using (true);
 
 -- Users may read their own active grants (to explain "why can/can't I…").
+drop policy if exists user_role_assignments_own_read on public.user_role_assignments;
 create policy user_role_assignments_own_read on public.user_role_assignments
   for select using (user_id = public.current_user_id());
 
@@ -521,6 +538,7 @@ alter table public.person_records enable row level security;
 alter table public.committee_memberships enable row level security;
 
 -- Committees: readable by members and admins only (names are private).
+drop policy if exists committees_member_read on public.committees;
 create policy committees_member_read on public.committees
   for select using (
     public.is_super_admin()
@@ -532,47 +550,51 @@ create policy committees_member_read on public.committees
     )
   );
 
+drop policy if exists committees_admin_write on public.committees;
 create policy committees_admin_write on public.committees
   for all using (public.is_super_admin())
   with check (public.is_super_admin());
 
+drop policy if exists responsibilities_member_read on public.committee_responsibilities;
 create policy responsibilities_member_read on public.committee_responsibilities
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists responsibilities_officer_write on public.committee_responsibilities;
 create policy responsibilities_officer_write on public.committee_responsibilities
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
+drop policy if exists positions_member_read on public.committee_positions;
 create policy positions_member_read on public.committee_positions
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists positions_officer_write on public.committee_positions;
 create policy positions_officer_write on public.committee_positions
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
--- Person records: own row, officers of committees the person belongs to,
--- accreditation officers, super_admin.
+drop policy if exists person_records_own_read on public.person_records;
 create policy person_records_own_read on public.person_records
   for select using (profile_id = public.current_user_id());
 
+drop policy if exists person_records_committee_read on public.person_records;
 create policy person_records_committee_read on public.person_records
   for select using (
     public.is_super_admin()
     or public.has_role('accreditation_officer')
     or exists (
-      -- members of a committee this person belongs to (approved fields only,
-      -- enforced by the column list in the app layer)
       select 1 from public.committee_memberships m
       where m.person_id = person_records.id
         and public.is_committee_member(m.committee_id)
     )
   );
 
+drop policy if exists person_records_admin_write on public.person_records;
 create policy person_records_admin_write on public.person_records
   for all using (public.is_super_admin() or public.has_role('accreditation_officer'))
   with check (public.is_super_admin() or public.has_role('accreditation_officer'));
 
--- Memberships: visible to members of that committee; written by officers/admins.
+drop policy if exists memberships_member_read on public.committee_memberships;
 create policy memberships_member_read on public.committee_memberships
   for select using (
     public.is_super_admin()
@@ -580,11 +602,12 @@ create policy memberships_member_read on public.committee_memberships
     or person_id in (select id from public.person_records where profile_id = public.current_user_id())
   );
 
+drop policy if exists memberships_officer_write on public.committee_memberships;
 create policy memberships_officer_write on public.committee_memberships
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
--- Grants: super_admin manages; everyone reads their own.
+drop policy if exists user_role_assignments_admin_write on public.user_role_assignments;
 create policy user_role_assignments_admin_write on public.user_role_assignments
   for all using (public.is_super_admin())
   with check (public.is_super_admin());
@@ -760,13 +783,16 @@ alter table public.committee_documents enable row level security;
 alter table public.committee_announcements enable row level security;
 alter table public.committee_activity_logs enable row level security;
 
+drop policy if exists tasks_member_read on public.committee_tasks;
 create policy tasks_member_read on public.committee_tasks
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists tasks_officer_write on public.committee_tasks;
 create policy tasks_officer_write on public.committee_tasks
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
+drop policy if exists task_assignments_member_read on public.task_assignments;
 create policy task_assignments_member_read on public.task_assignments
   for select using (
     public.is_committee_member(
@@ -774,6 +800,7 @@ create policy task_assignments_member_read on public.task_assignments
     )
   );
 
+drop policy if exists task_assignments_officer_write on public.task_assignments;
 create policy task_assignments_officer_write on public.task_assignments
   for all using (
     public.is_committee_officer(
@@ -786,14 +813,17 @@ create policy task_assignments_officer_write on public.task_assignments
     )
   );
 
+drop policy if exists meetings_member_read on public.committee_meetings;
 create policy meetings_member_read on public.committee_meetings
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists meetings_officer_write on public.committee_meetings;
 create policy meetings_officer_write on public.committee_meetings
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
 -- Minutes: explicit-grant sensitivity.
+drop policy if exists minutes_officer_read on public.meeting_minutes;
 create policy minutes_officer_read on public.meeting_minutes
   for select using (
     public.is_super_admin()
@@ -806,6 +836,7 @@ create policy minutes_officer_read on public.meeting_minutes
     )
   );
 
+drop policy if exists minutes_officer_write on public.meeting_minutes;
 create policy minutes_officer_write on public.meeting_minutes
   for all using (
     public.is_committee_officer(
@@ -818,14 +849,17 @@ create policy minutes_officer_write on public.meeting_minutes
     )
   );
 
+drop policy if exists decisions_member_read on public.committee_decisions;
 create policy decisions_member_read on public.committee_decisions
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists decisions_officer_write on public.committee_decisions;
 create policy decisions_officer_write on public.committee_decisions
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
 -- Documents: explicit-grant sensitivity (same rule as minutes).
+drop policy if exists documents_officer_read on public.committee_documents;
 create policy documents_officer_read on public.committee_documents
   for select using (
     public.is_super_admin()
@@ -833,20 +867,25 @@ create policy documents_officer_read on public.committee_documents
     or public.has_permission('minutes.read', committee_id)
   );
 
+drop policy if exists documents_officer_write on public.committee_documents;
 create policy documents_officer_write on public.committee_documents
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
+drop policy if exists announcements_member_read on public.committee_announcements;
 create policy announcements_member_read on public.committee_announcements
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists announcements_officer_write on public.committee_announcements;
 create policy announcements_officer_write on public.committee_announcements
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
+drop policy if exists activity_log_member_read on public.committee_activity_logs;
 create policy activity_log_member_read on public.committee_activity_logs
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists activity_log_officer_insert on public.committee_activity_logs;
 create policy activity_log_officer_insert on public.committee_activity_logs
   for insert with check (public.is_committee_member(committee_id));
 
@@ -871,32 +910,36 @@ values (
 on conflict (id) do nothing;
 
 -- storage.foldername(name)[1] is the committee_id folder.
+drop policy if exists "committee documents officer read" on storage.objects;
 create policy "committee documents officer read"
   on storage.objects for select
   using (
     bucket_id = 'committee-documents'
-    and public.is_committee_officer(((storage.foldername(name))[1])::uuid)
+    and (case when (storage.foldername(name))[1] ~ '^[0-9a-fA-F-]{36}$' then public.is_committee_officer(((storage.foldername(name))[1])::uuid) else false end)
   );
 
+drop policy if exists "committee documents officer insert" on storage.objects;
 create policy "committee documents officer insert"
   on storage.objects for insert
   with check (
     bucket_id = 'committee-documents'
-    and public.is_committee_officer(((storage.foldername(name))[1])::uuid)
+    and (case when (storage.foldername(name))[1] ~ '^[0-9a-fA-F-]{36}$' then public.is_committee_officer(((storage.foldername(name))[1])::uuid) else false end)
   );
 
+drop policy if exists "committee documents officer update" on storage.objects;
 create policy "committee documents officer update"
   on storage.objects for update
   using (
     bucket_id = 'committee-documents'
-    and public.is_committee_officer(((storage.foldername(name))[1])::uuid)
+    and (case when (storage.foldername(name))[1] ~ '^[0-9a-fA-F-]{36}$' then public.is_committee_officer(((storage.foldername(name))[1])::uuid) else false end)
   );
 
+drop policy if exists "committee documents officer delete" on storage.objects;
 create policy "committee documents officer delete"
   on storage.objects for delete
   using (
     bucket_id = 'committee-documents'
-    and public.is_committee_officer(((storage.foldername(name))[1])::uuid)
+    and (case when (storage.foldername(name))[1] ~ '^[0-9a-fA-F-]{36}$' then public.is_committee_officer(((storage.foldername(name))[1])::uuid) else false end)
   );
 
 -- >>> END: 0006_document_storage.sql <<<
@@ -961,10 +1004,12 @@ create index if not exists idx_registrations_email on public.registrations (emai
 create index if not exists idx_check_in_events_scanned_at on public.check_in_events (scanned_at desc);
 
 -- ── 5. Updated At Triggers ──────────────────────────────────────────────────
+drop trigger if exists registrations_set_updated_at on public.registrations;
 create trigger registrations_set_updated_at
   before update on public.registrations
   for each row execute function public.set_updated_at();
 
+drop trigger if exists credentials_set_updated_at on public.credentials;
 create trigger credentials_set_updated_at
   before update on public.credentials
   for each row execute function public.set_updated_at();
@@ -975,13 +1020,13 @@ alter table public.credentials enable row level security;
 alter table public.check_in_events enable row level security;
 
 -- Policies: Registrations
--- Anyone can insert registration (public free pass signup)
+drop policy if exists registrations_public_insert on public.registrations;
 create policy registrations_public_insert
   on public.registrations
   for insert
   with check (true);
 
--- Users can read their own registration records
+drop policy if exists registrations_own_read on public.registrations;
 create policy registrations_own_read
   on public.registrations
   for select
@@ -991,7 +1036,7 @@ create policy registrations_own_read
   );
 
 -- Policies: Credentials
--- Credential owners can view their own passes
+drop policy if exists credentials_own_read on public.credentials;
 create policy credentials_own_read
   on public.credentials
   for select
@@ -1004,7 +1049,7 @@ create policy credentials_own_read
     public.current_app_role() in ('super_admin', 'accreditation_officer', 'security_checkin_officer')
   );
 
--- Security officers & super admin can update credentials during gate check-in
+drop policy if exists credentials_officer_update on public.credentials;
 create policy credentials_officer_update
   on public.credentials
   for update
@@ -1012,11 +1057,13 @@ create policy credentials_officer_update
   with check (public.current_app_role() in ('super_admin', 'security_checkin_officer', 'accreditation_officer'));
 
 -- Policies: Check-in Events
+drop policy if exists check_in_events_officer_insert on public.check_in_events;
 create policy check_in_events_officer_insert
   on public.check_in_events
   for insert
   with check (public.current_app_role() in ('super_admin', 'security_checkin_officer'));
 
+drop policy if exists check_in_events_admin_read on public.check_in_events;
 create policy check_in_events_admin_read
   on public.check_in_events
   for select
@@ -1100,7 +1147,7 @@ begin
     'result', 'admitted',
     'holder_name', v_cred.holder_name,
     'pass_type', v_cred.pass_type,
-    'zone_access', v_cred.zone_access,
+    'zone_access', to_jsonb(v_cred.zone_access),
     'admitted_at', now(),
     'message', 'Access Granted. Welcome to the 2026 Abeokuta Polo Festival.'
   );

@@ -164,13 +164,16 @@ alter table public.committee_documents enable row level security;
 alter table public.committee_announcements enable row level security;
 alter table public.committee_activity_logs enable row level security;
 
+drop policy if exists tasks_member_read on public.committee_tasks;
 create policy tasks_member_read on public.committee_tasks
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists tasks_officer_write on public.committee_tasks;
 create policy tasks_officer_write on public.committee_tasks
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
+drop policy if exists task_assignments_member_read on public.task_assignments;
 create policy task_assignments_member_read on public.task_assignments
   for select using (
     public.is_committee_member(
@@ -178,6 +181,7 @@ create policy task_assignments_member_read on public.task_assignments
     )
   );
 
+drop policy if exists task_assignments_officer_write on public.task_assignments;
 create policy task_assignments_officer_write on public.task_assignments
   for all using (
     public.is_committee_officer(
@@ -190,14 +194,17 @@ create policy task_assignments_officer_write on public.task_assignments
     )
   );
 
+drop policy if exists meetings_member_read on public.committee_meetings;
 create policy meetings_member_read on public.committee_meetings
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists meetings_officer_write on public.committee_meetings;
 create policy meetings_officer_write on public.committee_meetings
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
 -- Minutes: explicit-grant sensitivity.
+drop policy if exists minutes_officer_read on public.meeting_minutes;
 create policy minutes_officer_read on public.meeting_minutes
   for select using (
     public.is_super_admin()
@@ -210,6 +217,7 @@ create policy minutes_officer_read on public.meeting_minutes
     )
   );
 
+drop policy if exists minutes_officer_write on public.meeting_minutes;
 create policy minutes_officer_write on public.meeting_minutes
   for all using (
     public.is_committee_officer(
@@ -222,14 +230,17 @@ create policy minutes_officer_write on public.meeting_minutes
     )
   );
 
+drop policy if exists decisions_member_read on public.committee_decisions;
 create policy decisions_member_read on public.committee_decisions
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists decisions_officer_write on public.committee_decisions;
 create policy decisions_officer_write on public.committee_decisions
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
 -- Documents: explicit-grant sensitivity (same rule as minutes).
+drop policy if exists documents_officer_read on public.committee_documents;
 create policy documents_officer_read on public.committee_documents
   for select using (
     public.is_super_admin()
@@ -237,19 +248,24 @@ create policy documents_officer_read on public.committee_documents
     or public.has_permission('minutes.read', committee_id)
   );
 
+drop policy if exists documents_officer_write on public.committee_documents;
 create policy documents_officer_write on public.committee_documents
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
+drop policy if exists announcements_member_read on public.committee_announcements;
 create policy announcements_member_read on public.committee_announcements
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists announcements_officer_write on public.committee_announcements;
 create policy announcements_officer_write on public.committee_announcements
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
+drop policy if exists activity_log_member_read on public.committee_activity_logs;
 create policy activity_log_member_read on public.committee_activity_logs
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists activity_log_officer_insert on public.committee_activity_logs;
 create policy activity_log_officer_insert on public.committee_activity_logs
   for insert with check (public.is_committee_member(committee_id));

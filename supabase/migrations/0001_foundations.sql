@@ -41,22 +41,29 @@ stable
 security definer
 set search_path = public
 as $$
-  select nullif(auth.uid(), '')::uuid;
+  select auth.uid();
 $$;
 
 -- ── Enums ───────────────────────────────────────────────────────────────────
-create type public.festival_edition_status as enum ('planning', 'published', 'live', 'archived');
-create type public.app_role as enum (
-  'guest',
-  'committee_member',
-  'committee_officer',
-  'accreditation_officer',
-  'finance_officer',
-  'media_officer',
-  'sponsorship_officer',
-  'security_checkin_officer',
-  'super_admin'
-);
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'festival_edition_status') then
+    create type public.festival_edition_status as enum ('planning', 'published', 'live', 'archived');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'app_role') then
+    create type public.app_role as enum (
+      'guest',
+      'committee_member',
+      'committee_officer',
+      'accreditation_officer',
+      'finance_officer',
+      'media_officer',
+      'sponsorship_officer',
+      'security_checkin_officer',
+      'super_admin'
+    );
+  end if;
+end $$;
 
 -- ── Festival editions ───────────────────────────────────────────────────────
 create table public.festival_editions (

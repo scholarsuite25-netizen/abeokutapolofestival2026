@@ -32,6 +32,7 @@ revoke execute on function public.write_audit(text, text, text, jsonb) from publ
 grant execute on function public.write_audit(text, text, text, jsonb) to authenticated, service_role;
 
 -- Clients may read only their own audit rows (e.g. "your pass was revoked at X").
+drop policy if exists audit_logs_own_read on public.audit_logs;
 create policy audit_logs_own_read
   on public.audit_logs
   for select

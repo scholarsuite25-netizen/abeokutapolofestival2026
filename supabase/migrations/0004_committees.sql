@@ -167,6 +167,7 @@ alter table public.person_records enable row level security;
 alter table public.committee_memberships enable row level security;
 
 -- Committees: readable by members and admins only (names are private).
+drop policy if exists committees_member_read on public.committees;
 create policy committees_member_read on public.committees
   for select using (
     public.is_super_admin()
@@ -178,47 +179,51 @@ create policy committees_member_read on public.committees
     )
   );
 
+drop policy if exists committees_admin_write on public.committees;
 create policy committees_admin_write on public.committees
   for all using (public.is_super_admin())
   with check (public.is_super_admin());
 
+drop policy if exists responsibilities_member_read on public.committee_responsibilities;
 create policy responsibilities_member_read on public.committee_responsibilities
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists responsibilities_officer_write on public.committee_responsibilities;
 create policy responsibilities_officer_write on public.committee_responsibilities
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
+drop policy if exists positions_member_read on public.committee_positions;
 create policy positions_member_read on public.committee_positions
   for select using (public.is_committee_member(committee_id));
 
+drop policy if exists positions_officer_write on public.committee_positions;
 create policy positions_officer_write on public.committee_positions
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
--- Person records: own row, officers of committees the person belongs to,
--- accreditation officers, super_admin.
+drop policy if exists person_records_own_read on public.person_records;
 create policy person_records_own_read on public.person_records
   for select using (profile_id = public.current_user_id());
 
+drop policy if exists person_records_committee_read on public.person_records;
 create policy person_records_committee_read on public.person_records
   for select using (
     public.is_super_admin()
     or public.has_role('accreditation_officer')
     or exists (
-      -- members of a committee this person belongs to (approved fields only,
-      -- enforced by the column list in the app layer)
       select 1 from public.committee_memberships m
       where m.person_id = person_records.id
         and public.is_committee_member(m.committee_id)
     )
   );
 
+drop policy if exists person_records_admin_write on public.person_records;
 create policy person_records_admin_write on public.person_records
   for all using (public.is_super_admin() or public.has_role('accreditation_officer'))
   with check (public.is_super_admin() or public.has_role('accreditation_officer'));
 
--- Memberships: visible to members of that committee; written by officers/admins.
+drop policy if exists memberships_member_read on public.committee_memberships;
 create policy memberships_member_read on public.committee_memberships
   for select using (
     public.is_super_admin()
@@ -226,11 +231,12 @@ create policy memberships_member_read on public.committee_memberships
     or person_id in (select id from public.person_records where profile_id = public.current_user_id())
   );
 
+drop policy if exists memberships_officer_write on public.committee_memberships;
 create policy memberships_officer_write on public.committee_memberships
   for all using (public.is_committee_officer(committee_id))
   with check (public.is_committee_officer(committee_id));
 
--- Grants: super_admin manages; everyone reads their own.
+drop policy if exists user_role_assignments_admin_write on public.user_role_assignments;
 create policy user_role_assignments_admin_write on public.user_role_assignments
   for all using (public.is_super_admin())
   with check (public.is_super_admin());

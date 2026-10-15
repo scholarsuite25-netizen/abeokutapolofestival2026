@@ -245,50 +245,46 @@ begin
 
   -- 8. Seed Sample Accredited Guests and Credentials for Gate Scanner Demonstration
   insert into public.registrations (
-    edition_id, full_name, email, phone, category, attendance_days, guest_count,
-    organization, special_requests, consent_given, status
+    edition_id, first_name, last_name, email, phone, category, group_size, status
   )
   values (
     v_edition_id,
-    'Kabiyesi Oba Adedotun Aremu Gbadebo, CFR',
+    'Oba Adedotun Aremu',
+    'Gbadebo, CFR',
     'palace@egbaland.ng',
     '+234 803 000 0001',
     'Royal Patron',
-    array['all_days'],
     4,
-    'The Alake of Egbaland Palace',
-    'Royal Dais Sovereign Protocol & Escort',
-    true,
     'confirmed'
   )
   returning id into v_reg_id;
 
   insert into public.credentials (
-    edition_id, registration_id, token_id, token_hash, signature, category,
-    guest_name, guest_email, status, expires_at
+    registration_id, holder_name, token_hash, pass_code, pass_type, zone_access,
+    status, check_in_count, first_checked_in_at, last_checked_in_at, last_check_in_gate
   )
   values (
-    v_edition_id,
     v_reg_id,
-    'ABK26.RP.ROYAL-001',
-    'f3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4',
-    'sig_royal_patron_verified_hmac256',
-    'Royal Patron',
     'Kabiyesi Oba Adedotun Aremu Gbadebo, CFR',
-    'palace@egbaland.ng',
+    'f3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4',
+    'ABK-2026-ROYAL',
+    'Royal Patron',
+    array['royal_dais', 'sovereign_pavilion', 'general_lawn'],
     'active',
-    '2026-12-21 23:59:59+01'
+    1,
+    now() - interval '1 hour',
+    now() - interval '1 hour',
+    'Gate 1 - Royal & VIP Boulevard'
   )
   returning id into v_cred_id;
 
   -- Add an initial admitted gate check-in event
-  insert into public.check_in_events (credential_id, gate_id, operator_id, result, offline_sync)
+  insert into public.check_in_events (credential_id, gate, result, details)
   values (
     v_cred_id,
-    'Gate A - VIP & Royal Pavilion',
-    'officer-sec-01',
+    'Gate 1 - Royal & VIP Boulevard',
     'admitted',
-    false
+    jsonb_build_object('gate', 'Gate 1 - Royal & VIP Boulevard', 'protocol', 'Sovereign Royal Dais Escort')
   );
 
 end $$;

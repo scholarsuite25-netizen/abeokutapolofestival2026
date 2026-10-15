@@ -55,10 +55,12 @@ create index if not exists idx_registrations_email on public.registrations (emai
 create index if not exists idx_check_in_events_scanned_at on public.check_in_events (scanned_at desc);
 
 -- ── 5. Updated At Triggers ──────────────────────────────────────────────────
+drop trigger if exists registrations_set_updated_at on public.registrations;
 create trigger registrations_set_updated_at
   before update on public.registrations
   for each row execute function public.set_updated_at();
 
+drop trigger if exists credentials_set_updated_at on public.credentials;
 create trigger credentials_set_updated_at
   before update on public.credentials
   for each row execute function public.set_updated_at();
@@ -69,13 +71,13 @@ alter table public.credentials enable row level security;
 alter table public.check_in_events enable row level security;
 
 -- Policies: Registrations
--- Anyone can insert registration (public free pass signup)
+drop policy if exists registrations_public_insert on public.registrations;
 create policy registrations_public_insert
   on public.registrations
   for insert
   with check (true);
 
--- Users can read their own registration records
+drop policy if exists registrations_own_read on public.registrations;
 create policy registrations_own_read
   on public.registrations
   for select
@@ -85,7 +87,7 @@ create policy registrations_own_read
   );
 
 -- Policies: Credentials
--- Credential owners can view their own passes
+drop policy if exists credentials_own_read on public.credentials;
 create policy credentials_own_read
   on public.credentials
   for select
@@ -98,7 +100,7 @@ create policy credentials_own_read
     public.current_app_role() in ('super_admin', 'accreditation_officer', 'security_checkin_officer')
   );
 
--- Security officers & super admin can update credentials during gate check-in
+drop policy if exists credentials_officer_update on public.credentials;
 create policy credentials_officer_update
   on public.credentials
   for update
@@ -106,11 +108,13 @@ create policy credentials_officer_update
   with check (public.current_app_role() in ('super_admin', 'security_checkin_officer', 'accreditation_officer'));
 
 -- Policies: Check-in Events
+drop policy if exists check_in_events_officer_insert on public.check_in_events;
 create policy check_in_events_officer_insert
   on public.check_in_events
   for insert
   with check (public.current_app_role() in ('super_admin', 'security_checkin_officer'));
 
+drop policy if exists check_in_events_admin_read on public.check_in_events;
 create policy check_in_events_admin_read
   on public.check_in_events
   for select
@@ -194,7 +198,7 @@ begin
     'result', 'admitted',
     'holder_name', v_cred.holder_name,
     'pass_type', v_cred.pass_type,
-    'zone_access', v_cred.zone_access,
+    'zone_access', to_jsonb(v_cred.zone_access),
     'admitted_at', now(),
     'message', 'Access Granted. Welcome to the 2026 Abeokuta Polo Festival.'
   );

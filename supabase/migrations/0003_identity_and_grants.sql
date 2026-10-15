@@ -70,7 +70,8 @@ insert into public.permissions (code, description) values
   ('credential.override', 'Audited manual override at the gate'),
   ('cms.publish', 'Publish CMS content (with approver)'),
   ('grants.manage', 'Grant or revoke roles (super_admin only)'),
-  ('export.bulk', 'Bulk export (writes audit row)');
+  ('export.bulk', 'Bulk export (writes audit row)')
+on conflict (code) do nothing;
 
 insert into public.roles (key, description) values
   ('guest', 'Registered attendee — own records only'),
@@ -81,7 +82,8 @@ insert into public.roles (key, description) values
   ('media_officer', 'CMS and media library'),
   ('sponsorship_officer', 'Sponsor pipeline and agreements'),
   ('security_checkin_officer', 'Gate validation and overrides'),
-  ('super_admin', 'All permissions, audited');
+  ('super_admin', 'All permissions, audited')
+on conflict (key) do nothing;
 
 -- Mirror of matrix.ts role grants (matrix.ts stays authoritative in the app).
 insert into public.role_permissions (role_key, permission_code)
@@ -124,6 +126,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
@@ -134,10 +137,16 @@ alter table public.roles enable row level security;
 alter table public.role_permissions enable row level security;
 alter table public.user_role_assignments enable row level security;
 
+drop policy if exists permissions_read_all on public.permissions;
 create policy permissions_read_all on public.permissions for select using (true);
+
+drop policy if exists roles_read_all on public.roles;
 create policy roles_read_all on public.roles for select using (true);
+
+drop policy if exists role_permissions_read_all on public.role_permissions;
 create policy role_permissions_read_all on public.role_permissions for select using (true);
 
 -- Users may read their own active grants (to explain "why can/can't I…").
+drop policy if exists user_role_assignments_own_read on public.user_role_assignments;
 create policy user_role_assignments_own_read on public.user_role_assignments
   for select using (user_id = public.current_user_id());
