@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -24,15 +24,10 @@ import {
   UserCheck,
   ArrowRight,
   Sparkle,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetClose,
@@ -40,6 +35,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useStoredPass } from "@/lib/storage/pass-storage";
 
 interface SubmenuItem {
   href: string;
@@ -141,26 +137,26 @@ const NAV_CATEGORIES: NavCategory[] = [
       {
         href: "/faq",
         label: "FAQs",
-        desc: "Visitor dress codes & etiquette",
+        desc: "Day 1 Free entry, Day 2/3 ticket rules & dress code",
         icon: HelpCircle,
       },
     ],
   },
   {
     title: "Access",
-    desc: "Registration, pass retrieval & gate verification",
+    desc: "Day 1 Free Entry · Day 2 & 3 Through Ticket",
     items: [
       {
         href: "/register",
         label: "Register for Pass",
-        desc: "Instant gate access card with 3-day QR tracking",
+        desc: "Day 1 Free Pass + Day 2/3 Ticket QR card",
         icon: Ticket,
         isPriority: true,
       },
       {
         href: "/pass/lookup",
         label: "Find My Pass",
-        desc: "Look up access card by pass code or email",
+        desc: "Retrieve saved pass on this phone or look up code",
         icon: Search,
       },
       {
@@ -180,7 +176,22 @@ const NAV_CATEGORIES: NavCategory[] = [
 ];
 
 export function PublicHeader() {
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const storedPass = useStoredPass();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Safe hover handlers with 150ms debounce to eliminate all shaking
+  const handleMouseEnter = (title: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setActiveCategory(title);
+  };
+
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setActiveCategory(null);
+    }, 150);
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-line/80 bg-ivory/95 backdrop-blur-md supports-[backdrop-filter]:bg-ivory/85">
@@ -208,56 +219,61 @@ export function PublicHeader() {
           </div>
         </Link>
 
-        {/* ── 2. Unified Single-Word Main Menu with Submenus (Desktop) ── */}
+        {/* ── 2. Unified Single-Word Main Menu with Stable Non-Shaking Submenus ── */}
         <nav aria-label="Main Navigation" className="hidden lg:flex items-center gap-1">
-          {NAV_CATEGORIES.map((category) => (
-            <div
-              key={category.title}
-              onMouseEnter={() => setOpenDropdown(category.title)}
-              onMouseLeave={() => setOpenDropdown(null)}
-              className="relative"
-            >
-              <DropdownMenu
-                open={openDropdown === category.title}
-                onOpenChange={(isOpen) => setOpenDropdown(isOpen ? category.title : null)}
+          {NAV_CATEGORIES.map((category) => {
+            const isOpen = activeCategory === category.title;
+            return (
+              <div
+                key={category.title}
+                onMouseEnter={() => handleMouseEnter(category.title)}
+                onMouseLeave={handleMouseLeave}
+                className="relative py-2"
               >
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all outline-none cursor-pointer ${
-                      category.title === "Access"
-                        ? "text-forest hover:bg-gold/15 hover:text-forest-deep"
-                        : "text-ink/80 hover:bg-sage/50 hover:text-forest"
-                    } ${openDropdown === category.title ? "bg-sage/60 text-forest" : ""}`}
-                  >
-                    <span>{category.title}</span>
-                    <ChevronDown
-                      className={`size-3.5 transition-transform duration-200 opacity-60 ${
-                        openDropdown === category.title ? "rotate-180 opacity-100" : ""
-                      }`}
-                    />
-                  </button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent
-                  align="start"
-                  sideOffset={8}
-                  className="w-80 rounded-2xl border border-line bg-card p-3 shadow-xl animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+                <button
+                  onClick={() => setActiveCategory(isOpen ? null : category.title)}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors outline-none cursor-pointer ${
+                    category.title === "Access"
+                      ? "text-forest hover:bg-gold/15 hover:text-forest-deep"
+                      : "text-ink/80 hover:bg-sage/50 hover:text-forest"
+                  } ${isOpen ? "bg-sage/60 text-forest" : ""}`}
+                  aria-expanded={isOpen}
                 >
-                  <div className="px-3 pt-1 pb-2 border-b border-line/60">
-                    <p className="font-display text-xs font-bold uppercase tracking-wider text-forest">
-                      {category.title}
-                    </p>
-                    <p className="text-[11px] text-muted-brand">{category.desc}</p>
-                  </div>
+                  <span>{category.title}</span>
+                  <ChevronDown
+                    className={`size-3.5 transition-transform duration-200 opacity-60 ${
+                      isOpen ? "rotate-180 opacity-100" : ""
+                    }`}
+                  />
+                </button>
 
-                  <div className="mt-2 space-y-1">
-                    {category.items.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <DropdownMenuItem asChild key={item.href} className="p-0 focus:bg-transparent">
+                {/* Inline non-portalled dropdown with invisible hover bridge (Zero Shake!) */}
+                <div
+                  className={`absolute left-0 top-full pt-2 w-80 transition-all duration-150 origin-top z-50 ${
+                    isOpen
+                      ? "opacity-100 visible translate-y-0 pointer-events-auto"
+                      : "opacity-0 invisible -translate-y-2 pointer-events-none"
+                  }`}
+                >
+                  {/* Invisible Hitbox Bridge preventing mouseLeave gap */}
+                  <div className="absolute -top-2 left-0 right-0 h-4 bg-transparent" />
+
+                  <div className="rounded-2xl border border-line bg-card p-3 shadow-xl">
+                    <div className="px-3 pt-1 pb-2 border-b border-line/60">
+                      <p className="font-display text-xs font-bold uppercase tracking-wider text-forest">
+                        {category.title}
+                      </p>
+                      <p className="text-[11px] text-muted-brand">{category.desc}</p>
+                    </div>
+
+                    <div className="mt-2 space-y-1">
+                      {category.items.map((item) => {
+                        const Icon = item.icon;
+                        return (
                           <Link
+                            key={item.href}
                             href={item.href}
-                            onClick={() => setOpenDropdown(null)}
+                            onClick={() => setActiveCategory(null)}
                             className={`flex items-start gap-3 rounded-xl p-2.5 transition-colors cursor-pointer ${
                               item.isPriority
                                 ? "bg-gold/15 border border-gold/50 text-forest hover:bg-gold/25"
@@ -266,9 +282,7 @@ export function PublicHeader() {
                           >
                             <div
                               className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${
-                                item.isPriority
-                                  ? "bg-forest text-gold"
-                                  : "bg-sage/60 text-forest"
+                                item.isPriority ? "bg-forest text-gold" : "bg-sage/60 text-forest"
                               }`}
                             >
                               <Icon className="size-4" />
@@ -289,24 +303,38 @@ export function PublicHeader() {
                               </p>
                             </div>
                           </Link>
-                        </DropdownMenuItem>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
-        {/* ── 3. High-Priority Registration Call-to-Action (Desktop) ── */}
+        {/* ── 3. High-Priority Registration CTA & Persistent Pass Indicator ── */}
         <div className="hidden sm:flex items-center gap-3">
-          <Link
-            href="/pass/lookup"
-            className="text-xs font-semibold text-muted-brand hover:text-forest transition-colors px-2 py-1.5"
-          >
-            Find My Pass
-          </Link>
+          {storedPass ? (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20"
+            >
+              <Link href={`/pass/${storedPass.passCode}`} className="flex items-center gap-1.5">
+                <ShieldCheck className="size-3.5 text-gold-deep" />
+                <span>My Pass ({storedPass.passCode})</span>
+              </Link>
+            </Button>
+          ) : (
+            <Link
+              href="/pass/lookup"
+              className="text-xs font-semibold text-muted-brand hover:text-forest transition-colors px-2 py-1.5"
+            >
+              Find My Pass
+            </Link>
+          )}
 
           <Button
             asChild
@@ -320,7 +348,7 @@ export function PublicHeader() {
               <Ticket className="size-4 text-gold shrink-0 transition-transform group-hover:rotate-12" />
               <span className="font-semibold tracking-wide">Register for Pass</span>
               <span className="rounded bg-gold/25 px-1.5 py-0.5 text-[9px] font-bold text-gold uppercase tracking-wider border border-gold/40">
-                Free
+                Day 1 Free
               </span>
             </Link>
           </Button>
@@ -328,15 +356,14 @@ export function PublicHeader() {
 
         {/* ── 4. Mobile Quick Actions & Drawer ── */}
         <div className="flex items-center gap-2 lg:hidden">
-          {/* Mobile Direct Register CTA Button */}
           <Button
             asChild
             size="sm"
             className="bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs px-3 shadow-xs border border-gold/40 sm:hidden"
           >
-            <Link href="/register" className="flex items-center gap-1.5">
+            <Link href={storedPass ? `/pass/${storedPass.passCode}` : "/register"} className="flex items-center gap-1.5">
               <Ticket className="size-3.5 text-gold" />
-              <span>Register</span>
+              <span>{storedPass ? "My Pass" : "Register"}</span>
             </Link>
           </Button>
 
@@ -356,7 +383,6 @@ export function PublicHeader() {
               side="right"
               className="w-full sm:max-w-md overflow-y-auto bg-ivory p-6 text-ink border-l border-line"
             >
-              {/* Header inside Drawer */}
               <div className="flex items-center gap-3 border-b border-line pb-4">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/40">
                   <Shield className="size-5 text-gold" />
@@ -371,49 +397,69 @@ export function PublicHeader() {
                 </div>
               </div>
 
-              {/* ── Priority Registration Hero Card inside Mobile Menu ── */}
-              <div className="mt-5 rounded-2xl border-2 border-gold/60 bg-forest p-4 text-ivory shadow-lg relative overflow-hidden">
-                <div className="flex items-start justify-between">
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-gold/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold border border-gold/30">
-                    <Sparkle className="size-3" /> Priority Accreditation
+              {/* Mobile Persistent Pass or Registration Hero */}
+              {storedPass ? (
+                <div className="mt-5 rounded-2xl border-2 border-emerald-600 bg-emerald-900/90 p-4 text-ivory shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <Badge className="bg-emerald-500 text-ivory text-[10px]">SAVED PASS ON DEVICE</Badge>
+                    <span className="font-mono text-xs text-gold font-bold">{storedPass.passCode}</span>
                   </div>
-                  <Badge variant="outline" className="border-gold text-gold text-[10px]">
-                    COMPLIMENTARY
-                  </Badge>
-                </div>
-
-                <h3 className="mt-2 font-display text-lg font-bold text-ivory">
-                  Official Gate Access Card
-                </h3>
-                <p className="mt-1 text-xs text-ivory/80 leading-relaxed">
-                  Register to get your digital access card with instant QR daily turnstile check-in for all 3 days.
-                </p>
-
-                <div className="mt-4 flex flex-col gap-2">
+                  <p className="font-bold text-sm text-ivory mt-2">{storedPass.holderName}</p>
+                  <p className="text-xs text-emerald-100/80">
+                    Day 1: Free Entry · Day 2 &amp; 3: Through Ticket
+                  </p>
                   <SheetClose asChild>
-                    <Button
-                      asChild
-                      className="w-full bg-gold font-bold text-forest-deep hover:bg-gold/90 shadow-md py-2.5 text-xs sm:text-sm"
-                    >
-                      <Link href="/register" className="flex items-center justify-center gap-2">
-                        <Ticket className="size-4" /> Register &amp; Get Pass Now
-                        <ArrowRight className="size-4" />
+                    <Button asChild className="w-full mt-3 bg-gold font-bold text-forest-deep hover:bg-gold/90 text-xs">
+                      <Link href={`/pass/${storedPass.passCode}`}>
+                        <ShieldCheck className="mr-1.5 size-4" /> Open Access Card QR
                       </Link>
                     </Button>
                   </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/pass/lookup"
-                      className="text-center text-[11px] font-semibold text-gold/90 hover:underline pt-1"
-                    >
-                      Already registered? Look up your Access Card →
-                    </Link>
-                  </SheetClose>
                 </div>
-              </div>
+              ) : (
+                <div className="mt-5 rounded-2xl border-2 border-gold/60 bg-forest p-4 text-ivory shadow-lg relative overflow-hidden">
+                  <div className="flex items-start justify-between">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-gold/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold border border-gold/30">
+                      <Sparkle className="size-3" /> Priority Accreditation
+                    </div>
+                    <Badge variant="outline" className="border-gold text-gold text-[10px]">
+                      DAY 1 FREE
+                    </Badge>
+                  </div>
 
-              {/* ── Submenus Grouped by Relationship ── */}
-              <div className="mt-6 space-y-5">
+                  <h3 className="mt-2 font-display text-lg font-bold text-ivory">
+                    Official Gate Access Card
+                  </h3>
+                  <p className="mt-1 text-xs text-ivory/80 leading-relaxed">
+                    Day 1 is 100% Free Entry. Day 2 &amp; Day 3 admission is through ticket. Register now for your digital access card.
+                  </p>
+
+                  <div className="mt-4 flex flex-col gap-2">
+                    <SheetClose asChild>
+                      <Button
+                        asChild
+                        className="w-full bg-gold font-bold text-forest-deep hover:bg-gold/90 shadow-md py-2.5 text-xs sm:text-sm"
+                      >
+                        <Link href="/register" className="flex items-center justify-center gap-2">
+                          <Ticket className="size-4" /> Register &amp; Get Pass Now
+                          <ArrowRight className="size-4" />
+                        </Link>
+                      </Button>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Link
+                        href="/pass/lookup"
+                        className="text-center text-[11px] font-semibold text-gold/90 hover:underline pt-1"
+                      >
+                        Already registered? Look up your Access Card →
+                      </Link>
+                    </SheetClose>
+                  </div>
+                </div>
+              )}
+
+              {/* Grouped Submenus */}
+              <div className="mt-6 space-y-4">
                 {NAV_CATEGORIES.map((category) => (
                   <div key={category.title} className="rounded-xl border border-line bg-card p-3 shadow-xs">
                     <div className="flex items-center justify-between border-b border-line/60 pb-1.5 mb-2 px-1">
@@ -442,7 +488,7 @@ export function PublicHeader() {
                               </span>
                               {item.isPriority ? (
                                 <Badge className="bg-forest text-gold text-[9px] px-1 py-0 font-bold uppercase">
-                                  Free Pass
+                                  Day 1 Free
                                 </Badge>
                               ) : (
                                 <span className="text-[10px] text-muted-brand">{item.desc}</span>

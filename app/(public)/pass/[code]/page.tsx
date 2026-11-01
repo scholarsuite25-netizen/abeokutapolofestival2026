@@ -3,20 +3,22 @@ import { Suspense } from "react";
 import {
   QrCode,
   ShieldCheck,
-  Printer,
   MapPin,
   ArrowLeft,
   CheckCircle2,
   Building,
   UserCheck,
   CalendarCheck,
+  Ticket,
 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
+import { PassViewActions } from "@/components/shared/pass-view-actions";
 import { generateSignedPassToken, hashPassToken, verifyPassToken } from "@/lib/qr/token";
+import type { StoredPass } from "@/lib/storage/pass-storage";
 
 interface PassPageProps {
   params: Promise<{ code: string }>;
@@ -24,7 +26,7 @@ interface PassPageProps {
 
 export const metadata = {
   title: "Official Gate Access Card — 2026 Abeokuta Polo Festival",
-  description: "Official Gate Entry Access Card for Abeokuta Polo Festival 2026.",
+  description: "Official Gate Entry Access Card for Abeokuta Polo Festival 2026. Day 1 Free, Day 2 & 3 Through Ticket.",
 };
 
 export default function PublicPassPage({ params }: PassPageProps) {
@@ -54,6 +56,10 @@ async function PassContent({ params }: PassPageProps) {
     day2_checked_in_at?: string | null;
     day3_checked_in_at?: string | null;
     first_checked_in_at: string | null;
+    has_day2_ticket?: boolean;
+    has_day3_ticket?: boolean;
+    day2_ticket_ref?: string | null;
+    day3_ticket_ref?: string | null;
   } | null = null;
 
   let qrToken = "";
@@ -157,7 +163,23 @@ async function PassContent({ params }: PassPageProps) {
       ? `Guest of: ${cred.host_name}`
       : cred.affiliation_type === "corporate" && cred.organization
       ? `Corporate: ${cred.organization}`
-      : "Individual Guest";
+      : "Individual Attendee";
+
+  const passStorageData: StoredPass = {
+    passCode: cred.pass_code,
+    holderName: cred.holder_name,
+    category: cred.pass_type,
+    affiliationType: (cred.affiliation_type as "individual" | "guest_of" | "corporate") || "individual",
+    hostName: cred.host_name,
+    organization: cred.organization,
+    qrToken: qrToken || undefined,
+    registeredAt: cred.issued_at || new Date().toISOString(),
+    day1Status: "free_admitted",
+    day2Status: cred.has_day2_ticket ? "ticket_verified" : "ticket_required",
+    day3Status: cred.has_day3_ticket ? "ticket_verified" : "ticket_required",
+    ticketRefDay2: cred.day2_ticket_ref,
+    ticketRefDay3: cred.day3_ticket_ref,
+  };
 
   return (
     <div className="flex w-full flex-col bg-ivory text-ink py-10 sm:py-16 print:py-0 print:bg-white">
@@ -179,8 +201,11 @@ async function PassContent({ params }: PassPageProps) {
           </div>
         </div>
 
+        {/* Action Bar (Download Offline Pass / Print / Share) */}
+        <PassViewActions passData={passStorageData} />
+
         {/* Access Card Container */}
-        <div className="overflow-hidden rounded-3xl border border-line bg-card shadow-2xl print:border-2 print:border-black print:shadow-none">
+        <div className="overflow-hidden rounded-3xl border-2 border-forest/20 bg-card shadow-2xl print:border-2 print:border-black print:shadow-none">
           {/* Header */}
           <div className="bg-forest p-6 text-ivory text-center relative overflow-hidden print:bg-black print:text-white">
             <div className="flex justify-center mb-2">
@@ -188,11 +213,11 @@ async function PassContent({ params }: PassPageProps) {
                 variant="outline"
                 className="border-gold bg-gold/20 text-gold text-[10px] uppercase tracking-widest print:border-white print:text-white"
               >
-                Tournament Access Card
+                Abeokuta Polo Festival 2026
               </Badge>
             </div>
             <h1 className="font-display text-2xl font-semibold sm:text-3xl text-ivory">
-              Abeokuta Polo Festival 2026
+              Official Gate Access Card
             </h1>
             <p className="mt-1 text-xs text-ivory/80">
               The Blueprint — Where Heritage Meets Excellence · 18–20 Dec 2026
@@ -214,11 +239,11 @@ async function PassContent({ params }: PassPageProps) {
             <div className="flex size-48 items-center justify-center rounded-2xl border-4 border-dashed border-forest/30 bg-card p-4 shadow-inner print:border-black">
               <QrCode className="size-40 text-forest print:text-black" />
             </div>
-            <p className="mt-4 font-mono text-xl font-bold tracking-widest text-forest print:text-black">
+            <p className="mt-4 font-mono text-2xl font-bold tracking-widest text-forest print:text-black">
               {cred.pass_code}
             </p>
             <span className="mt-1 text-xs font-semibold text-emerald-800 flex items-center gap-1">
-              <ShieldCheck className="size-3.5" /> Cryptographically Signed Access QR
+              <ShieldCheck className="size-3.5" /> Cryptographically Signed Gate Pass
             </span>
             {qrVerified ? (
               <span className="mt-2 max-w-full break-all rounded bg-sage/60 px-2 py-1 font-mono text-[9px] text-muted-brand print:hidden">
@@ -261,51 +286,54 @@ async function PassContent({ params }: PassPageProps) {
               </span>
             </div>
 
-            {/* 3-Day Daily Attendance Tracking Status */}
+            {/* 3-Day Daily Admission & Gate Attendance Tracking */}
             <div className="pt-2">
               <span className="text-[11px] font-semibold text-forest block mb-2 flex items-center gap-1">
-                <CalendarCheck className="size-3.5 text-gold-deep" /> Daily Entrance Attendance Record:
+                <CalendarCheck className="size-3.5 text-gold-deep" /> Daily Gate Admission &amp; Attendance:
               </span>
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                {/* Day 1: Free */}
                 <div
-                  className={`rounded-lg p-2 border ${
+                  className={`rounded-lg p-2.5 border ${
                     cred.day1_checked_in_at
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                      : "bg-sage/20 border-line text-muted-brand"
+                      ? "bg-emerald-50 border-emerald-400 text-emerald-900"
+                      : "bg-emerald-50/50 border-emerald-300 text-emerald-900"
                   }`}
                 >
-                  <span className="block font-bold">Day 1</span>
-                  <span className="text-[10px] block">Fri 18 Dec</span>
-                  <span className="text-[10px] font-semibold mt-1 block">
-                    {cred.day1_checked_in_at ? "Checked In" : "Not Yet"}
+                  <span className="block font-bold">Day 1 (Fri 18)</span>
+                  <Badge className="bg-emerald-700 text-ivory text-[9px] my-1">FREE ENTRY</Badge>
+                  <span className="text-[10px] font-semibold block text-emerald-800">
+                    {cred.day1_checked_in_at ? "✓ Checked In" : "Ready for Gate"}
                   </span>
                 </div>
 
+                {/* Day 2: Through Ticket */}
                 <div
-                  className={`rounded-lg p-2 border ${
+                  className={`rounded-lg p-2.5 border ${
                     cred.day2_checked_in_at
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                      : "bg-sage/20 border-line text-muted-brand"
+                      ? "bg-emerald-50 border-emerald-400 text-emerald-900"
+                      : "bg-amber-50/50 border-amber-300 text-amber-900"
                   }`}
                 >
-                  <span className="block font-bold">Day 2</span>
-                  <span className="text-[10px] block">Sat 19 Dec</span>
-                  <span className="text-[10px] font-semibold mt-1 block">
-                    {cred.day2_checked_in_at ? "Checked In" : "Not Yet"}
+                  <span className="block font-bold">Day 2 (Sat 19)</span>
+                  <Badge className="bg-amber-700 text-ivory text-[9px] my-1">THROUGH TICKET</Badge>
+                  <span className="text-[10px] font-semibold block text-amber-800">
+                    {cred.day2_checked_in_at ? "✓ Checked In" : "Ticket Required"}
                   </span>
                 </div>
 
+                {/* Day 3: Through Ticket */}
                 <div
-                  className={`rounded-lg p-2 border ${
+                  className={`rounded-lg p-2.5 border ${
                     cred.day3_checked_in_at
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                      : "bg-sage/20 border-line text-muted-brand"
+                      ? "bg-emerald-50 border-emerald-400 text-emerald-900"
+                      : "bg-amber-50/50 border-amber-300 text-amber-900"
                   }`}
                 >
-                  <span className="block font-bold">Day 3</span>
-                  <span className="text-[10px] block">Sun 20 Dec</span>
-                  <span className="text-[10px] font-semibold mt-1 block">
-                    {cred.day3_checked_in_at ? "Checked In" : "Not Yet"}
+                  <span className="block font-bold">Day 3 (Sun 20)</span>
+                  <Badge className="bg-amber-700 text-ivory text-[9px] my-1">THROUGH TICKET</Badge>
+                  <span className="text-[10px] font-semibold block text-amber-800">
+                    {cred.day3_checked_in_at ? "✓ Checked In" : "Ticket Required"}
                   </span>
                 </div>
               </div>
@@ -314,23 +342,20 @@ async function PassContent({ params }: PassPageProps) {
 
           {/* Gate Scanning Instructions */}
           <div className="bg-sage/40 p-4 text-center border-t border-line text-[11px] text-muted-brand">
-            Present this access card at the entrance turnstiles. Gate officers will scan this QR
-            code on each tournament day to confirm and log your attendance.
+            Show this screen or your downloaded offline pass at turnstiles. Gate officers scan this
+            pass code on each tournament day to log your admission.
           </div>
         </div>
 
-        {/* Print & Return Controls */}
-        <div className="flex flex-col sm:flex-row justify-center gap-3 print:hidden">
-          <Button
-            asChild
-            className="bg-forest text-ivory hover:bg-forest-interactive shadow cursor-pointer"
-          >
-            <a href="javascript:window.print()">
-              <Printer className="mr-2 size-4" /> Print Access Card / Save PDF
-            </a>
-          </Button>
+        {/* Return Controls */}
+        <div className="flex justify-center gap-3 print:hidden">
           <Button asChild variant="outline" className="border-line text-forest">
             <Link href="/register">Register Another Person</Link>
+          </Button>
+          <Button asChild variant="ghost" className="text-muted-brand hover:text-forest">
+            <Link href="/pass/lookup">
+              <Ticket className="mr-1.5 size-4" /> Look Up Another Pass
+            </Link>
           </Button>
         </div>
       </div>

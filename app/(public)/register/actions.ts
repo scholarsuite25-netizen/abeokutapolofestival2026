@@ -16,6 +16,10 @@ const registrationSchema = z.object({
   affiliationType: z.enum(["individual", "guest_of", "corporate"]).default("individual"),
   hostName: z.string().trim().optional(),
   organization: z.string().trim().optional(),
+  hasDay2Ticket: z.boolean().default(false),
+  hasDay3Ticket: z.boolean().default(false),
+  day2TicketRef: z.string().trim().optional(),
+  day3TicketRef: z.string().trim().optional(),
 });
 
 export interface RegisterResult {
@@ -31,6 +35,11 @@ export interface RegisterResult {
   hostName?: string;
   organization?: string;
   zoneAccess?: string[];
+  day1Status?: "free_admitted" | "registered";
+  day2Status?: "ticket_required" | "ticket_verified";
+  day3Status?: "ticket_required" | "ticket_verified";
+  ticketRefDay2?: string;
+  ticketRefDay3?: string;
 }
 
 function formatCategory(
@@ -49,10 +58,9 @@ function formatCategory(
 
 /**
  * Registration Workflow with Guest Affiliation:
- * - Attendee registers, stating whether they are an Individual Attendee,
- *   a Guest of a Member / Dignitary, or a Corporate Guest.
+ * - Day 1 (Friday 18 Dec): 100% Free Entry upon registration.
+ * - Day 2 (Saturday 19 Dec) & Day 3 (Sunday 20 Dec): Admission is Through Ticket.
  * - Digital access card is issued immediately with pass code and cryptographic QR code.
- * - No website payments are ever collected. Attendance is 100% complimentary upon registration.
  */
 export async function submitRegistration(rawInput: unknown): Promise<RegisterResult> {
   const parsed = registrationSchema.safeParse(rawInput);
@@ -72,11 +80,19 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     affiliationType,
     hostName,
     organization,
+    hasDay2Ticket,
+    hasDay3Ticket,
+    day2TicketRef,
+    day3TicketRef,
   } = parsed.data;
 
   const category = formatCategory(affiliationType, hostName, organization);
   const holderName = `${firstName} ${lastName}`.trim();
   const zoneAccess = ["Festival Grounds & Grandstand"];
+
+  const day1Status = "registered";
+  const day2Status = hasDay2Ticket || day2TicketRef ? "ticket_verified" : "ticket_required";
+  const day3Status = hasDay3Ticket || day3TicketRef ? "ticket_verified" : "ticket_required";
 
   if (!isSupabaseConfigured()) {
     // Graceful offline mock response for local evaluation or tests
@@ -92,7 +108,12 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       hostName: hostName || undefined,
       organization: organization || undefined,
       zoneAccess,
-      message: "Registration confirmed! Your digital access card has been issued.",
+      day1Status,
+      day2Status,
+      day3Status,
+      ticketRefDay2: day2TicketRef || (hasDay2Ticket ? "TCK-VERIFIED" : undefined),
+      ticketRefDay3: day3TicketRef || (hasDay3Ticket ? "TCK-VERIFIED" : undefined),
+      message: "Registration confirmed! Day 1 is Free Entry; Day 2 & 3 admission is Through Ticket.",
     };
   }
 
@@ -183,6 +204,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       holderName,
       category,
       affiliationType,
+      day1Status,
+      day2Status,
+      day3Status,
       message: "Registration recorded. Access card is active.",
     };
   }
@@ -191,7 +215,14 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     action: "registration.issue_access_card",
     entityType: "registration",
     entityId: registrationId,
-    metadata: { pass_code: passCode, category, affiliation_type: affiliationType },
+    metadata: {
+      pass_code: passCode,
+      category,
+      affiliation_type: affiliationType,
+      day1_free: true,
+      day2_ticket: day2Status,
+      day3_ticket: day3Status,
+    },
   }).catch(() => undefined);
 
   const affiliationDisplay =
@@ -201,7 +232,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       ? `Corporate Delegation: ${organization}`
       : "Individual Attendee";
 
-  // Send confirmation email with pass details
+  // Send confirmation email with pass details & 3-day admission rules
   try {
     await sendEmail({
       to: email,
@@ -216,8 +247,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
           <div style="padding: 24px 0;">
             <p style="font-size: 16px; margin: 0 0 12px 0;">Dear <strong>${holderName}</strong>,</p>
             <p style="font-size: 14px; line-height: 1.6; color: #414843;">
-              Your digital access card for the 2026 Abeokuta Polo Festival is confirmed.
-              Admission is completely free across all three tournament days (18, 19, 20 December 2026).
+              Your digital access card for the 2026 Abeokuta Polo Festival has been issued and stored.
             </p>
             <div style="background-color: #FFFFFF; border: 2px dashed #062D1D; border-radius: 8px; padding: 18px; margin: 20px 0; text-align: center;">
               <p style="color: #795910; font-size: 11px; text-transform: uppercase; font-weight: 700; margin: 0;">Pass Code / Ref</p>
@@ -226,18 +256,19 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
               <p style="color: #795910; font-size: 12px; margin: 4px 0 0 0; font-weight: 600;">${affiliationDisplay}</p>
               <p style="color: #414843; font-size: 12px; margin: 4px 0 0 0;">Access: <strong>Festival Grounds & Grandstand</strong></p>
             </div>
-            <div style="background-color: #F4F4F0; border-radius: 6px; padding: 14px; font-size: 13px; color: #414843;">
-              <p style="margin: 0 0 6px 0; font-weight: 600; color: #062D1D;">Daily Gate Check-in Protocol:</p>
-              <ul style="margin: 0; padding-left: 18px; line-height: 1.5;">
-                <li>Present this pass code or your QR pass on your smartphone at the entrance turnstiles.</li>
-                <li>Scan your QR code once upon arrival on each day you attend (Day 1: Dec 18, Day 2: Dec 19, Day 3: Dec 20).</li>
-                <li>Gates open daily from 10:00 AM.</li>
+
+            <div style="background-color: #F4F4F0; border-radius: 8px; padding: 16px; font-size: 13px; color: #414843; margin-bottom: 16px;">
+              <p style="margin: 0 0 8px 0; font-weight: 700; color: #062D1D;">Tournament Admission Schedule:</p>
+              <ul style="margin: 0; padding-left: 18px; line-height: 1.6;">
+                <li><strong>Day 1 (Friday 18 Dec):</strong> <span style="color: #065F46; font-weight: bold;">FREE PUBLIC ADMISSION</span> — Present this pass code / QR at turnstiles for complimentary entry.</li>
+                <li><strong>Day 2 (Saturday 19 Dec):</strong> <span style="color: #92400E; font-weight: bold;">THROUGH TICKET</span> — Admission requires an authorized tournament ticket.</li>
+                <li><strong>Day 3 (Sunday 20 Dec):</strong> <span style="color: #92400E; font-weight: bold;">THROUGH TICKET</span> — Admission requires an authorized tournament ticket for the Royal Cup Finals.</li>
               </ul>
             </div>
           </div>
           <div style="text-align: center; font-size: 11px; color: #707973; border-top: 1px solid #DCD5C2; padding-top: 16px;">
             Abeokuta Polo Club · Kobape Expressway, Abeokuta, Ogun State, Nigeria<br />
-            Strict zero-payment policy: Admissions and access credentials are strictly complimentary.
+            Keep this pass handy on your smartphone at the gate.
           </div>
         </div>
       `,
@@ -257,6 +288,11 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     hostName: hostName || undefined,
     organization: organization || undefined,
     zoneAccess,
-    message: "Registration confirmed! Your digital access card has been issued.",
+    day1Status,
+    day2Status,
+    day3Status,
+    ticketRefDay2: day2TicketRef || (hasDay2Ticket ? "TCK-VERIFIED" : undefined),
+    ticketRefDay3: day3TicketRef || (hasDay3Ticket ? "TCK-VERIFIED" : undefined),
+    message: "Registration confirmed! Day 1 is Free Entry; Day 2 & 3 admission is Through Ticket.",
   };
 }

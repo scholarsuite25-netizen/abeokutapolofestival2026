@@ -141,6 +141,13 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
     history[dayKey] = true;
     localAttendanceCache.set(passKey, history);
 
+    const dayAdmissionMessage =
+      eventDay === 1
+        ? "Day 1 (Fri 18 Dec): Free Public Admission Confirmed. Welcome!"
+        : eventDay === 2
+        ? "Day 2 (Sat 19 Dec): Admission Through Ticket Verified. Welcome to Semi-Finals Day!"
+        : "Day 3 (Sun 20 Dec): Admission Through Ticket Verified. Welcome to Royal Finals Day!";
+
     return {
       status: "valid",
       result: "admitted",
@@ -152,7 +159,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
       day3CheckedIn: !!history.day3,
       gate,
       admittedAt: new Date().toLocaleTimeString(),
-      message: `Access Granted for Day ${eventDay} (18–20 Dec 2026). Welcome!`,
+      message: dayAdmissionMessage,
     };
   }
 
