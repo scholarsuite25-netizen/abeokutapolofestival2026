@@ -6,9 +6,13 @@ import {
   ShieldCheck,
   QrCode,
   CheckCircle2,
+  Printer,
   User,
   Mail,
   Phone,
+  Building,
+  UserCheck,
+  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,8 +37,10 @@ export default function RegisterPage() {
     lastName: "",
     email: "",
     phone: "",
-    category: "General Public Admission",
     groupCount: "0",
+    affiliationType: "individual" as "individual" | "guest_of" | "corporate",
+    hostName: "",
+    organization: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,8 +53,10 @@ export default function RegisterPage() {
       lastName: formData.lastName,
       email: formData.email,
       phone: formData.phone,
-      category: formData.category,
       groupSize: parseInt(formData.groupCount, 10) + 1,
+      affiliationType: formData.affiliationType,
+      hostName: formData.hostName,
+      organization: formData.organization,
     });
 
     setLoading(false);
@@ -59,19 +67,30 @@ export default function RegisterPage() {
     }
   };
 
+  const affiliationLabel =
+    formData.affiliationType === "guest_of"
+      ? `Guest of: ${formData.hostName || "Host Member"}`
+      : formData.affiliationType === "corporate"
+      ? `Corporate: ${formData.organization || "Company Delegation"}`
+      : "Individual Attendee";
+
   return (
     <div className="flex w-full flex-col bg-ivory text-ink py-12 sm:py-16">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         {/* Header Breadcrumb */}
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <Badge variant="outline" className="border-gold/50 bg-gold/10 text-forest font-semibold uppercase tracking-widest text-[11px]">
-            Official Accreditation Portal
+          <Badge
+            variant="outline"
+            className="border-gold/50 bg-gold/10 text-forest font-semibold uppercase tracking-widest text-[11px]"
+          >
+            Official Gate Accreditation
           </Badge>
           <h1 className="mt-3 font-display text-3xl font-semibold text-forest sm:text-5xl">
-            Free Digital Pass Registration
+            Event Registration &amp; Access Card
           </h1>
           <p className="mt-2 text-sm text-muted-brand sm:text-base">
-            Attendance is free for all three tournament days (18–20 December 2026). Prior digital registration is mandatory for gate entrance.
+            Register to obtain your official gate access card. Present and scan your QR code at the
+            entrance turnstiles to indicate attendance on each day of the three-day festival (18–20 December 2026).
           </p>
         </div>
 
@@ -79,12 +98,14 @@ export default function RegisterPage() {
         <div className="mb-10 rounded-xl border border-line bg-sage/40 p-4 text-xs text-forest-deep sm:text-sm flex items-center gap-3">
           <ShieldCheck className="size-5 text-forest shrink-0" />
           <p>
-            <strong>Zero Payment Policy:</strong> This website does not process, solicit, or collect payments. Your pass is issued upon registration and delivered directly to your email.
+            <strong>Zero Payment Policy:</strong> Attendance is 100% complimentary upon registration. Your
+            digital access card is issued immediately with your credentials, guest affiliation, and 3-day daily
+            attendance tracking.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start">
-          {/* Registration Form */}
+          {/* Registration Form / Success State */}
           <div className="rounded-2xl border border-line bg-card p-6 shadow-sm sm:p-8 lg:col-span-7">
             {errorMsg ? (
               <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-xs text-red-800">
@@ -93,48 +114,116 @@ export default function RegisterPage() {
             ) : null}
 
             {result?.success ? (
-              <div className="py-8 text-center space-y-4">
+              /* Instant Auto-Issued Access Card */
+              <div className="py-6 text-center space-y-5">
                 <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
                   <CheckCircle2 className="size-8" />
                 </div>
-                <h2 className="font-display text-2xl font-semibold text-forest">
-                  Registration Successfully Confirmed!
-                </h2>
-                <div className="inline-block rounded-lg border border-gold/40 bg-gold/15 px-4 py-2 font-mono text-lg font-bold text-forest">
-                  {result.passCode}
-                </div>
-                <p className="text-sm text-muted-brand max-w-md mx-auto">
-                  Welcome to the 2026 Abeokuta Polo Festival,{" "}
-                  <strong className="text-forest">{formData.firstName}</strong>. Your credential record has been generated and dispatched to{" "}
-                  <strong className="text-forest">{formData.email}</strong>.
-                </p>
-
-                <div className="rounded-xl border border-gold/40 bg-gold/10 p-4 text-xs text-forest text-left">
-                  <p className="font-semibold text-forest">Next Steps for Entry:</p>
-                  <ul className="mt-2 list-disc list-inside space-y-1 text-muted-brand">
-                    <li>Present your pass code <strong>{result.passCode}</strong> or your QR pass on your smartphone at Gate 2 or Gate 3.</li>
-                    <li>Ensure you bring valid identification matching this name.</li>
-                    <li>Gates open daily from 10:00 AM (18–20 December 2026).</li>
-                  </ul>
+                <div>
+                  <Badge className="bg-emerald-800 text-ivory text-xs mb-2">Access Card Issued</Badge>
+                  <h2 className="font-display text-2xl font-semibold text-forest">
+                    Digital Gate Access Card Ready
+                  </h2>
+                  <p className="text-sm text-muted-brand mt-1">
+                    Welcome, <strong className="text-forest">{result.holderName || formData.firstName}</strong>.
+                    Your access card is active for all three days of the festival.
+                  </p>
                 </div>
 
-                <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3">
+                {/* Access Card Box */}
+                <div className="rounded-2xl border-2 border-forest/30 bg-forest p-6 text-ivory shadow-xl text-left relative overflow-hidden">
+                  <div className="flex justify-between items-start border-b border-white/20 pb-3">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gold">
+                        Gate Access Card
+                      </span>
+                      <p className="font-mono text-2xl font-bold tracking-wider text-ivory mt-0.5">
+                        {result.passCode}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="border-gold text-gold text-[10px]">
+                      FREE ENTRY
+                    </Badge>
+                  </div>
+
+                  <div className="py-4 flex items-center gap-4 border-b border-white/20">
+                    <div className="rounded-xl bg-white p-2 text-forest shadow">
+                      <QrCode className="size-16" />
+                    </div>
+                    <div className="text-xs space-y-1">
+                      <p className="font-semibold text-base text-ivory">
+                        {result.holderName || `${formData.firstName} ${formData.lastName}`}
+                      </p>
+                      <p className="text-gold font-medium">
+                        {result.affiliationType === "guest_of"
+                          ? `Guest of: ${result.hostName || formData.hostName}`
+                          : result.affiliationType === "corporate"
+                          ? `Corporate: ${result.organization || formData.organization}`
+                          : "Individual Attendee"}
+                      </p>
+                      <p className="text-ivory/70 text-[11px]">
+                        Scan at turnstiles on each festival day (18, 19, 20 Dec 2026).
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 grid grid-cols-2 gap-2 text-xs border-b border-white/20 pb-3">
+                    <div>
+                      <span className="text-ivory/60 text-[11px] block">Category</span>
+                      <span className="font-semibold text-ivory">
+                        {result.category || affiliationLabel}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-ivory/60 text-[11px] block">Access</span>
+                      <span className="font-semibold text-ivory">Festival Grounds &amp; Grandstand</span>
+                    </div>
+                  </div>
+
+                  {/* 3-Day Attendance Tracker Indicator */}
+                  <div className="pt-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-ivory/70 block mb-1.5 flex items-center gap-1">
+                      <CalendarCheck className="size-3.5 text-gold" /> 3-Day Gate Attendance Tracker:
+                    </span>
+                    <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+                      <div className="rounded bg-white/10 p-1.5 border border-white/10">
+                        <span className="block font-semibold text-gold">Day 1</span>
+                        <span className="text-ivory/80">Fri 18 Dec</span>
+                      </div>
+                      <div className="rounded bg-white/10 p-1.5 border border-white/10">
+                        <span className="block font-semibold text-gold">Day 2</span>
+                        <span className="text-ivory/80">Sat 19 Dec</span>
+                      </div>
+                      <div className="rounded bg-white/10 p-1.5 border border-white/10">
+                        <span className="block font-semibold text-gold">Day 3</span>
+                        <span className="text-ivory/80">Sun 20 Dec</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
+                  {result.passCode ? (
+                    <Button asChild className="bg-forest text-ivory hover:bg-forest-interactive">
+                      <Link href={`/pass/${result.passCode}`} target="_blank">
+                        <Printer className="mr-2 size-4" /> Open Full Access Card &amp; Print
+                      </Link>
+                    </Button>
+                  ) : null}
                   <Button
                     onClick={() => setResult(null)}
                     variant="outline"
                     className="border-line text-forest"
                   >
-                    Register Another Guest
-                  </Button>
-                  <Button asChild className="bg-forest text-ivory hover:bg-forest-interactive">
-                    <Link href="/programme">Explore Tournament Schedule →</Link>
+                    Register Another Person
                   </Button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <h2 className="font-display text-xl font-semibold text-forest border-b border-line pb-3">
-                  Attendee Credentials
+                  1. Attendee Information
                 </h2>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -177,78 +266,129 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs font-semibold text-forest">
-                    Email Address * (For Digital QR Pass Delivery)
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 size-4 text-muted-brand" />
-                    <Input
-                      id="email"
-                      type="email"
-                      required
-                      placeholder="name@example.com"
-                      className="pl-9 bg-ivory"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-xs font-semibold text-forest">
-                    Mobile Phone Number *
-                  </Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 size-4 text-muted-brand" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      required
-                      placeholder="+234 800 000 0000"
-                      className="pl-9 bg-ivory"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-forest">Pass Category</Label>
+                    <Label htmlFor="email" className="text-xs font-semibold text-forest">
+                      Email Address *
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 size-4 text-muted-brand" />
+                      <Input
+                        id="email"
+                        type="email"
+                        required
+                        placeholder="name@example.com"
+                        className="pl-9 bg-ivory"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-xs font-semibold text-forest">
+                      Mobile Phone Number *
+                    </Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 size-4 text-muted-brand" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        required
+                        placeholder="+234 800 000 0000"
+                        className="pl-9 bg-ivory"
+                        value={formData.phone}
+                        onChange={(e) =>
+                          setFormData({ ...formData, phone: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Guest Affiliation / Category Section */}
+                <h2 className="font-display text-xl font-semibold text-forest border-b border-line pt-2 pb-3">
+                  2. Attendance &amp; Guest Affiliation
+                </h2>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-forest">
+                      How are you attending the 2026 Abeokuta Polo Festival? *
+                    </Label>
                     <Select
-                      value={formData.category}
-                      onValueChange={(val) =>
-                        setFormData({ ...formData, category: val })
+                      value={formData.affiliationType}
+                      onValueChange={(val: "individual" | "guest_of" | "corporate") =>
+                        setFormData({ ...formData, affiliationType: val })
                       }
                     >
                       <SelectTrigger className="bg-ivory">
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder="Select attendance category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="General Public Admission">
-                          General Public Lawn Pass
+                        <SelectItem value="individual">
+                          Individual Attendee (Independent Registration)
                         </SelectItem>
-                        <SelectItem value="Patron / VIP Guest">
-                          Patron / Dignitary Guest
+                        <SelectItem value="guest_of">
+                          Guest of a Member / Patron / Dignitary
                         </SelectItem>
-                        <SelectItem value="Committee / Officer Guest">
-                          Committee / Officer Guest
-                        </SelectItem>
-                        <SelectItem value="Media & Press Accreditation">
-                          Media & Press Accreditation
+                        <SelectItem value="corporate">
+                          Corporate Guest / Corporate Sponsor Delegation
                         </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-1.5">
+                  {/* Dynamic conditional input for Guest Of */}
+                  {formData.affiliationType === "guest_of" && (
+                    <div className="space-y-1.5 rounded-lg border border-gold/40 bg-gold/10 p-4">
+                      <Label htmlFor="hostName" className="text-xs font-semibold text-forest">
+                        Host / Inviting Person Name * (Who are you a guest of?)
+                      </Label>
+                      <div className="relative">
+                        <UserCheck className="absolute left-3 top-3 size-4 text-gold-deep" />
+                        <Input
+                          id="hostName"
+                          required
+                          placeholder="e.g. Chief Olumide, Patron Bello, Diplomatic Host"
+                          className="pl-9 bg-ivory"
+                          value={formData.hostName}
+                          onChange={(e) =>
+                            setFormData({ ...formData, hostName: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dynamic conditional input for Corporate Guest */}
+                  {formData.affiliationType === "corporate" && (
+                    <div className="space-y-1.5 rounded-lg border border-gold/40 bg-gold/10 p-4">
+                      <Label htmlFor="organization" className="text-xs font-semibold text-forest">
+                        Company or Corporate Organization Name *
+                      </Label>
+                      <div className="relative">
+                        <Building className="absolute left-3 top-3 size-4 text-gold-deep" />
+                        <Input
+                          id="organization"
+                          required
+                          placeholder="e.g. First Bank of Nigeria, Dangote Group, Ogun State Govt"
+                          className="pl-9 bg-ivory"
+                          value={formData.organization}
+                          onChange={(e) =>
+                            setFormData({ ...formData, organization: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Group Count */}
+                  <div className="space-y-1.5 pt-2">
                     <Label className="text-xs font-semibold text-forest">
-                      Additional Group Guests
+                      Additional Accompanying Passes
                     </Label>
                     <Select
                       value={formData.groupCount}
@@ -257,93 +397,126 @@ export default function RegisterPage() {
                       }
                     >
                       <SelectTrigger className="bg-ivory">
-                        <SelectValue placeholder="Additional guests" />
+                        <SelectValue placeholder="Accompanying passes" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="0">Just Myself (1 Pass)</SelectItem>
-                        <SelectItem value="1">+1 Guest (2 Passes)</SelectItem>
-                        <SelectItem value="2">+2 Guests (3 Passes)</SelectItem>
-                        <SelectItem value="3">+3 Guests (4 Passes)</SelectItem>
-                        <SelectItem value="4">+4 Guests (5 Passes)</SelectItem>
+                        <SelectItem value="1">+1 Accompanying Guest (2 Passes)</SelectItem>
+                        <SelectItem value="2">+2 Accompanying Guests (3 Passes)</SelectItem>
+                        <SelectItem value="3">+3 Accompanying Guests (4 Passes)</SelectItem>
+                        <SelectItem value="4">+4 Accompanying Guests (5 Passes)</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-muted-brand">
+                      Complimentary passes will be issued for all accompanying guests under your primary registration.
+                    </p>
                   </div>
                 </div>
 
-                <div className="pt-2 text-xs text-muted-brand leading-relaxed">
-                  By clicking Register, you confirm agreement to tournament entry protocols, equestrian safety rules, and NDPA personal data processing.
+                <div className="pt-4 border-t border-line">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-forest text-ivory hover:bg-forest-interactive font-semibold py-6 text-base"
+                  >
+                    {loading ? "Generating Access Card..." : "Complete Registration & Get Access Card →"}
+                  </Button>
                 </div>
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={loading}
-                  className="w-full bg-gold font-semibold text-forest-deep shadow hover:bg-gold/90 disabled:opacity-50"
-                >
-                  {loading ? "Processing Registration..." : "Confirm Registration & Generate Free Pass →"}
-                </Button>
               </form>
             )}
           </div>
 
-          {/* Interactive Digital Pass Wallet Simulation */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="rounded-2xl border border-gold/40 bg-forest p-6 text-ivory shadow-xl sm:p-8">
-              <div className="flex items-center justify-between border-b border-line/20 pb-4">
+          {/* Side Info Panel */}
+          <div className="space-y-6 lg:col-span-5">
+            {/* Live Access Card Preview */}
+            <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gold block mb-2">
+                Digital Pass Preview
+              </span>
+              <h3 className="font-display text-lg font-semibold text-forest mb-3">
+                Your Official Gate Entry Card
+              </h3>
+
+              <div className="rounded-xl border border-dashed border-forest/30 bg-ivory p-5 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-muted-brand block">
+                      Attendee Name
+                    </span>
+                    <p className="font-semibold text-forest text-sm">
+                      {formData.firstName || formData.lastName
+                        ? `${formData.firstName} ${formData.lastName}`.trim()
+                        : "Your Full Name"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-card p-1.5 border border-line">
+                    <QrCode className="size-8 text-forest" />
+                  </div>
+                </div>
+
                 <div>
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-gold">
-                    Accredited Guest Pass
+                  <span className="text-[10px] uppercase font-bold text-muted-brand block">
+                    Stated Affiliation
                   </span>
-                  <h3 className="font-display text-lg font-semibold text-ivory">
-                    Abeokuta Polo Festival 2026
-                  </h3>
-                </div>
-                <Badge variant="outline" className="border-gold bg-gold/15 text-gold text-[10px]">
-                  VERIFIED
-                </Badge>
-              </div>
-
-              <div className="my-6 flex flex-col items-center justify-center rounded-xl bg-ivory p-6 text-forest">
-                <div className="flex size-36 items-center justify-center rounded-lg border-2 border-dashed border-forest/30 bg-sage/30">
-                  <QrCode className="size-28 text-forest" />
-                </div>
-                <p className="mt-3 font-mono text-[11px] font-semibold uppercase tracking-widest text-muted-brand">
-                  ABK-2026-PASS-SECURE
-                </p>
-                <span className="text-[10px] text-emerald-700 font-medium">
-                  ● Ready for Gate Scanning
-                </span>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between border-b border-line/10 pb-1.5">
-                  <span className="text-ivory/60">Holder:</span>
-                  <span className="font-semibold text-ivory">
-                    {formData.firstName || formData.lastName
-                      ? `${formData.firstName} ${formData.lastName}`
-                      : "Registered Guest"}
+                  <span className="font-medium text-gold-deep text-xs flex items-center gap-1 mt-0.5">
+                    {formData.affiliationType === "guest_of" ? (
+                      <UserCheck className="size-3 text-gold-deep inline" />
+                    ) : formData.affiliationType === "corporate" ? (
+                      <Building className="size-3 text-gold-deep inline" />
+                    ) : null}
+                    {affiliationLabel}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-line/10 pb-1.5">
-                  <span className="text-ivory/60">Category:</span>
-                  <span className="font-semibold text-gold">{formData.category}</span>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-line/60">
+                  <div>
+                    <span className="text-muted-brand block">Venue</span>
+                    <span className="font-semibold text-forest">Abeokuta Polo Club</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-brand block">Dates</span>
+                    <span className="font-semibold text-forest">18–20 Dec 2026</span>
+                  </div>
                 </div>
-                <div className="flex justify-between border-b border-line/10 pb-1.5">
-                  <span className="text-ivory/60">Valid Dates:</span>
-                  <span className="font-semibold text-ivory">18–20 Dec 2026</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-ivory/60">Venue Access:</span>
-                  <span className="font-semibold text-ivory">Abeokuta Polo Club Grounds</span>
+
+                {/* 3-day indicator */}
+                <div className="pt-2 border-t border-line/60">
+                  <span className="text-[10px] font-semibold text-muted-brand block mb-1">
+                    Daily Gate Scan (Fri / Sat / Sun):
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                    <div className="bg-sage/40 rounded py-1 font-medium text-forest">Day 1</div>
+                    <div className="bg-sage/40 rounded py-1 font-medium text-forest">Day 2</div>
+                    <div className="bg-sage/40 rounded py-1 font-medium text-forest">Day 3</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-line bg-card p-5 text-xs text-muted-brand">
-              <p className="font-semibold text-forest">Need Dignitary or Royal Protocol?</p>
-              <p className="mt-1">
-                For Royal Box seating, private diplomatic aircraft landing coordination, or VIP chalet reservations, please contact protocol directly via WhatsApp at +234 818 188 8884.
-              </p>
+            {/* Attendance Protocol Info */}
+            <div className="rounded-2xl border border-line bg-sage/30 p-6 space-y-3 text-xs text-forest-deep">
+              <h4 className="font-display text-sm font-semibold text-forest">
+                Gate Entry &amp; Turnstile Protocol
+              </h4>
+              <ul className="space-y-2 list-disc pl-4 text-muted-brand">
+                <li>
+                  <strong className="text-forest">Show at the Gate:</strong> Present your digital pass or printout on your smartphone at the entrance.
+                </li>
+                <li>
+                  <strong className="text-forest">Daily Scan:</strong> Gate attendants scan your pass QR code on each day you attend (18, 19, or 20 Dec 2026).
+                </li>
+                <li>
+                  <strong className="text-forest">No Entry Fees:</strong> All registered participants enjoy complimentary access throughout the 3-day tournament.
+                </li>
+              </ul>
+              <div className="pt-2 border-t border-line/60">
+                <Link
+                  href="/pass/lookup"
+                  className="font-semibold text-forest hover:text-gold-deep inline-flex items-center gap-1"
+                >
+                  Already registered? Look up your existing Access Card →
+                </Link>
+              </div>
             </div>
           </div>
         </div>

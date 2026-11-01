@@ -83,13 +83,13 @@ export default function GalleryPage() {
           </div>
 
           <div className="mt-16 rounded-2xl border border-line bg-sage/30 p-8 text-center sm:p-12">
-            <h3 className="font-display text-2xl font-semibold text-forest">Media & Press Accreditation</h3>
+            <h3 className="font-display text-2xl font-semibold text-forest">Media &amp; Press Access</h3>
             <p className="mt-2 text-sm text-muted-brand max-w-lg mx-auto">
-              Accredited photojournalists, television broadcast crews, and digital creators may request media pit credentials for the 2026 tournament.
+              Photojournalists, television broadcast crews, and digital creators may review official media protocols and editorial access for the 2026 tournament.
             </p>
             <div className="mt-6 flex justify-center">
               <Button asChild className="bg-forest text-ivory hover:bg-forest-interactive">
-                <Link href="/register">Apply for Media Pass →</Link>
+                <Link href="/press">Media &amp; Press Protocol →</Link>
               </Button>
             </div>
           </div>

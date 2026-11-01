@@ -3,7 +3,6 @@ import {
   ShieldCheck, 
   LayoutDashboard, 
   Users2, 
-  FolderKanban, 
   Landmark, 
   QrCode, 
   FileSpreadsheet,
@@ -13,8 +12,7 @@ import {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { label: "Command Centre", href: "/admin", icon: LayoutDashboard },
-    { label: "Committees (7)", href: "/admin/committees", icon: FolderKanban },
-    { label: "Member Roster", href: "/admin/members", icon: Users2 },
+    { label: "Participants", href: "/admin/registrations", icon: Users2 },
     { label: "Offline Finance", href: "/admin/finance", icon: Landmark },
     { label: "Reports & Export", href: "/admin/reports", icon: FileSpreadsheet },
     { label: "Turnstile Scanner", href: "/scan", icon: QrCode },
@@ -91,8 +89,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
           <p>© 2026 Abeokuta Polo Club. Authorized Executive Personnel Only.</p>
           <div className="flex items-center gap-4">
-            <Link href="/committee" className="transition-colors hover:text-forest">
-              Committee Workspaces
+            <Link href="/admin/registrations" className="transition-colors hover:text-forest">
+              Participant Registry
             </Link>
             <span>·</span>
             <Link href="/scan" className="transition-colors hover:text-forest">

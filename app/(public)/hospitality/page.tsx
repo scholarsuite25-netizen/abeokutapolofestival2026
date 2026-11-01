@@ -188,13 +188,13 @@ export default function HospitalityPage() {
           <div className="mt-16 rounded-2xl border border-gold/40 bg-forest p-8 text-ivory text-center sm:text-left sm:flex sm:items-center sm:justify-between sm:p-10">
             <div>
               <Badge variant="outline" className="border-gold text-gold text-[11px] uppercase tracking-widest">
-                Complimentary General Entry
+                Complimentary Festival Entry
               </Badge>
               <h3 className="mt-2 font-display text-2xl font-semibold text-ivory">
-                General Public Lawn Attendance
+                Tournament Attendance &amp; Gate Access
               </h3>
               <p className="mt-1 text-sm text-ivory/80 max-w-xl">
-                Lawn attendance is free to the public. Pre-registration is mandatory for security credential accreditation and gate passage.
+                Attendance is complimentary across all three festival days. Pre-registration is mandatory for security credential accreditation and gate passage.
               </p>
             </div>
             <div className="mt-6 sm:mt-0 shrink-0">

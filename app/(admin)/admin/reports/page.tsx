@@ -9,8 +9,7 @@ import {
   ShieldCheck, 
   Users, 
   QrCode, 
-  Landmark, 
-  FileText
+  Landmark
 } from "lucide-react";
 
 export const metadata = {
@@ -38,19 +37,19 @@ const REPORT_DEFINITIONS = [
     icon: Users,
   },
   {
-    id: "committee-readiness",
-    title: "7-Committee Departmental Readiness Matrix",
-    category: "Executive Governance",
-    description: "Audit breakdown of task completion percentages, verified committee memberships, meeting minutes, and responsibility approvals across all directorates.",
+    id: "daily-attendance",
+    title: "3-Day Daily Turnstile Attendance Log",
+    category: "Gate Access Control",
+    description: "Audit breakdown of daily optical gate scans, Day 1/2/3 check-ins, duplicate attempts, and turnstile throughput.",
     format: "CSV (RFC-4180)",
-    filename: "abeokuta-polo-2026-committee-readiness.csv",
-    icon: FileText,
+    filename: "abeokuta-polo-2026-daily-attendance.csv",
+    icon: QrCode,
   },
   {
     id: "offline-finance",
     title: "Offline Sponsorship & Endowments Ledger",
     category: "Finance & Audit",
-    description: "Official record of verified corporate pledges, covenanted royal endowments, direct bank wire references, and committee budget allocations (Rule D-01 / D-03).",
+    description: "Official record of verified corporate pledges, covenanted royal endowments, direct bank wire references, and operational budget allocations (Rule D-01 / D-03).",
     format: "CSV (RFC-4180)",
     filename: "abeokuta-polo-2026-finance-commitments.csv",
     icon: Landmark,

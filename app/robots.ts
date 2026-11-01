@@ -27,8 +27,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/admin",
           "/admin/*",
-          "/committee",
-          "/committee/*",
           "/scan",
           "/scan/*",
           "/dashboard",

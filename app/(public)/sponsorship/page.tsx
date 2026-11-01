@@ -27,7 +27,7 @@ interface SponsorshipTier {
 const TIERS: SponsorshipTier[] = [
   {
     id: "headline",
-    name: "Main Headline / Title Partner",
+    name: "Title Partner",
     proposedAmount: "₦75,000,000",
     badge: "Exclusive Title Integration",
     isPrimary: true,
@@ -42,14 +42,14 @@ const TIERS: SponsorshipTier[] = [
     ],
   },
   {
-    id: "platinum",
-    name: "Platinum Partner",
-    proposedAmount: "₦50,000,000",
+    id: "presenting",
+    name: "Presenting Partner",
+    proposedAmount: "₦40,000,000",
     badge: "Principal Brand Alignment",
     description:
       "Premier category exclusivity, major perimeter turf boards, dedicated hospitality chalet, and prominent inclusion in all national press and media.",
     highlights: [
-      "Official Platinum Category Exclusivity (e.g. Official Bank / Telco / Energy)",
+      "Official Presenting Category Exclusivity (e.g. Official Bank / Telco / Energy)",
       "Dedicated 25-person VIP Chukka Chalet with full catering",
       "25 VIP and Hospitality credentials with clubhouse access",
       "Prominent perimeter field boards and digital screen advertising",
@@ -57,9 +57,9 @@ const TIERS: SponsorshipTier[] = [
     ],
   },
   {
-    id: "gold",
-    name: "Gold Partner",
-    proposedAmount: "₦30,000,000",
+    id: "royal-cup",
+    name: "Royal Cup Partner",
+    proposedAmount: "₦25,000,000",
     badge: "Major Tournament Sponsor",
     description:
       "High-visibility brand integration, exhibition pavilion spaces, executive box allocations, and official gazette features.",
@@ -72,9 +72,9 @@ const TIERS: SponsorshipTier[] = [
     ],
   },
   {
-    id: "silver",
-    name: "Silver Partner",
-    proposedAmount: "₦20,000,000",
+    id: "platinum",
+    name: "Platinum Property",
+    proposedAmount: "₦15,000,000",
     badge: "Associate Sponsor",
     description:
       "Targeted brand alignment, brand activation booth on the lifestyle lawn, and reserved VIP seating.",
@@ -86,9 +86,9 @@ const TIERS: SponsorshipTier[] = [
     ],
   },
   {
-    id: "bronze",
-    name: "Bronze Partner",
-    proposedAmount: "₦10,000,000",
+    id: "gold",
+    name: "Gold Property",
+    proposedAmount: "₦8,000,000",
     badge: "Supporting Sponsor",
     description:
       "Essential visibility for growing corporate brands seeking association with prestigious equestrian heritage.",
@@ -100,29 +100,30 @@ const TIERS: SponsorshipTier[] = [
     ],
   },
   {
-    id: "club",
-    name: "Club Partner",
-    proposedAmount: "₦5,000,000",
-    badge: "Patron Enterprise",
-    description:
-      "Ideal for regional businesses and high-net-worth patron syndicates supporting Ogun State equestrian sports.",
-    highlights: [
-      "Official Club Partner listing on website and event program",
-      "4 VIP hospitality credentials",
-      "Tournament banner placement on clubhouse grounds",
-    ],
-  },
-  {
-    id: "supporter",
-    name: "Festival Supporter",
-    proposedAmount: "₦2,500,000",
-    badge: "Heritage Contributor",
+    id: "silver",
+    name: "Silver Partner",
+    proposedAmount: "₦4,000,000",
+    badge: "Official Category",
     description:
       "Direct patronage contribution supporting tournament logistics, youth polo clinics, and festival pageantry.",
     highlights: [
+      "Official listing on the festival website and event programme",
+      "4 VIP passes with Chukka Terrace access",
       "Supporter listing in the official commemorative gazette",
-      "2 VIP passes with access to the Chukka Terrace",
       "Certificate of sovereign festival patronage",
+    ],
+  },
+  {
+    id: "official",
+    name: "Official Category",
+    proposedAmount: "₦2,500,000",
+    badge: "Heritage Contributor",
+    description:
+      "Formal association for indigenous brands and patron syndicates supporting Ogun State equestrian sports.",
+    highlights: [
+      "Official club partner listing on website and event programme",
+      "2 VIP passes with access to the Chukka Terrace",
+      "Tournament banner placement on clubhouse grounds",
     ],
   },
 ];
@@ -301,14 +302,14 @@ export default function SponsorshipPage() {
               Bespoke Commercial & Government Activations
             </h3>
             <p className="mt-2 text-sm text-muted-brand max-w-xl mx-auto">
-              Our Finance, Sponsorship & Business Development Committee works directly with your brand team to structure bespoke product placements, lounge hosting, and media co-productions.
+              Our Sponsorship & Business Development Team works directly with your brand team to structure bespoke product placements, lounge hosting, and media co-productions.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
               <EnquiryDialog
                 title="Bespoke Partnership Inquiries"
                 category="sponsorship"
                 tierName="Bespoke Enterprise Activation"
-                triggerText="Contact Sponsorship Committee"
+                triggerText="Contact Sponsorship Secretariat"
                 className="bg-forest font-semibold text-ivory hover:bg-forest-interactive"
               />
             </div>

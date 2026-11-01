@@ -1,4 +1,4 @@
-import { rosterRowSchema, type RosterRow } from "@/lib/validators/committee";
+import { rosterRowSchema, type RosterRow } from "@/lib/validators/roster";
 
 /**
  * Minimal RFC-4180-style CSV parser (quotes, escaped quotes, CRLF).
@@ -74,7 +74,7 @@ export type RosterParseResult =
 /**
  * Parses a roster CSV. Expected headers (any order, aliases accepted):
  *   name, email, phone, position, role
- * `role` must be committee_member or committee_officer (default: member).
+ * `role` must be member or officer (default: member).
  */
 export function parseRosterCsv(input: string): RosterParseResult {
   const table = parseCsv(input);
@@ -110,7 +110,7 @@ export function parseRosterCsv(input: string): RosterParseResult {
       email: read("email"),
       phone: read("phone"),
       position: read("position"),
-      role: read("role") || "committee_member",
+      role: read("role") || "member",
     });
 
     if (!parsed.success) {

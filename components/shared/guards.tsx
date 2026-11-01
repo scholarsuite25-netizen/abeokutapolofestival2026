@@ -13,7 +13,7 @@ export function PermissionDenied() {
   return (
     <EmptyState
       title="You do not have access to this area"
-      description="If you believe this is a mistake, contact the festival office (0803 681 8916) or your committee officer."
+      description="If you believe this is a mistake, contact the festival office (0803 681 8916) or your festival administrator."
     />
   );
 }

@@ -9,8 +9,6 @@
 export const ROLES = [
   "public",
   "guest",
-  "committee_member",
-  "committee_officer",
   "accreditation_officer",
   "finance_officer",
   "media_officer",
@@ -28,10 +26,6 @@ export const PERMISSIONS = [
   "registration.manage",
   "roster.read",
   "roster.read_all",
-  "tasks.read",
-  "tasks.manage",
-  "minutes.read",
-  "minutes.read_all",
   "finance.read",
   "sponsorship.read_public",
   "sponsorship.manage",
@@ -50,23 +44,6 @@ export type Permission = (typeof PERMISSIONS)[number];
 const ROLE_GRANTS: Record<Role, readonly Permission[]> = {
   public: ["content.read", "sponsorship.read_public"],
   guest: ["content.read", "registration.read_own", "directory.read_own", "sponsorship.read_public"],
-  committee_member: [
-    "content.read",
-    "registration.read_own",
-    "directory.read_own",
-    "roster.read",
-    "tasks.read",
-  ],
-  committee_officer: [
-    "content.read",
-    "registration.read_own",
-    "directory.read_own",
-    "roster.read",
-    "tasks.read",
-    "tasks.manage",
-    "minutes.read",
-    "sponsorship.read_public",
-  ],
   accreditation_officer: [
     "content.read",
     "registration.manage",
@@ -100,15 +77,12 @@ export interface Actor {
 
 export interface Scope {
   editionId?: string;
-  committeeId?: string;
   resourceType?: string;
   resourceId?: string;
 }
 
 /**
  * Default-deny authorisation check.
- * Scope-aware checks (`resourceType: 'own'`) are enforced by callers until
- * `user_role_assignments` lands in Phase 2.
  */
 export function can(actor: Actor, permission: Permission): boolean {
   return actor.roles.some((role) => ROLE_GRANTS[role].includes(permission));

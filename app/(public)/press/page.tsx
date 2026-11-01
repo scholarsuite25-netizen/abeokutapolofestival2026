@@ -47,7 +47,7 @@ export default function PressPage() {
                 <Radio className="size-6 text-gold mb-2" />
                 <h3 className="font-display text-lg font-semibold text-forest">Broadcast & Digital TV</h3>
                 <p className="mt-1 text-xs text-muted-brand leading-relaxed">
-                  Elevated commentary platform access and live broadcast signal coordination with the Media & ICT Committee.
+                  Elevated commentary platform access and live broadcast signal coordination with the Media & Broadcast Team.
                 </p>
               </div>
             </div>

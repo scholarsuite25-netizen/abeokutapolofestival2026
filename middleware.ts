@@ -16,7 +16,16 @@ export async function middleware(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) {
-    // Auth not configured yet (scaffold) — never block public pages.
+    // Auth not configured yet (scaffold) — fail closed on private routes.
+    const { pathname } = request.nextUrl;
+    const isPrivate = PRIVATE_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+    if (isPrivate) {
+      const signInUrl = new URL("/sign-in", request.url);
+      signInUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
     return response;
   }
 

@@ -3,15 +3,13 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 
 /**
- * Live RLS allow/deny tests (ARCHITECTURE_PLAN.md §14 testing strategy).
+ * Live RLS allow/deny tests.
  *
  * Requires a disposable Supabase project (local `supabase start` or a scratch
  * cloud project). Skipped automatically when env is absent:
  *   SUPABASE_TEST_URL
  *   SUPABASE_TEST_SERVICE_ROLE_KEY
  *   SUPABASE_TEST_ANON_KEY
- *
- * Migrations 0001–0005 must already be applied to the target.
  */
 
 const url = process.env.SUPABASE_TEST_URL;
@@ -20,21 +18,15 @@ const anonKey = process.env.SUPABASE_TEST_ANON_KEY;
 const configured = Boolean(url && serviceRoleKey && anonKey);
 
 const suffix = randomUUID().slice(0, 8);
-const emailA = `rls-a-${suffix}@example.test`;
-const emailB = `rls-b-${suffix}@example.test`;
+const emailAdmin = `rls-admin-${suffix}@example.test`;
 const emailGuest = `rls-g-${suffix}@example.test`;
 const password = `Test!Passw0rd-${suffix}`;
 
 let admin: SupabaseClient | null = null;
-let userAId = "";
-let userBId = "";
+let adminUserId = "";
 let guestId = "";
 let editionId = "";
-let committeeAId = "";
-let committeeBId = "";
-let personAId = "";
-let taskAId = "";
-let taskBId = "";
+let registrationAId = "";
 
 async function userClient(email: string): Promise<SupabaseClient> {
   const { data, error } = await admin!.auth.signInWithPassword({ email, password });
@@ -62,8 +54,7 @@ describe.skipIf(!configured)("RLS allow/deny (live)", () => {
       return data.user.id;
     };
 
-    userAId = await mk(emailA);
-    userBId = await mk(emailB);
+    adminUserId = await mk(emailAdmin);
     guestId = await mk(emailGuest);
 
     const { data: edition, error: editionError } = await admin
@@ -74,55 +65,33 @@ describe.skipIf(!configured)("RLS allow/deny (live)", () => {
     if (editionError) throw editionError;
     editionId = edition.id;
 
-    const { data: committees, error: committeeError } = await admin
-      .from("committees")
-      .insert([
-        { edition_id: editionId, slug: `committee-a-${suffix}`, name: `Committee A ${suffix}` },
-        { edition_id: editionId, slug: `committee-b-${suffix}`, name: `Committee B ${suffix}` },
-      ])
-      .select("id, slug");
-    if (committeeError) throw committeeError;
-    committeeAId = committees[0]!.id;
-    committeeBId = committees[1]!.id;
-
-    const { data: person, error: personError } = await admin
-      .from("person_records")
-      .insert({ edition_id: editionId, source_spelling: `Member A ${suffix}`, profile_id: userAId })
-      .select("id")
-      .single();
-    if (personError) throw personError;
-    personAId = person.id;
-
-    const { error: membershipError } = await admin.from("committee_memberships").insert({
-      committee_id: committeeAId,
-      person_id: personAId,
-      role_key: "committee_member",
-      verified_status: "verified",
-    });
-    if (membershipError) throw membershipError;
-
     const { error: grantError } = await admin.from("user_role_assignments").insert([
-      { user_id: userAId, role_key: "committee_member", committee_id: committeeAId },
-      { user_id: userBId, role_key: "committee_member", committee_id: committeeBId },
+      { user_id: adminUserId, role_key: "super_admin" },
       { user_id: guestId, role_key: "guest" },
     ]);
     if (grantError) throw grantError;
 
-    const { data: tasks, error: taskError } = await admin
-      .from("committee_tasks")
-      .insert([
-        { committee_id: committeeAId, edition_id: editionId, title: `Task A ${suffix}` },
-        { committee_id: committeeBId, edition_id: editionId, title: `Task B ${suffix}` },
-      ])
-      .select("id, committee_id");
-    if (taskError) throw taskError;
-    taskAId = tasks[0]!.id;
-    taskBId = tasks[1]!.id;
+    const { data: reg, error: regError } = await admin
+      .from("event_registrations")
+      .insert({
+        edition_id: editionId,
+        full_name: `Attendee ${suffix}`,
+        email: `attendee-${suffix}@example.com`,
+        phone: "+2348011223344",
+        category: "Corporate Guest",
+        affiliation_type: "corporate",
+        organization: "Prestige Polo Ltd",
+        status: "approved",
+      })
+      .select("id")
+      .single();
+    if (regError) throw regError;
+    registrationAId = reg.id;
   }, 60_000);
 
   afterAll(async () => {
-    if (admin && userAId) {
-      for (const id of [userAId, userBId, guestId]) {
+    if (admin && adminUserId) {
+      for (const id of [adminUserId, guestId]) {
         await admin.auth.admin.deleteUser(id).catch(() => undefined);
       }
     }
@@ -131,76 +100,33 @@ describe.skipIf(!configured)("RLS allow/deny (live)", () => {
     }
   });
 
-  it("member A can read own committee tasks but not committee B tasks", async () => {
-    const client = await userClient(emailA);
+  it("super_admin can read all event registrations", async () => {
+    const client = await userClient(emailAdmin);
 
     const { data: visible } = await client
-      .from("committee_tasks")
+      .from("event_registrations")
       .select("id")
-      .eq("id", taskAId);
+      .eq("id", registrationAId);
     expect(visible?.length).toBe(1);
-
-    const { data: hidden } = await client
-      .from("committee_tasks")
-      .select("id")
-      .eq("id", taskBId);
-    expect(hidden?.length).toBe(0);
   });
 
-  it("member A cannot read the other committee's roster or name", async () => {
-    const client = await userClient(emailA);
-
-    const { data: committees } = await client.from("committees").select("id");
-    const ids = (committees ?? []).map((c) => c.id);
-    expect(ids).toContain(committeeAId);
-    expect(ids).not.toContain(committeeBId);
-
-    const { data: memberships } = await client
-      .from("committee_memberships")
-      .select("id")
-      .eq("committee_id", committeeBId);
-    expect(memberships?.length).toBe(0);
-  });
-
-  it("plain members cannot write tasks (officers only)", async () => {
-    const client = await userClient(emailA);
-
-    const { error } = await client
-      .from("committee_tasks")
-      .insert({ committee_id: committeeAId, edition_id: editionId, title: "Sneaky task" });
-    expect(error).not.toBeNull();
-  });
-
-  it("guest users see no committee workspaces", async () => {
+  it("guest users cannot read registrations of other attendees directly", async () => {
     const client = await userClient(emailGuest);
 
-    const { data: committees } = await client.from("committees").select("id");
-    expect(committees?.length ?? 0).toBe(0);
-
-    const { data: people } = await client.from("person_records").select("id");
-    expect(people?.length ?? 0).toBe(0);
+    const { data: records } = await client
+      .from("event_registrations")
+      .select("id")
+      .eq("id", registrationAId);
+    expect(records?.length ?? 0).toBe(0);
   });
 
-  it("anon sees no committee workspaces or people", async () => {
+  it("anon cannot query internal event registrations table directly", async () => {
     const anon = createClient(url!, anonKey!, { auth: { persistSession: false } });
 
-    const { data: committees } = await anon.from("committees").select("id");
-    expect(committees?.length ?? 0).toBe(0);
-
-    const { data: people } = await anon.from("person_records").select("id");
-    expect(people?.length ?? 0).toBe(0);
-
-    const { data: tasks } = await anon.from("committee_tasks").select("id");
-    expect(tasks?.length ?? 0).toBe(0);
-  });
-
-  it("member A cannot read minutes or documents without an explicit grant", async () => {
-    const client = await userClient(emailA);
-
-    const { data: meetings } = await client
-      .from("committee_meetings")
+    const { data: records } = await anon
+      .from("event_registrations")
       .select("id")
-      .eq("committee_id", committeeAId);
-    expect(meetings?.length ?? 0).toBe(0); // none created; policy still denies foreign rows
+      .eq("id", registrationAId);
+    expect(records?.length ?? 0).toBe(0);
   });
 });

@@ -18,7 +18,7 @@ const FAQS: FAQItem[] = [
     id: "dates",
     question: "When does the 2026 Abeokuta Polo Festival take place?",
     answer:
-      "18–20 December 2026. The overall three-day date range is officially approved; daily fixture schedules and ceremonial timings are published as confirmed by the Tournament Committee.",
+      "18–20 December 2026. The overall three-day date range is officially approved; daily fixture schedules and ceremonial timings are published as confirmed by the Tournament Secretariat.",
   },
   {
     id: "venue",

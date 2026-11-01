@@ -68,7 +68,7 @@ export default function ProgrammePage() {
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8 text-xs text-forest-deep sm:text-sm">
           <AlertCircle className="size-5 text-gold shrink-0" />
           <p>
-            <strong>Official Scheduling Notice:</strong> The overall festival date range (18–20 December 2026) is confirmed. In accordance with festival governance, exact match clock times, team seedings, and player rosters are published in the Official Gazette as confirmed by the Tournament Committee.
+            <strong>Official Scheduling Notice:</strong> The overall festival date range (18–20 December 2026) is confirmed. In accordance with festival governance, exact match clock times, team seedings, and player rosters are published in the Official Gazette as confirmed by Tournament Officials.
           </p>
         </div>
       </section>

@@ -45,7 +45,7 @@ export default function VisitPage() {
                   <Car className="size-6 text-gold mb-3" />
                   <h3 className="font-display text-lg font-semibold text-forest">Parking & Valet</h3>
                   <p className="mt-2 text-xs text-muted-brand leading-relaxed">
-                    Dedicated secure parking zones for general guests. Valet and priority parking available for Patrons, VIP Chalets, and Committee Officers.
+                    Dedicated secure parking zones for general guests. Valet and priority parking available for Patrons, VIP Chalets, and Tournament Officials.
                   </p>
                 </div>
 

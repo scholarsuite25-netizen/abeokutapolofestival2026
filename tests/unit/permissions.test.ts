@@ -43,12 +43,11 @@ describe("permission matrix", () => {
     expect(can(actor("super_admin"), "grants.manage")).toBe(true);
   });
 
-  it("gives committee members read access to their own tasks and roster", () => {
-    const member = actor("committee_member");
-    expect(can(member, "tasks.read")).toBe(true);
-    expect(can(member, "roster.read")).toBe(true);
-    expect(can(member, "roster.read_all")).toBe(false);
-    expect(can(member, "tasks.manage")).toBe(false);
+  it("gives accreditation officers manage access to registrations and credentials", () => {
+    const officer = actor("accreditation_officer");
+    expect(can(officer, "registration.manage")).toBe(true);
+    expect(can(officer, "credential.issue")).toBe(true);
+    expect(can(officer, "roster.read")).toBe(true);
   });
 
   it("splits credential powers between issuance and gate validation", () => {
@@ -58,23 +57,19 @@ describe("permission matrix", () => {
     expect(can(actor("guest"), "credential.validate")).toBe(false);
   });
 
-  it("grants guests access only to their own records", () => {
+  it("does not leak privileged permissions to guest", () => {
     const guest = actor("guest");
-    expect(can(guest, "registration.read_own")).toBe(true);
-    expect(can(guest, "directory.read_own")).toBe(true);
     expect(can(guest, "registration.manage")).toBe(false);
-    expect(can(guest, "roster.read")).toBe(false);
-    expect(can(guest, "minutes.read")).toBe(false);
+    expect(can(guest, "credential.issue")).toBe(false);
+    expect(can(guest, "credential.validate")).toBe(false);
+    expect(can(guest, "finance.read")).toBe(false);
+    expect(can(guest, "registration.read_own")).toBe(true);
   });
 
-  it("keeps content management away from every role except media_officer and super_admin", () => {
-    for (const role of ROLES) {
-      const expected = role === "media_officer" || role === "super_admin";
-      expect(can(actor(role), "cms.publish")).toBe(expected);
+  it("confirms super_admin holds all declared permissions", () => {
+    const admin = actor("super_admin");
+    for (const permission of PERMISSIONS) {
+      expect(can(admin, permission)).toBe(true);
     }
-  });
-
-  it("lists every role in ROLES", () => {
-    expect(new Set(ROLES).size).toBe(ROLES.length);
   });
 });

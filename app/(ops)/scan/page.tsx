@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   QrCode,
   ShieldCheck,
@@ -9,7 +8,7 @@ import {
   XCircle,
   CheckCircle2,
   Camera,
-  Clock,
+  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +24,7 @@ import { processGateScan, type ScanResult } from "./actions";
 
 export default function GateScanPage() {
   const [gate, setGate] = useState("Gate 2 - General Turnstiles");
+  const [eventDay, setEventDay] = useState("1");
   const [passInput, setPassInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
@@ -37,6 +37,7 @@ export default function GateScanPage() {
     const res = await processGateScan({
       passIdentifier: codeToScan.trim(),
       gate,
+      eventDay: parseInt(eventDay, 10),
     });
 
     setLoading(false);
@@ -63,36 +64,46 @@ export default function GateScanPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <Badge variant="outline" className="border-gold/50 bg-gold/10 text-gold text-[10px] uppercase tracking-wider">
+              <Badge
+                variant="outline"
+                className="border-gold/50 bg-gold/10 text-gold text-[10px] uppercase tracking-wider"
+              >
                 Access Control Protocol · Live
               </Badge>
             </div>
             <h1 className="mt-1 font-display text-2xl font-semibold sm:text-3xl text-ivory">
-              Security Gate Scanner
+              Security Gate Scanner &amp; 3-Day Attendance
             </h1>
             <p className="text-xs text-ivory/60">
-              Abeokuta Polo Club Grounds · Real-Time Check-In PWA
+              Abeokuta Polo Club Grounds · Daily Turnstile Attendance Verification
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-            <Link
-              href="/scan/history"
-              className="inline-flex items-center gap-1.5 rounded-md border border-gold/40 bg-gold/15 px-3 py-2 text-xs font-semibold text-gold transition-colors hover:bg-gold/25"
-            >
-              <Clock className="h-3.5 w-3.5" />
-              <span>Ingress History</span>
-            </Link>
+            {/* Event Day Selector */}
+            <div className="w-full sm:w-44">
+              <Select value={eventDay} onValueChange={setEventDay}>
+                <SelectTrigger className="bg-forest border-gold/40 text-gold font-semibold text-xs">
+                  <SelectValue placeholder="Tournament Day" />
+                </SelectTrigger>
+                <SelectContent className="bg-forest text-ivory border-ivory/20">
+                  <SelectItem value="1">Day 1 (Fri 18 Dec)</SelectItem>
+                  <SelectItem value="2">Day 2 (Sat 19 Dec)</SelectItem>
+                  <SelectItem value="3">Day 3 (Sun 20 Dec)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <div className="w-full sm:w-64">
+            {/* Gate Selector */}
+            <div className="w-full sm:w-56">
               <Select value={gate} onValueChange={setGate}>
                 <SelectTrigger className="bg-forest border-ivory/20 text-ivory text-xs">
                   <SelectValue placeholder="Select Gate" />
                 </SelectTrigger>
                 <SelectContent className="bg-forest text-ivory border-ivory/20">
-                  <SelectItem value="Gate 1 - Royal & VIP Boulevard">Gate 1 - Royal & VIP Boulevard</SelectItem>
+                  <SelectItem value="Gate 1 - Royal & VIP Boulevard">Gate 1 - Royal &amp; VIP Boulevard</SelectItem>
                   <SelectItem value="Gate 2 - General Turnstiles">Gate 2 - General Turnstiles</SelectItem>
-                  <SelectItem value="Gate 3 - Media & Hospitality East">Gate 3 - Media & Hospitality East</SelectItem>
+                  <SelectItem value="Gate 3 - Media & Hospitality East">Gate 3 - Media &amp; Hospitality East</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -103,7 +114,7 @@ export default function GateScanPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-ivory/15 bg-forest/80 p-4 text-center">
             <span className="text-2xl font-bold font-mono text-ivory">{stats.total}</span>
-            <span className="block text-[11px] uppercase tracking-wider text-ivory/60 mt-1">Total Scanned</span>
+            <span className="block text-[11px] uppercase tracking-wider text-ivory/60 mt-1">Total Scans</span>
           </div>
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-center">
             <span className="text-2xl font-bold font-mono text-emerald-400">{stats.admitted}</span>
@@ -111,7 +122,7 @@ export default function GateScanPage() {
           </div>
           <div className="rounded-xl border border-amber-500/30 bg-amber-950/40 p-4 text-center">
             <span className="text-2xl font-bold font-mono text-amber-400">{stats.duplicate}</span>
-            <span className="block text-[11px] uppercase tracking-wider text-amber-400/80 mt-1">Duplicates</span>
+            <span className="block text-[11px] uppercase tracking-wider text-amber-400/80 mt-1">Day Duplicate</span>
           </div>
           <div className="rounded-xl border border-red-500/30 bg-red-950/40 p-4 text-center">
             <span className="text-2xl font-bold font-mono text-red-400">{stats.rejected}</span>
@@ -124,26 +135,24 @@ export default function GateScanPage() {
           {/* Viewfinder Simulator */}
           <div className="lg:col-span-7 rounded-2xl border border-ivory/20 bg-forest p-6 space-y-4">
             <div className="flex items-center justify-between text-xs text-ivory/70 border-b border-ivory/10 pb-3">
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 font-semibold text-ivory">
                 <Camera className="size-4 text-gold" />
-                Optical Scanner Viewport
+                Optical Turnstile Scanner — Day {eventDay}
               </span>
-              <span className="text-emerald-400 font-mono text-[11px]">● CAMERA ACTIVE</span>
+              <span className="text-emerald-400 font-mono text-[11px]">● CAMERA SENSOR ONLINE</span>
             </div>
 
             {/* Viewfinder Target Box */}
             <div className="relative h-64 sm:h-72 rounded-xl bg-forest-deep flex flex-col items-center justify-center border-2 border-dashed border-ivory/20 overflow-hidden">
-              {/* Corner Reticles */}
               <div className="absolute top-4 left-4 size-6 border-t-2 border-l-2 border-gold" />
               <div className="absolute top-4 right-4 size-6 border-t-2 border-r-2 border-gold" />
               <div className="absolute bottom-4 left-4 size-6 border-b-2 border-l-2 border-gold" />
               <div className="absolute bottom-4 right-4 size-6 border-b-2 border-r-2 border-gold" />
 
-              {/* Laser Scanning Animation Bar */}
               <div className="absolute inset-x-8 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_12px_rgba(239,68,68,0.8)] animate-pulse" />
 
               <QrCode className="size-28 text-ivory/20" />
-              <p className="mt-4 text-xs text-ivory/50">Align Attendee QR Code Within Reticle</p>
+              <p className="mt-4 text-xs text-ivory/60">Position Attendee QR Access Card Within Reticle</p>
             </div>
 
             {/* Manual Code Input Bar */}
@@ -155,7 +164,7 @@ export default function GateScanPage() {
               className="flex gap-2"
             >
               <Input
-                placeholder="Or type pass code e.g. ABK-2026-X7K9"
+                placeholder="Or scan/type Pass Code e.g. ABK-2026-X7K9"
                 value={passInput}
                 onChange={(e) => setPassInput(e.target.value)}
                 className="bg-forest-deep border-ivory/20 text-ivory placeholder:text-ivory/40"
@@ -163,37 +172,37 @@ export default function GateScanPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="bg-gold font-semibold text-forest-deep hover:bg-gold/90 shrink-0"
+                className="bg-gold font-semibold text-forest-deep hover:bg-gold/90 shrink-0 cursor-pointer"
               >
-                {loading ? "Verifying..." : "Verify Pass"}
+                {loading ? "Verifying..." : "Scan Pass"}
               </Button>
             </form>
 
-            {/* Sample Simulation Shortcuts */}
+            {/* Quick Test Codes */}
             <div className="pt-2 text-[11px] text-ivory/60 flex flex-wrap items-center gap-2">
               <span>Quick Test:</span>
               <button
                 type="button"
-                onClick={() => simulateSampleScan("ABK-2026-VIP-9182")}
+                onClick={() => simulateSampleScan("ABK-2026-LAWN4")}
                 className="underline hover:text-gold"
               >
-                Valid Pass
+                Sample Pass 1
               </button>
               <span>·</span>
               <button
                 type="button"
-                onClick={() => simulateSampleScan("ABK-2026-DUP-001")}
+                onClick={() => simulateSampleScan("ABK-2026-FB01")}
                 className="underline hover:text-gold"
               >
-                Duplicate Pass
+                Corporate Pass
               </button>
               <span>·</span>
               <button
                 type="button"
-                onClick={() => simulateSampleScan("ABK-2026-REVOKED-88")}
+                onClick={() => simulateSampleScan("ABK-2026-X7K9")}
                 className="underline hover:text-gold"
               >
-                Revoked Pass
+                VIP Guest Pass
               </button>
             </div>
           </div>
@@ -201,7 +210,7 @@ export default function GateScanPage() {
           {/* Validation Result Feedback Panel */}
           <div className="lg:col-span-5 rounded-2xl border border-ivory/20 bg-forest p-6 space-y-4">
             <h2 className="font-display text-lg font-semibold text-ivory border-b border-ivory/10 pb-3">
-              Scan Verification Result
+              Gate Ingress Verification
             </h2>
 
             {lastResult ? (
@@ -225,9 +234,9 @@ export default function GateScanPage() {
                   <div>
                     <h3 className="font-display text-xl font-bold uppercase tracking-wider">
                       {lastResult.result === "admitted"
-                        ? "ACCESS GRANTED"
+                        ? `DAY ${eventDay} ADMISSION GRANTED`
                         : lastResult.result === "already_admitted"
-                        ? "DUPLICATE PASS"
+                        ? `ALREADY ADMITTED (DAY ${eventDay})`
                         : "ACCESS DENIED"}
                     </h3>
                     <p className="text-xs opacity-90">{lastResult.message}</p>
@@ -235,44 +244,82 @@ export default function GateScanPage() {
                 </div>
 
                 <div className="pt-3 border-t border-ivory/20 space-y-2 text-xs">
-                  {lastResult.holderName ? (
+                  {lastResult.holderName && (
                     <div className="flex justify-between">
                       <span className="opacity-70">Attendee:</span>
                       <span className="font-bold">{lastResult.holderName}</span>
                     </div>
-                  ) : null}
-                  {lastResult.passType ? (
+                  )}
+                  {lastResult.passType && (
                     <div className="flex justify-between">
-                      <span className="opacity-70">Pass Tier:</span>
+                      <span className="opacity-70">Tier:</span>
                       <span className="font-semibold text-gold">{lastResult.passType}</span>
                     </div>
-                  ) : null}
-                  {lastResult.firstCheckedInAt ? (
-                    <div className="flex justify-between text-amber-300">
-                      <span className="opacity-70">First Admitted:</span>
-                      <span>{lastResult.firstCheckedInAt} ({lastResult.lastGate || "Gate 2"})</span>
+                  )}
+                  {(lastResult.hostName || lastResult.organization) && (
+                    <div className="flex justify-between">
+                      <span className="opacity-70">Affiliation:</span>
+                      <span className="font-semibold text-gold">
+                        {lastResult.hostName ? `Guest of ${lastResult.hostName}` : `Corporate: ${lastResult.organization}`}
+                      </span>
                     </div>
-                  ) : null}
+                  )}
                   <div className="flex justify-between">
                     <span className="opacity-70">Checkpoint:</span>
                     <span>{gate}</span>
+                  </div>
+
+                  {/* 3-Day Attendance Progress Tracker */}
+                  <div className="pt-2 border-t border-ivory/15">
+                    <span className="text-[10px] font-bold uppercase text-ivory/70 block mb-1.5 flex items-center gap-1">
+                      <CalendarCheck className="size-3 text-gold" /> Attendance Across 3 Days:
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                      <div
+                        className={`rounded p-1 font-semibold ${
+                          lastResult.day1CheckedIn
+                            ? "bg-emerald-500/30 text-emerald-300 border border-emerald-500/40"
+                            : "bg-white/5 text-ivory/40"
+                        }`}
+                      >
+                        Day 1: {lastResult.day1CheckedIn ? "Checked In" : "Not Yet"}
+                      </div>
+                      <div
+                        className={`rounded p-1 font-semibold ${
+                          lastResult.day2CheckedIn
+                            ? "bg-emerald-500/30 text-emerald-300 border border-emerald-500/40"
+                            : "bg-white/5 text-ivory/40"
+                        }`}
+                      >
+                        Day 2: {lastResult.day2CheckedIn ? "Checked In" : "Not Yet"}
+                      </div>
+                      <div
+                        className={`rounded p-1 font-semibold ${
+                          lastResult.day3CheckedIn
+                            ? "bg-emerald-500/30 text-emerald-300 border border-emerald-500/40"
+                            : "bg-white/5 text-ivory/40"
+                        }`}
+                      >
+                        Day 3: {lastResult.day3CheckedIn ? "Checked In" : "Not Yet"}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-ivory/15 p-8 text-center text-ivory/50 space-y-2">
                 <ShieldCheck className="size-10 text-ivory/30 mx-auto" />
-                <p className="text-xs">Awaiting first credential scan...</p>
-                <p className="text-[11px] text-ivory/40">Point camera at QR pass or type pass code.</p>
+                <p className="text-xs">Awaiting gate scan for Day {eventDay}...</p>
+                <p className="text-[11px] text-ivory/40">Point optical scanner at attendee access card.</p>
               </div>
             )}
 
             <div className="rounded-xl border border-ivory/10 bg-forest-deep p-4 text-[11px] text-ivory/70 space-y-1.5">
-              <p className="font-semibold text-gold">Security Gate Standing Rules:</p>
+              <p className="font-semibold text-gold">Gate Attendant Operating Guide:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li>All general guests require active accredited digital QR pass.</li>
-                <li>Gate 1 reserved for Royal Monarchs, State VIPs &amp; Diplomatic delegations.</li>
-                <li>Report duplicate or forged passes immediately to Chief Security Officer.</li>
+                <li>Make sure the top dropdown matches today&apos;s tournament day.</li>
+                <li>Each attendee&apos;s access card is scanned once per day to record daily attendance.</li>
+                <li>Duplicates on the same day alert in amber; foreign or forged tokens alert in red.</li>
               </ul>
             </div>
           </div>

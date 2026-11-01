@@ -9,8 +9,7 @@ export default function SignInPage() {
       <CardHeader>
         <CardTitle className="font-display text-forest">Sign in</CardTitle>
         <CardDescription>
-          Access your registration, digital pass and — where granted — committee
-          workspaces.
+          Access your registration, official digital gate pass and management console.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

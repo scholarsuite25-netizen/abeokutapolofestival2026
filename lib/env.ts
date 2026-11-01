@@ -62,7 +62,15 @@ export function getPublicEnv(): PublicEnv {
       process.env.NEXT_PUBLIC_FEATURE_HOSPITALITY_ENQUIRY,
   };
   const parsed = publicSchema.safeParse(raw);
-  return parsed.success ? parsed.data : raw;
+  if (!parsed.success) {
+    return {
+      NEXT_PUBLIC_SUPABASE_URL: raw.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: raw.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      NEXT_PUBLIC_SITE_URL: raw.NEXT_PUBLIC_SITE_URL,
+      NEXT_PUBLIC_FEATURE_HOSPITALITY_ENQUIRY: "true",
+    };
+  }
+  return parsed.data;
 }
 
 /** True when a complete Supabase pair is configured (used to soft-disable data features). */

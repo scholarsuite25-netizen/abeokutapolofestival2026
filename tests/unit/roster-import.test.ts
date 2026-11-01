@@ -38,7 +38,7 @@ describe("parseRosterCsv", () => {
         email: "ada@example.com",
         phone: "08030000000",
         position: "Secretary",
-        role: "committee_member",
+        role: "member",
       },
     ]);
   });
@@ -57,11 +57,11 @@ describe("parseRosterCsv", () => {
     expect(result.error).toMatch(/Row 2/);
   });
 
-  it("accepts committee_officer role", () => {
-    const result = parseRosterCsv("name,role\nTunde,committee_officer\n");
+  it("accepts officer role", () => {
+    const result = parseRosterCsv("name,role\nTunde,officer\n");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.rows[0]?.role).toBe("committee_officer");
+    expect(result.rows[0]?.role).toBe("officer");
   });
 
   it("rejects an unknown role", () => {

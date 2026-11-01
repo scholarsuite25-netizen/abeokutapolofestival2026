@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { Suspense } from "react";
 import { PermissionError, requirePermission } from "@/lib/auth/require";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +8,7 @@ import { NotConfigured, PermissionDenied } from "@/components/shared/guards";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Button } from "@/components/ui/button";
+import { RegistrationApprovals } from "@/components/admin/registration-approvals";
 
 export default function AdminMembersPage() {
   return (
@@ -28,31 +29,46 @@ async function MembersQueue() {
   }
 
   const supabase = await createClient();
-  const { data: people } = await supabase
-    .from("person_records")
-    .select("id, source_spelling, verified_status, created_at")
-    .in("verified_status", ["unverified", "provisional"])
-    .order("created_at", { ascending: false });
+  const [{ data: people }, { data: pending }] = await Promise.all([
+    supabase
+      .from("person_records")
+      .select("id, source_spelling, verified_status, created_at")
+      .in("verified_status", ["unverified", "provisional"])
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("registrations")
+      .select("id, first_name, last_name, email, phone, category, group_size, created_at")
+      .eq("status", "pending_approval")
+      .order("created_at", { ascending: false }),
+  ]);
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-forest">
-            Verification queue
-          </h1>
-          <p className="mt-1 text-sm text-muted-brand">
-            Provisional roster entries awaiting review. Identity is linked manually —
-            name variants are never auto-merged.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/members/import">Import roster (CSV)</Link>
-        </Button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-2xl font-semibold text-forest">
+          Verification queue
+        </h1>
+        <p className="mt-1 text-sm text-muted-brand">
+          Registration approvals and provisional roster entries awaiting review. Identity is
+          linked manually — name variants are never auto-merged.
+        </p>
       </div>
 
+      <RegistrationApprovals
+        pending={(pending ?? []) as Array<{
+          id: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          phone: string;
+          category: string;
+          group_size: number;
+          created_at: string;
+        }>}
+      />
+
       {people?.length ? (
-        <div className="mt-6 overflow-hidden rounded-lg border border-line bg-card">
+        <div className="overflow-hidden rounded-lg border border-line bg-card">
           <table className="w-full text-sm">
             <thead className="border-b border-line bg-sage/60 text-left">
               <tr>
@@ -64,9 +80,7 @@ async function MembersQueue() {
             <tbody className="divide-y divide-line">
               {people.map((person) => (
                 <tr key={person.id}>
-                  <td className="px-4 py-3 font-medium text-ink">
-                    {person.source_spelling}
-                  </td>
+                  <td className="px-4 py-3 font-medium text-ink">{person.source_spelling}</td>
                   <td className="px-4 py-3">
                     <StatusBadge
                       tone={person.verified_status === "provisional" ? "warning" : "neutral"}
@@ -84,11 +98,16 @@ async function MembersQueue() {
         </div>
       ) : (
         <EmptyState
-          className="mt-6"
           title="Queue is clear"
           description="No provisional records are waiting for verification."
         />
       )}
+
+      <div>
+        <Button asChild variant="outline">
+          <Link href="/admin/registrations">Open Participant Console</Link>
+        </Button>
+      </div>
     </div>
   );
 }
