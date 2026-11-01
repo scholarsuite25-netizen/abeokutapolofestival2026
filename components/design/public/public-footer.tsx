@@ -14,36 +14,36 @@ const COLUMNS = [
   {
     title: "Tournament",
     links: [
-      { href: "/programme", label: "Programme" },
-      { href: "/royal-cup", label: "Royal Cup" },
-      { href: "/experiences", label: "Experiences" },
+      { href: "/programme", label: "Match Programme" },
+      { href: "/royal-cup", label: "The Royal Cup" },
+      { href: "/experiences", label: "Experiences & Gala" },
     ],
   },
   {
-    title: "Attend",
+    title: "Access",
     links: [
-      { href: "/register", label: "Register (free)" },
+      { href: "/register", label: "Register for Pass (Free)" },
+      { href: "/pass/lookup", label: "Find My Access Card" },
+      { href: "/scan", label: "Gate Scanner PWA" },
       { href: "/dashboard/pass", label: "Digital Member Pass" },
-      { href: "/hospitality", label: "VIP Hospitality & Cabanas" },
-      { href: "/visit", label: "Visitor Protocol" },
     ],
   },
   {
-    title: "Partners",
+    title: "Hospitality",
     links: [
-      { href: "/sponsorship", label: "Patrons & Royal Sponsors" },
-      { href: "/partners", label: "Official Partners" },
+      { href: "/hospitality", label: "Suites & Enclosures" },
+      { href: "/sponsorship", label: "Corporate Partnerships" },
       { href: "/press", label: "Media & Press Access" },
     ],
   },
   {
-    title: "Information",
+    title: "Guide",
     links: [
+      { href: "/visit", label: "Plan Your Visit" },
+      { href: "/faq", label: "Visitor Protocols & FAQs" },
       { href: "/publications", label: "Tournament Gazette" },
       { href: "/gallery", label: "Archival Imagery" },
-      { href: "/news", label: "News" },
-      { href: "/faq", label: "FAQs" },
-      { href: "/contact", label: "Contact" },
+      { href: "/news", label: "Festival News" },
     ],
   },
 ] as const;
@@ -60,8 +60,12 @@ export function PublicFooter() {
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
           <div>
-            <p className="font-display text-xl font-semibold">2026 Abeokuta Polo Festival</p>
-            <p className="mt-1 text-sm italic text-ivory/70">The Blueprint</p>
+            <p className="font-display text-xl font-bold tracking-tight text-ivory">
+              Abeokuta Polo Festival 2026
+            </p>
+            <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-gold">
+              The Blueprint · 18–20 Dec 2026
+            </p>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-ivory/80">
               Attendance is free; entry requires prior registration and an accredited
               credential. This website does not take payments.
