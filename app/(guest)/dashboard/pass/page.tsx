@@ -139,7 +139,7 @@ async function PassContent() {
             <h1 className="font-display text-2xl font-semibold sm:text-3xl text-ivory">
               Abeokuta Polo Festival 2026
             </h1>
-            <p className="mt-1 text-xs text-ivory/80">Where Heritage Meets Excellence · Est. 1928</p>
+            <p className="mt-1 text-xs text-ivory/80">Where Heritage Meets Excellence · Est. 2025</p>
             <div className="mt-3 flex justify-center">
               <StatusBadge tone={isActive ? "success" : "danger"}>
                 {isActive ? "Active" : cred.status}

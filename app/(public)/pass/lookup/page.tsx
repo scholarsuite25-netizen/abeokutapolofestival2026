@@ -100,7 +100,7 @@ export default function PassLookupPage() {
                 <Ticket className="absolute left-3 top-3 size-4 text-muted-brand" />
                 <Input
                   id="code"
-                  required
+                  required={!storedPass?.passCode}
                   placeholder={storedPass?.passCode || "e.g. ABK-2026-X7K9"}
                   value={passInput}
                   onChange={(e) => setPassInput(e.target.value)}

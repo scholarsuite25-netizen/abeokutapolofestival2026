@@ -39,13 +39,13 @@ export default function HomePage() {
           className="pointer-events-none absolute -bottom-32 -left-32 size-96 rounded-full bg-forest-interactive/40 blur-3xl"
         />
 
-        {/* 1928 Foundation Watermark */}
+        {/* 2025 Foundation Watermark */}
         <div
           aria-hidden
           className="pointer-events-none absolute bottom-4 right-8 select-none opacity-5 lg:block hidden"
         >
           <span className="font-display text-[160px] font-bold leading-none tracking-tighter text-gold">
-            1928
+            2025
           </span>
         </div>
 

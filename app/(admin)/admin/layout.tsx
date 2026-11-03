@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div>
               <p className="font-display text-sm font-semibold tracking-wide text-ivory">
-                Abeokuta Polo Festival 1928 · Operations Console
+                Abeokuta Polo Festival 2026 · Operations Console
               </p>
               <div className="flex items-center gap-2">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />

@@ -69,7 +69,7 @@ npx vercel --prod
 ## 4. Post-Deployment Verification Checklist
 
 1. **Public Marketing Showcase**:
-   - Visit `/` and verify hero, 1928 watermark, and 5 Pillars render.
+   - Visit `/` and verify hero, 2025 watermark, and 5 Pillars render.
    - Visit `/royal-cup` and `/programme` to verify festival dates (18–20 Dec 2026).
 2. **Registration & Pass Generation**:
    - Register a guest at `/register`.

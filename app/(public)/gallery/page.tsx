@@ -1,60 +1,68 @@
 import Link from "next/link";
-import { Camera, Film } from "lucide-react";
+import { Camera, Film, Download, ShieldCheck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FestivalVideoPlayer } from "@/components/shared/festival-video-player";
+import { GalleryShowcase } from "@/components/design/public/gallery-showcase";
 
 export const metadata = {
-  title: "Media Gallery & Archives — 2026 Abeokuta Polo Festival",
+  title: "Media Gallery & Photographic Archives — 2026 Abeokuta Polo Festival",
   description:
-    "Official photographic coverage and archival imagery from the Abeokuta Polo Club and festival chukkas.",
+    "Official photographic coverage and archival imagery from the Abeokuta Polo Club (Established 2025), celebrating royal fathers, leadership, government participation, and high-goal chukkas.",
 };
-
-const ALBUMS = [
-  {
-    title: "Championship Chukkas",
-    category: "High-Goal Action",
-    date: "1928 – 2026",
-    description: "High-speed thoroughbred sprints, fierce mallet hooks, and field-side celebrations.",
-  },
-  {
-    title: "Royal Pageantry & Durbar",
-    category: "Sovereign Heritage",
-    date: "Annual Tradition",
-    description: "Crowned Yoruba monarchs, ceremonial drumming, and royal equestrian processions.",
-  },
-  {
-    title: "Chukka Terrace & Society",
-    category: "Lifestyle & Society",
-    date: "Festival Highlights",
-    description: "Guests in high-fashion garden attire, clubhouse gatherings, and evening galas.",
-  },
-  {
-    title: "Grounds & Club Heritage",
-    category: "Club Archives",
-    date: "Est. 1928",
-    description: "Historical photography celebrating nearly a century of polo excellence in Kobape, Ogun State.",
-  },
-];
 
 export default function GalleryPage() {
   return (
     <div className="flex w-full flex-col bg-ivory text-ink">
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 1. HERO SECTION                                                     */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-forest text-ivory py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Badge variant="outline" className="border-gold/40 bg-gold/10 text-gold uppercase tracking-widest text-[11px]">
-            Visual Archives & Media Hub
-          </Badge>
-          <h1 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-6xl">
-            Tournament Photography & Heritage Archives
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-32 -left-32 size-96 rounded-full bg-gold/10 blur-3xl"
+        />
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant="outline"
+              className="border-gold/40 bg-gold/10 text-gold uppercase tracking-widest text-[11px]"
+            >
+              Visual Archives &amp; Media Hub
+            </Badge>
+            <Badge className="bg-gold text-forest font-bold text-[10px]">
+              ESTABLISHED 2025
+            </Badge>
+          </div>
+
+          <h1 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-6xl text-ivory">
+            Visual Heritage &amp; <br />
+            <span className="font-normal italic text-gold">Championship Archives</span>
           </h1>
+
           <p className="mt-4 max-w-2xl text-base text-ivory/80 sm:text-lg">
-            Capturing the speed, majesty, and sovereign tradition of the Abeokuta Polo Club.
+            Documenting the historic journey of the Abeokuta Polo Club from its groundbreaking on May 17, 2025, to the maiden festival on December 21, 2025, and onwards to the landmark 2026 Blueprint Festival.
           </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button asChild className="bg-gold text-forest font-bold hover:bg-gold/90 text-xs sm:text-sm">
+              <Link href="/register">
+                Register for 2026 Access Pass <ArrowRight className="ml-1.5 size-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="border-gold/40 bg-white/10 text-ivory hover:bg-white/20 text-xs sm:text-sm">
+              <a href="#archives">
+                <Camera className="mr-1.5 size-4 text-gold" /> Explore Photo Archives
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 
-      {/* Official Teaser Section */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 2. OFFICIAL VIDEO TEASER SECTION                                    */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="bg-forest-deep py-12 border-b border-gold/30">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -67,9 +75,10 @@ export default function GalleryPage() {
               </h2>
             </div>
             <p className="text-xs text-ivory/70 max-w-md">
-              A cinematic look into the tournament chukkas, heritage grounds, and cultural spectacles scheduled for 18–20 December 2026.
+              A cinematic preview of the championship chukkas, Kobape heritage grounds, and royal pageantry scheduled for 18–20 December 2026.
             </p>
           </div>
+
           <FestivalVideoPlayer
             src="/videos/abeokuta-polo-trailer.mp4"
             autoPlay={false}
@@ -79,44 +88,55 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      <section className="py-20">
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 3. VERIFIED PHOTOGRAPHIC ARCHIVES                                   */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <section id="archives" className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {ALBUMS.map((album, idx) => (
-              <div
-                key={idx}
-                className="group flex flex-col justify-between rounded-2xl border border-line bg-card overflow-hidden shadow-sm transition hover:shadow-md"
-              >
-                <div className="h-48 bg-forest-deep/90 flex flex-col items-center justify-center text-ivory p-6 text-center">
-                  <div className="flex size-14 items-center justify-center rounded-xl bg-gold/15 text-gold mb-3">
-                    <Camera className="size-7" />
-                  </div>
-                  <Badge variant="outline" className="border-gold/40 bg-gold/10 text-gold text-[10px]">
-                    {album.category}
-                  </Badge>
-                </div>
-                <div className="p-6">
-                  <span className="text-xs text-muted-brand">{album.date}</span>
-                  <h3 className="mt-1 font-display text-xl font-semibold text-forest">
-                    {album.title}
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-muted-brand">
-                    {album.description}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <div className="mb-10 text-center max-w-3xl mx-auto">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+              Inception To Date · 2025 – 2026
+            </span>
+            <h2 className="mt-2 font-display text-3xl font-semibold text-forest sm:text-4xl">
+              Photographic Timeline &amp; Sovereign Highlights
+            </h2>
+            <p className="mt-2 text-sm text-muted-brand sm:text-base">
+              Featuring published coverage of Club President Dr. Chief Sheriff Adams Abdulrahman, Royal Monarchs chaired by HRM The Alake of Egbaland, Ogun State Government leadership, and high-goal equestrian action.
+            </p>
           </div>
 
-          <div className="mt-16 rounded-2xl border border-line bg-sage/30 p-8 text-center sm:p-12">
-            <h3 className="font-display text-2xl font-semibold text-forest">Media &amp; Press Access</h3>
-            <p className="mt-2 text-sm text-muted-brand max-w-lg mx-auto">
-              Photojournalists, television broadcast crews, and digital creators may review official media protocols and editorial access for the 2026 tournament.
-            </p>
-            <div className="mt-6 flex justify-center">
-              <Button asChild className="bg-forest text-ivory hover:bg-forest-interactive">
-                <Link href="/press">Media &amp; Press Protocol →</Link>
-              </Button>
+          {/* Interactive Gallery Showcase */}
+          <GalleryShowcase />
+
+          {/* Press & Media Accreditation Card */}
+          <div className="mt-20 rounded-3xl border border-line bg-sage/30 p-8 sm:p-12">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
+              <div className="lg:col-span-8 space-y-2">
+                <Badge variant="outline" className="border-gold/60 text-gold uppercase text-[10px]">
+                  Editorial &amp; Broadcast Rights
+                </Badge>
+                <h3 className="font-display text-2xl sm:text-3xl font-semibold text-forest">
+                  Official Media Accreditation &amp; Press Assets
+                </h3>
+                <p className="text-sm text-muted-brand leading-relaxed">
+                  Journalists, broadcast crews, and digital creators may request high-resolution assets, sideline pit access, and interview credentials for the 2026 Abeokuta Polo Festival.
+                </p>
+              </div>
+
+              <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-center">
+                <Button asChild className="bg-forest text-ivory hover:bg-forest-interactive">
+                  <Link href="/press">
+                    <ShieldCheck className="mr-2 size-4 text-gold" />
+                    Apply for Media Pass →
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="border-forest/30 bg-card text-forest hover:bg-ivory">
+                  <Link href="/api/programme/pdf" target="_blank">
+                    <Download className="mr-2 size-4 text-gold" />
+                    Download Official Schedule (PDF)
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

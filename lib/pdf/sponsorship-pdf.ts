@@ -199,7 +199,7 @@ export function generateSponsorshipHTML(): string {
     </div>
 
     <div class="title-banner">
-      <div class="subtitle">Abeokuta Polo Club & Country Resort · Est. 1928</div>
+      <div class="subtitle">Abeokuta Polo Club & Country Resort · Established in 2025</div>
       <h1 class="main-title">Abeokuta Polo Festival 2026</h1>
       <div class="meta-line">“The Blueprint: Celebrating Heritage, Empowering Tomorrow” · 18–20 December 2026</div>
     </div>

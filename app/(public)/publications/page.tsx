@@ -15,7 +15,7 @@ const PUBLICATIONS = [
     type: "Commemorative Issue",
     format: "Print & Digital PDF",
     description:
-      "The definitive tournament journal containing the Sovereign address by HRM The Alake of Egbaland, club history since 1928, and official player rosters.",
+      "The definitive tournament journal containing the Sovereign address by HRM The Alake of Egbaland, club history since its 2025 establishment, and official player rosters.",
   },
   {
     id: "spectator-guide",

@@ -128,11 +128,11 @@ export default function RoyalCupPage() {
             </div>
 
             <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
-              <span className="font-display text-3xl font-semibold text-forest">1928</span>
+              <span className="font-display text-3xl font-semibold text-forest">2025</span>
               <span className="mt-1 block text-xs font-semibold uppercase tracking-wider text-muted-brand">
-                Club Foundation
+                Established
               </span>
-              <span className="text-xs text-forest-interactive">Nearly a Century of Heritage</span>
+              <span className="text-xs text-forest-interactive">Abeokuta Polo Club</span>
             </div>
 
             <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
