@@ -3,6 +3,16 @@
   "framework": "nextjs",
   "buildCommand": "next build",
   "cleanUrls": true,
+  "crons": [
+    {
+      "path": "/api/cron/reminders?type=weekly",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/reminders?type=daily",
+      "schedule": "0 6 18-20 12 *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
