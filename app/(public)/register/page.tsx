@@ -867,6 +867,7 @@ export default function RegisterPage() {
             <AttendanceMilestoneWidget
               currentCount={1840}
               targetCount={2500}
+              variant="compact"
             />
           </div>
         </div>

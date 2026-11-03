@@ -249,7 +249,11 @@ export function PublicHeader() {
 
                 {/* Inline non-portalled dropdown with invisible hover bridge (Zero Shake!) */}
                 <div
-                  className={`absolute left-0 top-full pt-2 w-80 transition-all duration-150 origin-top z-50 ${
+                  className={`absolute ${
+                    category.title === "Access" || category.title === "Guide"
+                      ? "right-0"
+                      : "left-0"
+                  } top-full pt-2 w-80 transition-all duration-150 origin-top z-50 ${
                     isOpen
                       ? "opacity-100 visible translate-y-0 pointer-events-auto"
                       : "opacity-0 invisible -translate-y-2 pointer-events-none"

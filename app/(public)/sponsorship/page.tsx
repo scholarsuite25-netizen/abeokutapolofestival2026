@@ -107,10 +107,9 @@ export default function SponsorshipPage() {
                 }`}
               >
                 {tier.isPrimary && (
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full bg-gold/15 blur-3xl"
-                  />
+                  <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                    <div className="absolute -right-20 -top-20 size-80 rounded-full bg-gold/15 blur-3xl" />
+                  </div>
                 )}
 
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">

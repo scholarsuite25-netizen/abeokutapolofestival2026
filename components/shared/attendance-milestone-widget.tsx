@@ -12,12 +12,14 @@ export function AttendanceMilestoneWidget({
   holderName,
   currentCount = 1840,
   targetCount = 2500,
+  variant = "default",
   className = "",
 }: {
   passCode?: string;
   holderName?: string;
   currentCount?: number;
   targetCount?: number;
+  variant?: "default" | "compact";
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
@@ -45,13 +47,13 @@ export function AttendanceMilestoneWidget({
 
   return (
     <div className={`rounded-3xl border-2 border-gold/40 bg-forest p-6 sm:p-8 text-ivory shadow-2xl relative overflow-hidden ${className}`}>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-20 -bottom-20 size-72 rounded-full bg-gold/10 blur-3xl"
-      />
+      {/* Ambient background container securely clipped to prevent scrollWidth blowout */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -right-20 -bottom-20 size-72 rounded-full bg-gold/10 blur-3xl" />
+      </div>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ivory/15 pb-5">
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ivory/15 pb-5">
         <div>
           <Badge className="bg-gold text-forest font-bold text-[10px] mb-2">
             <Sparkles className="mr-1 size-3" /> OFFICIAL 2,500 ATTENDANCE CAMPAIGN
@@ -73,7 +75,7 @@ export function AttendanceMilestoneWidget({
       </div>
 
       {/* Progress Bar */}
-      <div className="pt-5 space-y-2">
+      <div className="relative z-10 pt-5 space-y-2">
         <div className="flex justify-between text-xs font-semibold">
           <span className="text-ivory/80 flex items-center gap-1.5">
             <Users className="size-4 text-gold" />
@@ -89,16 +91,22 @@ export function AttendanceMilestoneWidget({
         </div>
       </div>
 
-      {/* 4 Multi-Channel Attendance Acceleration Buttons */}
-      <div className="mt-6 pt-5 border-t border-ivory/15 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Multi-Channel Attendance Acceleration Buttons: Responsive to variant */}
+      <div
+        className={`relative z-10 mt-6 pt-5 border-t border-ivory/15 grid gap-3 ${
+          variant === "compact"
+            ? "grid-cols-1 sm:grid-cols-2"
+            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+        }`}
+      >
         {/* 1. WhatsApp 1-Click Viral Invite */}
         <Button
           asChild
-          className="bg-emerald-600 hover:bg-emerald-500 text-ivory font-bold shadow-md cursor-pointer text-xs h-auto py-3"
+          className="w-full min-w-0 bg-emerald-600 hover:bg-emerald-500 text-ivory font-bold shadow-md cursor-pointer text-xs h-auto py-3 px-3 text-center"
         >
-          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="mr-2 size-4" />
-            Share on WhatsApp
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 truncate">
+            <MessageCircle className="size-4 shrink-0" />
+            <span className="truncate">Share on WhatsApp</span>
           </a>
         </Button>
 
@@ -106,43 +114,49 @@ export function AttendanceMilestoneWidget({
         <Button
           onClick={() => downloadProgrammePDF()}
           variant="outline"
-          className="border-gold text-gold hover:bg-gold/15 cursor-pointer text-xs h-auto py-3 font-semibold"
+          className="w-full min-w-0 border-gold text-gold hover:bg-gold/15 cursor-pointer text-xs h-auto py-3 px-3 font-semibold text-center"
         >
-          <FileDown className="mr-2 size-4" />
-          Download Schedule PDF
+          <div className="flex items-center justify-center gap-1.5 truncate">
+            <FileDown className="size-4 shrink-0" />
+            <span className="truncate">Download Schedule PDF</span>
+          </div>
         </Button>
 
         {/* 3. Add to Phone Calendar (.ics with alarms) */}
         <Button
           onClick={() => downloadFestivalCalendar()}
           variant="outline"
-          className="border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 cursor-pointer text-xs h-auto py-3 font-semibold"
+          className="w-full min-w-0 border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 cursor-pointer text-xs h-auto py-3 px-3 font-semibold text-center"
         >
-          <Calendar className="mr-2 size-4 text-gold" />
-          Add to Phone Calendar
+          <div className="flex items-center justify-center gap-1.5 truncate">
+            <Calendar className="size-4 text-gold shrink-0" />
+            <span className="truncate">Add to Phone Calendar</span>
+          </div>
         </Button>
 
         {/* 4. Copy Invite Link */}
         <Button
           onClick={handleCopy}
           variant="ghost"
-          className="border border-ivory/20 text-ivory hover:bg-white/10 cursor-pointer text-xs h-auto py-3"
+          className="w-full min-w-0 border border-ivory/20 text-ivory hover:bg-white/10 cursor-pointer text-xs h-auto py-3 px-3 text-center"
         >
-          {copied ? (
-            <>
-              <Check className="mr-2 size-4 text-emerald-400" />
-              Invite Link Copied!
-            </>
-          ) : (
-            <>
-              <Share2 className="mr-2 size-4" />
-              Copy Referral Link
-            </>
-          )}
+          <div className="flex items-center justify-center gap-1.5 truncate">
+            {copied ? (
+              <>
+                <Check className="size-4 text-emerald-400 shrink-0" />
+                <span className="truncate">Link Copied!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="size-4 shrink-0" />
+                <span className="truncate">Copy Referral Link</span>
+              </>
+            )}
+          </div>
         </Button>
       </div>
 
-      <div className="mt-4 text-[11px] text-ivory/60 text-center">
+      <div className="relative z-10 mt-4 text-[11px] text-ivory/60 text-center">
         Every registered guest can invite family, colleagues, or delegation members. Day 1 is 100% Free Public Admission!
       </div>
     </div>

@@ -329,14 +329,14 @@ export function GalleryShowcase() {
             {/* Content Details */}
             <div className="p-5 flex flex-col flex-1 justify-between space-y-3">
               <div>
-                <div className="flex items-center gap-3 text-[11px] text-muted-brand mb-1.5">
-                  <span className="inline-flex items-center gap-1">
+                <div className="flex items-center gap-3 text-[11px] text-muted-brand mb-1.5 min-w-0">
+                  <span className="inline-flex items-center gap-1 shrink-0">
                     <Calendar className="size-3 text-gold" />
                     {item.date}
                   </span>
-                  <span className="inline-flex items-center gap-1 truncate max-w-[160px]">
-                    <MapPin className="size-3 text-gold" />
-                    {item.location.split(",")[0]}
+                  <span className="inline-flex items-center gap-1 truncate max-w-[160px] min-w-0">
+                    <MapPin className="size-3 text-gold shrink-0" />
+                    <span className="truncate min-w-0">{item.location.split(",")[0]}</span>
                   </span>
                 </div>
 
@@ -351,9 +351,9 @@ export function GalleryShowcase() {
 
               {/* Key Figures & Footer Bar */}
               <div className="border-t border-line/60 pt-3">
-                <div className="flex items-center gap-1.5 text-[11px] text-forest-interactive font-medium mb-3 truncate">
+                <div className="flex items-center gap-1.5 text-[11px] text-forest-interactive font-medium mb-3 min-w-0">
                   <Users className="size-3 text-gold shrink-0" />
-                  <span className="truncate">{item.dignitaries}</span>
+                  <span className="truncate min-w-0">{item.dignitaries}</span>
                 </div>
 
                 <div className="flex items-center justify-between">

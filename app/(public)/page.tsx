@@ -29,15 +29,11 @@ export default function HomePage() {
       {/* 1. TOP HERO SECTION WITH REGISTRATION PRIORITY & LIVE COUNTDOWN     */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-forest text-ivory">
-        {/* Ambient Radial Lights */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(198,166,107,0.3),transparent_60%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-32 -left-32 size-96 rounded-full bg-forest-interactive/40 blur-3xl"
-        />
+        {/* Ambient Radial Lights safely clipped to prevent horizontal overflow */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(198,166,107,0.3),transparent_60%)]" />
+          <div className="absolute -bottom-32 -left-32 size-96 rounded-full bg-forest-interactive/40 blur-3xl" />
+        </div>
 
         {/* 2025 Foundation Watermark */}
         <div
@@ -93,8 +89,11 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Quick Hero Video Trigger & Links */}
+              {/* Quick Hero Actions: Immediate Registration & Video */}
               <div className="flex flex-wrap items-center gap-3 pt-3">
+                <Button asChild className="bg-gold font-bold text-forest hover:bg-gold/90 text-xs shadow-md py-4 px-4">
+                  <Link href="/register">Register Gate Pass (Free Day 1) →</Link>
+                </Button>
                 <FestivalVideoModal
                   triggerText="Watch Official Teaser"
                   triggerVariant="outline"
@@ -107,19 +106,15 @@ export default function HomePage() {
             </div>
 
             {/* ───────────────────────────────────────────────────────────── */}
-            {/* PRIORITY REGISTRATION COCKPIT & LIVE COUNTDOWN AT TOP         */}
+            {/* PRIORITY REGISTRATION COCKPIT (MOVED UPWARD) & LIVE COUNTDOWN */}
             {/* ───────────────────────────────────────────────────────────── */}
             <div className="lg:col-span-5 rounded-3xl border-2 border-gold/50 bg-forest-deep/95 p-6 sm:p-7 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-5">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-gold/15 blur-2xl"
-              />
+              <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                <div className="absolute -right-12 -top-12 size-40 rounded-full bg-gold/15 blur-2xl" />
+              </div>
 
-              {/* Live Countdown Component */}
-              <FestivalCountdown variant="full" />
-
-              {/* Registration Direct CTA Card */}
-              <div className="rounded-2xl border border-gold/30 bg-forest/80 p-5 space-y-3 shadow-inner">
+              {/* 1. REGISTRATION MODULE MOVED TO TOP OF COCKPIT */}
+              <div className="relative z-10 rounded-2xl border border-gold/40 bg-forest/85 p-5 space-y-3.5 shadow-inner">
                 <div className="flex items-center justify-between">
                   <Badge className="bg-gold text-forest font-bold text-[10px]">
                     <Ticket className="mr-1 size-3" /> OFFICIAL GATE ACCREDITATION
@@ -131,45 +126,116 @@ export default function HomePage() {
                   <h3 className="font-display text-lg font-semibold text-ivory">
                     Register for Your Festival Gate Pass
                   </h3>
-                  <p className="text-xs text-ivory/70 mt-1">
-                    State individual attendance, host member, or corporate delegation. Pass drops directly onto your phone for offline turnstile access.
+                  <p className="text-xs text-ivory/70 mt-1 leading-relaxed">
+                    Complimentary Day 1 public access, member invitation, or corporate delegation pass. Delivered immediately to your phone for offline turnstile scan.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-center text-[10px] pt-1">
-                  <div className="rounded bg-emerald-950/80 p-2 border border-emerald-500/40 text-emerald-300">
-                    <span className="block font-bold">Day 1 (Fri 18)</span>
-                    <span className="text-[9px] text-ivory/80">FREE ENTRY</span>
+                <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] pt-1">
+                  <div className="rounded bg-emerald-950/80 p-1.5 border border-emerald-500/40 text-emerald-300 min-w-0">
+                    <span className="block font-bold truncate">Day 1 (Fri 18)</span>
+                    <span className="text-[9px] text-ivory/80 block truncate">FREE ENTRY</span>
                   </div>
-                  <div className="rounded bg-amber-950/80 p-2 border border-amber-500/40 text-amber-300">
-                    <span className="block font-bold">Day 2 (Sat 19)</span>
-                    <span className="text-[9px] text-ivory/80">THROUGH TICKET</span>
+                  <div className="rounded bg-amber-950/80 p-1.5 border border-amber-500/40 text-amber-300 min-w-0">
+                    <span className="block font-bold truncate">Day 2 (Sat 19)</span>
+                    <span className="text-[9px] text-ivory/80 block truncate">THROUGH TICKET</span>
                   </div>
-                  <div className="rounded bg-amber-950/80 p-2 border border-amber-500/40 text-amber-300">
-                    <span className="block font-bold">Day 3 (Sun 20)</span>
-                    <span className="text-[9px] text-ivory/80">THROUGH TICKET</span>
+                  <div className="rounded bg-amber-950/80 p-1.5 border border-amber-500/40 text-amber-300 min-w-0">
+                    <span className="block font-bold truncate">Day 3 (Sun 20)</span>
+                    <span className="text-[9px] text-ivory/80 block truncate">THROUGH TICKET</span>
                   </div>
                 </div>
 
-                <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+                {/* Un-cramped side-by-side or stacked grid with min-w-0 (Zero Overflow) */}
+                <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <Button
                     asChild
                     size="lg"
-                    className="w-full bg-gold font-bold text-forest hover:bg-gold/90 shadow-md text-sm py-5"
+                    className="w-full min-w-0 bg-gold font-bold text-forest hover:bg-gold/90 shadow-md text-xs sm:text-sm py-4 px-2 text-center"
                   >
-                    <Link href="/register">
-                      Register Gate Pass Now →
+                    <Link href="/register" className="truncate">
+                      Register Pass Now →
                     </Link>
                   </Button>
                   <Button
                     asChild
                     size="lg"
                     variant="outline"
-                    className="w-full border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 text-xs py-5"
+                    className="w-full min-w-0 border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 text-xs py-4 px-2 text-center"
                   >
-                    <Link href="/pass/lookup">Look Up Pass</Link>
+                    <Link href="/pass/lookup" className="truncate">Look Up Pass</Link>
                   </Button>
                 </div>
+              </div>
+
+              {/* 2. LIVE COUNTDOWN COMPONENT IMMEDIATELY BELOW REGISTRATION */}
+              <div className="relative z-10 pt-1">
+                <FestivalCountdown variant="full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 2. OFFICIAL ACCREDITATION & GATE PASS MODULE (MOVED UPWARD)         */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <section className="bg-ivory py-14 border-b border-line">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-3xl bg-forest-deep p-8 text-ivory shadow-2xl sm:p-12 lg:p-14">
+            <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="absolute -right-20 -bottom-20 size-96 rounded-full bg-gold/10 blur-3xl" />
+            </div>
+
+            <div className="relative z-10 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
+              <div className="max-w-2xl space-y-2">
+                <Badge variant="outline" className="border-gold/50 bg-gold/10 text-gold uppercase tracking-widest text-[11px]">
+                  Official Gate Accreditation · 18–20 December 2026
+                </Badge>
+                <h2 className="font-display text-3xl font-semibold text-ivory sm:text-4xl">
+                  Obtain Your Digital Access Card
+                </h2>
+                <p className="text-sm sm:text-base text-ivory/80 leading-relaxed">
+                  Day 1 is 100% Free Public Admission. Day 2 &amp; Day 3 admission is Through Ticket. Your unique pass code and offline QR turnstile badge are delivered immediately upon registration and permanently pinned to your browser.
+                </p>
+
+                <div className="pt-3 flex flex-wrap items-center gap-6 text-xs text-gold">
+                  <span className="flex items-center gap-1.5">
+                    <Phone className="size-3.5" />
+                    Helpline: +234 818 188 8884
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Phone className="size-3.5" />
+                    0803 681 8916
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Users className="size-3.5" />
+                    @abeokuta_polofestival
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col shrink-0 w-full sm:w-auto">
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-gold font-bold text-forest-deep shadow hover:bg-gold/90 text-sm py-5 px-6"
+                >
+                  <Link href="/register">Register For Gate Pass</Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-ivory/30 bg-transparent text-ivory hover:bg-ivory/10 hover:text-ivory text-xs"
+                >
+                  <Link href="/pass/lookup">Retrieve My Digital Pass</Link>
+                </Button>
+                <EnquiryDialog
+                  title="Festival Secretariat Inquiries"
+                  triggerText="Secretariat & Protocol Inquiries"
+                  variant="outline"
+                  className="border-ivory/20 bg-transparent text-ivory/80 hover:bg-ivory/10 hover:text-ivory text-xs"
+                />
               </div>
             </div>
           </div>
@@ -608,29 +674,28 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 7. PRE-FOOTER INQUIRY & REGISTRATION INVITATION                     */}
+      {/* 7. PRE-FOOTER PROTOCOL ASSISTANCE & SECRETARIAT INQUIRIES           */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="bg-ivory py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="relative overflow-hidden rounded-3xl bg-forest-deep p-8 text-ivory shadow-2xl sm:p-12 lg:p-16">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-20 -bottom-20 size-96 rounded-full bg-gold/10 blur-3xl"
-            />
+            <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="absolute -right-20 -bottom-20 size-96 rounded-full bg-gold/10 blur-3xl" />
+            </div>
 
             <div className="relative z-10 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
-              <div className="max-w-2xl">
+              <div className="max-w-2xl space-y-2">
                 <Badge variant="outline" className="border-gold/50 bg-gold/10 text-gold uppercase tracking-widest text-[11px]">
-                  Official Accreditation · 18–20 December 2026
+                  Festival Secretariat &amp; Delegate Protocol
                 </Badge>
-                <h2 className="mt-4 font-display text-3xl font-semibold text-ivory sm:text-4xl">
-                  Obtain Your Digital Access Card
+                <h2 className="font-display text-3xl font-semibold text-ivory sm:text-4xl">
+                  Connect With The Secretariat
                 </h2>
-                <p className="mt-3 text-base text-ivory/80">
-                  Day 1 is 100% Free Public Admission. Day 2 &amp; Day 3 admission is Through Ticket. Your pass code and QR card are generated immediately and saved to your phone.
+                <p className="text-sm sm:text-base text-ivory/80 leading-relaxed">
+                  For VIP enclosure allocations, corporate delegations, media accreditation, or hotel hospitality concierge assistance during the festival.
                 </p>
 
-                <div className="mt-6 flex flex-wrap items-center gap-6 text-xs text-gold">
+                <div className="pt-3 flex flex-wrap items-center gap-6 text-xs text-gold">
                   <span className="flex items-center gap-1.5">
                     <Phone className="size-3.5" />
                     Helpline: +234 818 188 8884
@@ -647,19 +712,19 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row lg:flex-col shrink-0 w-full sm:w-auto">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-gold font-bold text-forest-deep shadow hover:bg-gold/90 text-sm"
-                >
-                  <Link href="/register">Register For Gate Pass</Link>
-                </Button>
                 <EnquiryDialog
                   title="Festival Secretariat Inquiries"
                   triggerText="Secretariat & Protocol Inquiries"
-                  variant="outline"
-                  className="border-ivory/30 bg-transparent text-ivory hover:bg-ivory/10 hover:text-ivory text-xs"
+                  variant="default"
+                  className="bg-gold font-bold text-forest-deep shadow hover:bg-gold/90 text-sm py-4 px-6"
                 />
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-ivory/30 bg-transparent text-ivory hover:bg-ivory/10 hover:text-ivory text-xs py-4 px-6"
+                >
+                  <Link href="/register">Register For Gate Pass →</Link>
+                </Button>
               </div>
             </div>
           </div>

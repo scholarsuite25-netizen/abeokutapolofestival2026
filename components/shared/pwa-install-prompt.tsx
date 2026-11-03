@@ -135,7 +135,7 @@ export function PWAInstallPrompt() {
   return (
     <aside
       aria-label="Festival App Installation and Notification Prompt"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 animate-in fade-in slide-in-from-bottom-5 duration-300"
+      className="fixed bottom-4 left-4 right-4 sm:right-auto sm:left-6 sm:max-w-md z-40 animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
       <div className="rounded-2xl border-2 border-gold/60 bg-forest-deep/95 p-4 sm:p-5 text-ivory shadow-2xl backdrop-blur-xl relative">
         <button
