@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Camera } from "lucide-react";
+import { Camera, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { FestivalVideoPlayer } from "@/components/shared/festival-video-player";
 
 export const metadata = {
   title: "Media Gallery & Archives — 2026 Abeokuta Polo Festival",
@@ -50,6 +51,31 @@ export default function GalleryPage() {
           <p className="mt-4 max-w-2xl text-base text-ivory/80 sm:text-lg">
             Capturing the speed, majesty, and sovereign tradition of the Abeokuta Polo Club.
           </p>
+        </div>
+      </section>
+
+      {/* Official Teaser Section */}
+      <section className="bg-forest-deep py-12 border-b border-gold/30">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <Badge className="bg-gold text-forest font-bold text-[10px] mb-2">
+                <Film className="mr-1 size-3" /> OFFICIAL 2026 TRAILER
+              </Badge>
+              <h2 className="font-display text-2xl sm:text-3xl font-semibold text-ivory">
+                The Blueprint — Official Teaser
+              </h2>
+            </div>
+            <p className="text-xs text-ivory/70 max-w-md">
+              A cinematic look into the tournament chukkas, heritage grounds, and cultural spectacles scheduled for 18–20 December 2026.
+            </p>
+          </div>
+          <FestivalVideoPlayer
+            src="/videos/abeokuta-polo-trailer.mp4"
+            autoPlay={false}
+            muted={false}
+            className="w-full shadow-2xl"
+          />
         </div>
       </section>
 

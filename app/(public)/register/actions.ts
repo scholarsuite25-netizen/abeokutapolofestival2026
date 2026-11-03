@@ -12,7 +12,7 @@ const registrationSchema = z.object({
   lastName: z.string().trim().min(2, "Last name must be at least 2 characters."),
   email: z.string().trim().email("Please provide a valid email address."),
   phone: z.string().trim().min(7, "Please provide a valid phone number."),
-  groupSize: z.coerce.number().int().min(1).max(5).default(1),
+  groupSize: z.coerce.number().int().min(1).max(25).default(1),
   affiliationType: z.enum(["individual", "guest_of", "corporate"]).default("individual"),
   hostName: z.string().trim().optional(),
   organization: z.string().trim().optional(),
@@ -20,6 +20,9 @@ const registrationSchema = z.object({
   hasDay3Ticket: z.boolean().default(false),
   day2TicketRef: z.string().trim().optional(),
   day3TicketRef: z.string().trim().optional(),
+  sendEmailReminders: z.boolean().default(true),
+  sendWhatsappReminders: z.boolean().default(true),
+  reminderCadence: z.enum(["weekly_and_daily", "weekly_only", "event_week_only"]).default("weekly_and_daily"),
 });
 
 export interface RegisterResult {
@@ -232,43 +235,72 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       ? `Corporate Delegation: ${organization}`
       : "Individual Attendee";
 
-  // Send confirmation email with pass details & 3-day admission rules
+  // Send confirmation email with pass details, PDF schedule download link & 3-day admission rules
   try {
     await sendEmail({
       to: email,
       subject: `Your Gate Access Card: 2026 Abeokuta Polo Festival (${passCode})`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #111827; background-color: #FAF9F5; border-radius: 12px; border: 1px solid #DCD5C2;">
-          <div style="background-color: #062D1D; padding: 20px; border-radius: 8px; text-align: center; color: #FAF9F5;">
-            <p style="color: #DFBE75; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0;">Official Digital Access Card</p>
-            <h1 style="margin: 0; font-size: 24px; font-weight: 600;">2026 Abeokuta Polo Festival</h1>
-            <p style="margin: 6px 0 0 0; font-size: 13px; color: #DCD5C2;">18–20 December 2026 · Abeokuta Polo Club Grounds</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #111827; background-color: #FAF9F5; border-radius: 16px; border: 1px solid #DCD5C2;">
+          <div style="background-color: #062D1D; padding: 24px; border-radius: 12px; text-align: center; color: #FAF9F5;">
+            <p style="color: #DFBE75; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0; font-weight: bold;">Official Gate Access Pass & Schedule</p>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 700;">Abeokuta Polo Festival 2026</h1>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #DFBE75; font-style: italic;">The Blueprint — Building the Future from Our Heritage</p>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #DCD5C2;">18–20 December 2026 · Abeokuta Polo Club & Country Resort, Ogun State</p>
           </div>
           <div style="padding: 24px 0;">
-            <p style="font-size: 16px; margin: 0 0 12px 0;">Dear <strong>${holderName}</strong>,</p>
+            <p style="font-size: 15px; margin: 0 0 12px 0;">Dear <strong>${holderName}</strong>,</p>
             <p style="font-size: 14px; line-height: 1.6; color: #414843;">
-              Your digital access card for the 2026 Abeokuta Polo Festival has been issued and stored.
+              Your digital gate access card for the <strong>2026 Abeokuta Polo Festival</strong> has been successfully issued. Keep this email or download your offline card for gate entry.
             </p>
-            <div style="background-color: #FFFFFF; border: 2px dashed #062D1D; border-radius: 8px; padding: 18px; margin: 20px 0; text-align: center;">
-              <p style="color: #795910; font-size: 11px; text-transform: uppercase; font-weight: 700; margin: 0;">Pass Code / Ref</p>
-              <h2 style="font-size: 26px; color: #062D1D; margin: 6px 0; letter-spacing: 0.1em; font-family: monospace;">${passCode}</h2>
-              <p style="color: #414843; font-size: 13px; margin: 0;">Category: <strong>${category}</strong></p>
+
+            <!-- Digital Pass Card Box -->
+            <div style="background-color: #FFFFFF; border: 2px dashed #062D1D; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
+              <p style="color: #795910; font-size: 11px; text-transform: uppercase; font-weight: 700; margin: 0; letter-spacing: 0.1em;">Pass Reference Code</p>
+              <h2 style="font-size: 28px; color: #062D1D; margin: 6px 0; letter-spacing: 0.12em; font-family: monospace; font-weight: 800;">${passCode}</h2>
+              <p style="color: #414843; font-size: 13px; margin: 4px 0 0 0;">Category: <strong>${category}</strong></p>
               <p style="color: #795910; font-size: 12px; margin: 4px 0 0 0; font-weight: 600;">${affiliationDisplay}</p>
-              <p style="color: #414843; font-size: 12px; margin: 4px 0 0 0;">Access: <strong>Festival Grounds & Grandstand</strong></p>
+              <p style="color: #414843; font-size: 12px; margin: 4px 0 0 0;">Entitlement: <strong>Festival Grounds & Grandstand</strong></p>
             </div>
 
-            <div style="background-color: #F4F4F0; border-radius: 8px; padding: 16px; font-size: 13px; color: #414843; margin-bottom: 16px;">
-              <p style="margin: 0 0 8px 0; font-weight: 700; color: #062D1D;">Tournament Admission Schedule:</p>
-              <ul style="margin: 0; padding-left: 18px; line-height: 1.6;">
-                <li><strong>Day 1 (Friday 18 Dec):</strong> <span style="color: #065F46; font-weight: bold;">FREE PUBLIC ADMISSION</span> — Present this pass code / QR at turnstiles for complimentary entry.</li>
-                <li><strong>Day 2 (Saturday 19 Dec):</strong> <span style="color: #92400E; font-weight: bold;">THROUGH TICKET</span> — Admission requires an authorized tournament ticket.</li>
-                <li><strong>Day 3 (Sunday 20 Dec):</strong> <span style="color: #92400E; font-weight: bold;">THROUGH TICKET</span> — Admission requires an authorized tournament ticket for the Royal Cup Finals.</li>
+            <!-- Download Official PDF Schedule CTA -->
+            <div style="background-color: #062D1D; border-radius: 12px; padding: 18px; margin: 20px 0; text-align: center; color: #FAF9F5;">
+              <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #DFBE75;">Official 3-Day Festival Programme (PDF)</p>
+              <p style="margin: 0 0 14px 0; font-size: 12px; color: #FAF9F5; opacity: 0.9;">
+                Download the beautifully designed 3-day itinerary covering all ceremonial events, royal matches, foundation-layings, debate, sip & paint, and ARISTOS BAND performances.
+              </p>
+              <a href="https://abeokuta-polo-festival-2026.vercel.app/api/programme/pdf" style="display: inline-block; background-color: #DFBE75; color: #062D1D; padding: 10px 22px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">
+                📄 Download Official PDF Programme
+              </a>
+            </div>
+
+            <!-- Daily Schedule Breakdown -->
+            <div style="background-color: #F4F4F0; border-radius: 12px; padding: 18px; font-size: 12.5px; color: #414843; margin-bottom: 20px; line-height: 1.55;">
+              <p style="margin: 0 0 10px 0; font-weight: 700; color: #062D1D; font-size: 13px;">Tournament Schedule & Admission Rules:</p>
+              <ul style="margin: 0; padding-left: 18px;">
+                <li style="margin-bottom: 8px;">
+                  <strong style="color: #065F46;">Day 1: Friday 18 Dec (100% FREE PUBLIC ADMISSION)</strong><br />
+                  <span>MEDIA, TOUR & FESTIVAL LIGHT-UP: 10:00 AM Press Conference & Media Tour; Evening Festival Light-Up Ceremony & Welcome Dinner.</span>
+                </li>
+                <li style="margin-bottom: 8px;">
+                  <strong style="color: #92400E;">Day 2: Saturday 19 Dec (THROUGH TICKET)</strong><br />
+                  <span>ROYAL OPENING & POLO: 12:00 NOON Opening by HRM Oba Dr. Michael Aremu Gbadebo CFR, Opening of Market Square, 3 Foundation-Layings (Trauma Centre, Complex, 500-Horse Stable), Queens Polo Match, Literary Debate, Poetry, Sip & Paint, DJ & Evening Polo.</span>
+                </li>
+                <li>
+                  <strong style="color: #92400E;">Day 3: Sunday 20 Dec (THROUGH TICKET)</strong><br />
+                  <span>THE GRAND FINALE: 12:00 NOON Royal Cup Final & Queens Cup Final, Presidential Address by Dr. Sheriff Adams Abdulrahman, ARISTOS BAND performances, Celebrating the 100 Kings (ONE FIELD, ONE LEGACY), Headline concert by BERRYOLA.</span>
+                </li>
               </ul>
+            </div>
+
+            <!-- Automated Reminders Notice -->
+            <div style="background-color: #ECFDF5; border: 1px solid #6EE7B7; border-radius: 8px; padding: 12px; font-size: 12px; color: #065F46;">
+              <strong>🔔 Automated Event Reminders:</strong> You are subscribed to weekly countdown updates and daily tournament notifications via email and WhatsApp helpline (+234 818 188 8884) to keep you fully informed.
             </div>
           </div>
           <div style="text-align: center; font-size: 11px; color: #707973; border-top: 1px solid #DCD5C2; padding-top: 16px;">
-            Abeokuta Polo Club · Kobape Expressway, Abeokuta, Ogun State, Nigeria<br />
-            Keep this pass handy on your smartphone at the gate.
+            Abeokuta Polo Club & Country Resort · Kobape Expressway, Abeokuta, Ogun State, Nigeria<br />
+            &ldquo;WHERE ROYALTY MEETS SPORT. WHERE CULTURE MEETS EXCELLENCE. WHERE HERITAGE INSPIRES THE FUTURE.&rdquo;
           </div>
         </div>
       `,

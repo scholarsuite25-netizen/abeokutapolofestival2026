@@ -17,6 +17,9 @@ import {
   Ticket,
   ExternalLink,
   RotateCcw,
+  FileDown,
+  Calendar,
+  Film,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +40,10 @@ import {
   forceDownloadOfflinePassCard,
   type StoredPass,
 } from "@/lib/storage/pass-storage";
+import { downloadProgrammePDF } from "@/lib/pdf/programme-pdf";
+import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
+import { AttendanceMilestoneWidget } from "@/components/shared/attendance-milestone-widget";
+import { FestivalVideoPlayer } from "@/components/shared/festival-video-player";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -59,6 +66,9 @@ export default function RegisterPage() {
     day2TicketRef: "",
     hasDay3Ticket: false,
     day3TicketRef: "",
+    sendEmailReminders: true,
+    sendWhatsappReminders: true,
+    reminderCadence: "weekly_and_daily" as "weekly_and_daily" | "weekly_only" | "event_week_only",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,6 +89,9 @@ export default function RegisterPage() {
       day2TicketRef: formData.day2TicketRef,
       hasDay3Ticket: formData.hasDay3Ticket,
       day3TicketRef: formData.day3TicketRef,
+      sendEmailReminders: formData.sendEmailReminders,
+      sendWhatsappReminders: formData.sendWhatsappReminders,
+      reminderCadence: formData.reminderCadence,
     });
 
     setLoading(false);
@@ -186,34 +199,54 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Admission Policy Highlights */}
-        <div className="mb-8 rounded-2xl border border-line bg-card p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck className="size-5 text-forest shrink-0" />
-            <h3 className="font-display text-base font-semibold text-forest">
-              Tournament Admission &amp; Attendance Rules (18–20 Dec 2026)
-            </h3>
+        {/* Admission Policy Highlights & Programme PDF Download CTA */}
+        <div className="mb-8 rounded-2xl border border-line bg-card p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="size-5 text-forest shrink-0" />
+              <h3 className="font-display text-base font-semibold text-forest">
+                Tournament Admission &amp; Attendance Rules (18–20 Dec 2026)
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => downloadProgrammePDF()}
+                className="bg-gold font-bold text-forest hover:bg-gold/90 text-xs cursor-pointer shadow-sm"
+              >
+                <FileDown className="mr-1.5 size-3.5" /> Download Schedule PDF
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => downloadFestivalCalendar()}
+                className="border-line text-forest text-xs cursor-pointer hover:bg-sage/40"
+              >
+                <Calendar className="mr-1.5 size-3.5 text-gold-deep" /> Add to Calendar
+              </Button>
+            </div>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/60 p-3.5 text-emerald-900">
               <Badge className="bg-emerald-700 text-ivory text-[10px] mb-1 font-bold">100% FREE ENTRY</Badge>
               <h4 className="font-semibold text-sm text-emerald-950">Day 1: Friday 18 Dec</h4>
               <p className="text-[11px] text-emerald-800 mt-1">
-                Complimentary public admission for all registered participants. Simply show your digital access card at the gate turnstiles.
+                Complimentary public admission for all registered participants. Media Tour, Light-Up Ceremony &amp; Welcome Dinner.
               </p>
             </div>
             <div className="rounded-xl border border-amber-500/30 bg-amber-50/60 p-3.5 text-amber-900">
               <Badge className="bg-amber-700 text-ivory text-[10px] mb-1 font-bold">THROUGH TICKET</Badge>
               <h4 className="font-semibold text-sm text-amber-950">Day 2: Saturday 19 Dec</h4>
               <p className="text-[11px] text-amber-800 mt-1">
-                Semi-Finals &amp; Polo Derby Day. Gate admission is strictly through ticket. You can link your ticket below or present it at turnstiles.
+                Royal Opening by HRM Oba Dr. Michael Aremu Gbadebo CFR, 3 Foundation-Layings, Queens Polo, Debate, Sip &amp; Paint.
               </p>
             </div>
             <div className="rounded-xl border border-amber-500/30 bg-amber-50/60 p-3.5 text-amber-900">
               <Badge className="bg-amber-700 text-ivory text-[10px] mb-1 font-bold">THROUGH TICKET</Badge>
               <h4 className="font-semibold text-sm text-amber-950">Day 3: Sunday 20 Dec</h4>
               <p className="text-[11px] text-amber-800 mt-1">
-                Royal Grand Finals &amp; Trophy Presentation. Gate admission is strictly through ticket. Check in with your digital pass &amp; ticket.
+                Grand Finale: Royal Cup Final, Queens Cup Final, 100 Kings Celebration, ARISTOS BAND &amp; BERRYOLA headline.
               </p>
             </div>
           </div>
@@ -250,7 +283,7 @@ export default function RegisterPage() {
                   <div className="rounded-xl border border-emerald-500/40 bg-emerald-50 p-3 text-xs text-emerald-900 flex items-center justify-center gap-2">
                     <Download className="size-4 text-emerald-700 shrink-0" />
                     <span>
-                      <strong>Downloaded to your phone:</strong> An offline pass card file (<code>Abeokuta_Polo_Pass_{result.passCode}.html</code>) has been saved to your downloads for offline gate entry.
+                      <strong>Downloaded to your phone:</strong> An offline pass card file (<code>Abeokuta_Polo_Pass_{result.passCode}.html</code>) has been saved for offline gate entry.
                     </span>
                   </div>
                 )}
@@ -327,41 +360,53 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
+                {/* 2,500 Attendance Accelerator Widget & WhatsApp Share */}
+                <AttendanceMilestoneWidget
+                  passCode={result.passCode}
+                  holderName={result.holderName || formData.firstName}
+                  currentCount={1840}
+                  targetCount={2500}
+                />
+
+                {/* Registration Confirmation Video Teaser */}
+                <div className="rounded-2xl border border-line bg-card p-5 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-forest flex items-center gap-1.5">
+                      <Film className="size-4 text-gold" /> Watch Official Festival Teaser
+                    </span>
+                    <Badge variant="outline" className="border-gold/50 bg-gold/10 text-forest text-[10px]">
+                      Tournament Preview
+                    </Badge>
+                  </div>
+                  <FestivalVideoPlayer
+                    src="/videos/abeokuta-polo-trailer.mp4"
+                    autoPlay={true}
+                    muted={true}
+                    loop={true}
+                    className="w-full"
+                    title="Abeokuta Polo Festival 2026 — Official Teaser Trailer"
+                  />
+                  <p className="text-center text-[11px] text-muted-brand">
+                    Get ready for three historic days of royalty, equestrian distinction, and celebration in Abeokuta.
+                  </p>
+                </div>
+
                 {/* Actions */}
-                <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
+                <div className="pt-2 flex flex-col sm:flex-row justify-center gap-2.5">
                   {result.passCode ? (
                     <Button asChild className="bg-forest text-ivory hover:bg-forest-interactive">
                       <Link href={`/pass/${result.passCode}`} target="_blank">
-                        <Printer className="mr-2 size-4" /> Open Full Access Card &amp; Print
+                        <Printer className="mr-2 size-4" /> Open Full Card &amp; Print
                       </Link>
                     </Button>
                   ) : null}
 
                   <Button
-                    onClick={() => {
-                      if (result.passCode) {
-                        const passData: StoredPass = {
-                          passCode: result.passCode,
-                          holderName: result.holderName || `${formData.firstName} ${formData.lastName}`.trim(),
-                          category: result.category || affiliationLabel,
-                          affiliationType: formData.affiliationType,
-                          hostName: formData.hostName || null,
-                          organization: formData.organization || null,
-                          email: formData.email,
-                          phone: formData.phone,
-                          qrToken: result.qrToken,
-                          registeredAt: new Date().toISOString(),
-                          day1Status: "free_admitted",
-                          day2Status: formData.hasDay2Ticket ? "ticket_verified" : "ticket_required",
-                          day3Status: formData.hasDay3Ticket ? "ticket_verified" : "ticket_required",
-                        };
-                        forceDownloadOfflinePassCard(passData);
-                      }
-                    }}
+                    onClick={() => downloadProgrammePDF()}
                     variant="outline"
                     className="border-gold text-forest hover:bg-gold/10"
                   >
-                    <Download className="mr-2 size-4" /> Re-Download Pass File
+                    <FileDown className="mr-2 size-4 text-gold-deep" /> Download Schedule PDF
                   </Button>
 
                   <Button
@@ -445,7 +490,7 @@ export default function RegisterPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="phone" className="text-xs font-semibold text-forest">
-                      Mobile Phone Number *
+                      Mobile Phone Number * (For WhatsApp Reminders)
                     </Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 size-4 text-muted-brand" />
@@ -466,7 +511,7 @@ export default function RegisterPage() {
 
                 {/* Guest Affiliation / Category Section */}
                 <h2 className="font-display text-xl font-semibold text-forest border-b border-line pt-2 pb-3">
-                  2. Attendance &amp; Guest Affiliation
+                  2. Attendance &amp; Delegation Affiliation
                 </h2>
 
                 <div className="space-y-4">
@@ -541,10 +586,10 @@ export default function RegisterPage() {
                     </div>
                   )}
 
-                  {/* Group Count */}
+                  {/* Batch Delegation / Group Count (Supporting up to 25 passes) */}
                   <div className="space-y-1.5 pt-2">
                     <Label className="text-xs font-semibold text-forest">
-                      Additional Accompanying Passes
+                      Accompanying Delegation Passes (Invite Friends &amp; Colleagues)
                     </Label>
                     <Select
                       value={formData.groupCount}
@@ -561,8 +606,14 @@ export default function RegisterPage() {
                         <SelectItem value="2">+2 Accompanying Guests (3 Passes)</SelectItem>
                         <SelectItem value="3">+3 Accompanying Guests (4 Passes)</SelectItem>
                         <SelectItem value="4">+4 Accompanying Guests (5 Passes)</SelectItem>
+                        <SelectItem value="9">+9 Corporate Delegation (10 Passes)</SelectItem>
+                        <SelectItem value="14">+14 Corporate Delegation (15 Passes)</SelectItem>
+                        <SelectItem value="24">+24 Corporate / VIP Delegation (25 Passes)</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-muted-brand">
+                      Helps reach the 2,500 attendance goal. Complimentary passes are automatically extended to your accompanying delegation.
+                    </p>
                   </div>
                 </div>
 
@@ -655,6 +706,74 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
+                {/* 4. Automated Event Reminders (Email & WhatsApp) */}
+                <h2 className="font-display text-xl font-semibold text-forest border-b border-line pt-2 pb-3">
+                  4. Automated Event Reminders (Email &amp; WhatsApp)
+                </h2>
+
+                <div className="rounded-xl border border-line bg-sage/30 p-4 space-y-3 text-xs">
+                  <p className="text-muted-brand">
+                    Stay on schedule. Receive countdown alerts, match times, and gate entry reminders directly on your phone.
+                  </p>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.sendEmailReminders}
+                        onChange={(e) =>
+                          setFormData({ ...formData, sendEmailReminders: e.target.checked })
+                        }
+                        className="size-4 rounded border-line text-forest focus:ring-forest"
+                      />
+                      <span className="font-semibold text-forest">
+                        Email Reminders (Weekly countdown &amp; schedule alerts)
+                      </span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.sendWhatsappReminders}
+                        onChange={(e) =>
+                          setFormData({ ...formData, sendWhatsappReminders: e.target.checked })
+                        }
+                        className="size-4 rounded border-line text-forest focus:ring-forest"
+                      />
+                      <span className="font-semibold text-forest">
+                        WhatsApp Updates (Tournament highlights &amp; gate alerts)
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="pt-2">
+                    <Label className="text-[11px] text-forest font-semibold block mb-1">
+                      Reminder Cadence:
+                    </Label>
+                    <Select
+                      value={formData.reminderCadence}
+                      onValueChange={(val: "weekly_and_daily" | "weekly_only" | "event_week_only") =>
+                        setFormData({ ...formData, reminderCadence: val })
+                      }
+                    >
+                      <SelectTrigger className="bg-ivory text-xs">
+                        <SelectValue placeholder="Select cadence" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly_and_daily">
+                          Weekly Countdown + Daily Event Alerts (Recommended)
+                        </SelectItem>
+                        <SelectItem value="weekly_only">
+                          Weekly Countdown Only
+                        </SelectItem>
+                        <SelectItem value="event_week_only">
+                          Tournament Week Daily Alerts Only
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="pt-4 border-t border-line">
                   <Button
                     type="submit"
@@ -664,7 +783,7 @@ export default function RegisterPage() {
                     {loading ? "Generating & Saving Access Card..." : "Complete Registration & Get Access Card →"}
                   </Button>
                   <p className="text-center text-[11px] text-muted-brand mt-2">
-                    Your digital pass will be saved automatically to your phone for offline turnstile presentation.
+                    Your digital pass and official PDF schedule are delivered immediately for offline turnstile access.
                   </p>
                 </div>
               </form>
@@ -744,34 +863,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Attendance Protocol Info */}
-            <div className="rounded-2xl border border-line bg-sage/30 p-6 space-y-3 text-xs text-forest-deep">
-              <h4 className="font-display text-sm font-semibold text-forest">
-                Gate Entry &amp; Turnstile Protocol
-              </h4>
-              <ul className="space-y-2 list-disc pl-4 text-muted-brand">
-                <li>
-                  <strong className="text-forest">Show at the Gate:</strong> Present your digital pass on your smartphone. The offline pass works even without cell signal.
-                </li>
-                <li>
-                  <strong className="text-forest">Day 1 Free:</strong> Friday 18 Dec is completely free for all registered guests.
-                </li>
-                <li>
-                  <strong className="text-forest">Day 2 &amp; Day 3 Through Ticket:</strong> Saturday and Sunday require valid tournament tickets along with your access card.
-                </li>
-                <li>
-                  <strong className="text-forest">Daily Scan:</strong> Gate attendants scan your pass QR code on each day you attend to log attendance.
-                </li>
-              </ul>
-              <div className="pt-2 border-t border-line/60">
-                <Link
-                  href="/pass/lookup"
-                  className="font-semibold text-forest hover:text-gold-deep inline-flex items-center gap-1"
-                >
-                  Already registered? Look up your existing Access Card →
-                </Link>
-              </div>
-            </div>
+            {/* Attendance Milestone Campaign Card on Side */}
+            <AttendanceMilestoneWidget
+              currentCount={1840}
+              targetCount={2500}
+            />
           </div>
         </div>
       </div>

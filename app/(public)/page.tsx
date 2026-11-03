@@ -8,21 +8,25 @@ import {
   Sparkles,
   Users,
   Wine,
-  Flame,
-  Theater,
   Phone,
-  ShieldCheck,
+  Ticket,
+  Music,
+  Film,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FAQAccordion } from "@/components/design/public/faq-accordion";
 import { EnquiryDialog } from "@/components/design/public/enquiry-dialog";
+import { FestivalCountdown } from "@/components/shared/festival-countdown";
+import { FestivalVideoPlayer, FestivalVideoModal } from "@/components/shared/festival-video-player";
+import { AttendanceMilestoneWidget } from "@/components/shared/attendance-milestone-widget";
+import { FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export default function HomePage() {
   return (
     <div className="flex w-full flex-col bg-ivory text-ink">
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 1. HERO SECTION (Dark Heritage Forest Atmosphere)                   */}
+      {/* 1. TOP HERO SECTION WITH REGISTRATION PRIORITY & LIVE COUNTDOWN     */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-forest text-ivory">
         {/* Ambient Radial Lights */}
@@ -35,7 +39,7 @@ export default function HomePage() {
           className="pointer-events-none absolute -bottom-32 -left-32 size-96 rounded-full bg-forest-interactive/40 blur-3xl"
         />
 
-        {/* 1928 Club Foundation Watermark */}
+        {/* 1928 Foundation Watermark */}
         <div
           aria-hidden
           className="pointer-events-none absolute bottom-4 right-8 select-none opacity-5 lg:block hidden"
@@ -45,198 +49,327 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24 sm:pb-28 lg:px-8">
+        <div className="relative mx-auto max-w-7xl px-4 pt-12 pb-16 sm:px-6 sm:pt-16 sm:pb-20 lg:px-8">
           {/* Eyebrow Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-forest-deep/80 px-4 py-1.5 shadow-sm backdrop-blur-md">
             <span className="size-2 rounded-full bg-gold animate-pulse" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              THE BLUEPRINT · 2026 ABEOKUTA POLO FESTIVAL
+              {FESTIVAL_METADATA.title} · {FESTIVAL_METADATA.subTitle.toUpperCase()}
             </span>
           </div>
 
           {/* Hero Main Lockup */}
-          <div className="mt-8 grid grid-cols-1 items-end gap-12 lg:grid-cols-12">
-            <div className="lg:col-span-8">
+          <div className="mt-6 grid grid-cols-1 items-start gap-10 lg:grid-cols-12">
+            <div className="lg:col-span-7 space-y-4">
               <h1 className="font-display text-4xl font-semibold leading-[1.08] sm:text-6xl lg:text-7xl">
                 Abeokuta Polo <br />
                 <span className="font-normal italic text-gold">Festival 2026</span>
               </h1>
-              <p className="mt-6 max-w-2xl font-display text-2xl font-light text-ivory/90 sm:text-3xl">
-                Where Heritage Meets Excellence.
+
+              <p className="font-display text-xl sm:text-2xl font-light text-gold italic">
+                &ldquo;{FESTIVAL_METADATA.theme}&rdquo;
               </p>
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-ivory/80 sm:text-lg">
-                Three ceremonial days of equestrian distinction, Yoruba royal pageantry, and pan-African splendour on the historic turf of Egbaland.
+
+              <p className="max-w-2xl text-base leading-relaxed text-ivory/80 sm:text-lg">
+                Three ceremonial days of equestrian distinction, Yoruba royal pageantry, and pan-African splendour at the {FESTIVAL_METADATA.venue}.
               </p>
-            </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:col-span-4 lg:flex-col">
-              <Button
-                asChild
-                size="lg"
-                className="bg-gold text-base font-semibold text-forest-deep shadow-xl hover:bg-gold/90"
-              >
-                <Link href="/register">
-                  Register (Free Pass)
-                  <ArrowRight className="ml-2 size-5" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-ivory/30 bg-forest-deep/40 text-base text-ivory hover:bg-ivory/10 hover:text-ivory"
-              >
-                <Link href="/programme">
-                  Explore Programme
-                  <Calendar className="ml-2 size-4 text-gold" />
-                </Link>
-              </Button>
-            </div>
-          </div>
+              {/* Architectural Metadata Bar */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2">
+                <div className="flex items-center gap-3 rounded-xl border border-line/20 bg-forest-deep/70 p-3 shadow-md backdrop-blur-sm">
+                  <Calendar className="size-5 text-gold shrink-0" />
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-gold">Dates</span>
+                    <p className="text-xs font-semibold text-ivory">{FESTIVAL_METADATA.dates}</p>
+                  </div>
+                </div>
 
-          {/* Architectural Metadata Bar (Confirmed Specs) */}
-          <div className="mt-14 grid grid-cols-1 gap-4 rounded-2xl border border-line/20 bg-forest-deep/70 p-6 shadow-2xl backdrop-blur-md md:grid-cols-3">
-            <div className="flex items-start gap-4 p-2">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
-                <Calendar className="size-6" />
+                <div className="flex items-center gap-3 rounded-xl border border-line/20 bg-forest-deep/70 p-3 shadow-md backdrop-blur-sm">
+                  <MapPin className="size-5 text-gold shrink-0" />
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-gold">Venue</span>
+                    <p className="text-xs font-semibold text-ivory">Abeokuta Polo Club &amp; Country Resort</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-gold">Festival Dates</span>
-                <p className="font-display text-lg font-semibold text-ivory">18–20 December 2026</p>
-                <p className="text-xs text-ivory/60">3 Days of High-Goal Grandeur</p>
+
+              {/* Quick Hero Video Trigger & Links */}
+              <div className="flex flex-wrap items-center gap-3 pt-3">
+                <FestivalVideoModal
+                  triggerText="Watch Official Teaser"
+                  triggerVariant="outline"
+                  className="border-gold/50 bg-gold/15 text-gold hover:bg-gold/25 font-semibold text-xs"
+                />
+                <Button asChild variant="ghost" className="text-ivory/80 hover:text-ivory text-xs">
+                  <Link href="/programme">View 3-Day Programme →</Link>
+                </Button>
               </div>
             </div>
 
-            <div className="flex items-start gap-4 p-2">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
-                <MapPin className="size-6" />
-              </div>
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-gold">Grounds & Pavilion</span>
-                <p className="font-display text-lg font-semibold text-ivory">Abeokuta Polo Club</p>
-                <p className="text-xs text-ivory/60">Kobape, Abeokuta-Sagamu Expressway, Ogun State</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 p-2">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
-                <Award className="size-6" />
-              </div>
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-gold">Tournament Host</span>
-                <p className="font-display text-lg font-semibold text-ivory">Abeokuta Polo Club</p>
-                <p className="text-xs text-ivory/60">Partner: Ogun State Government · Est. 1928</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 2. COMPLIMENTARY ACCESS BANNER (Decision D-01/D-03)                  */}
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="border-y border-line bg-sage/40 py-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="size-6 text-forest shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-forest">
-                Complimentary Pass System · Accredited Guest Policy
-              </p>
-              <p className="text-xs text-muted-brand">
-                Attendance is free. Entry requires prior digital registration and an accredited QR credential. This website does not process or take payments.
-              </p>
-            </div>
-          </div>
-          <Button asChild size="sm" className="bg-forest text-xs font-semibold text-ivory hover:bg-forest-interactive">
-            <Link href="/register">Claim Free Credential</Link>
-          </Button>
-        </div>
-      </section>
-
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 3. FIVE PILLARS OF EXCELLENCE                                        */}
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="bg-ivory py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-                Strategic Framework
-              </span>
-              <h2 className="mt-2 font-display text-3xl font-semibold text-forest sm:text-4xl">
-                The Five Pillars of Excellence
-              </h2>
-              <p className="mt-2 max-w-xl text-sm text-muted-brand sm:text-base">
-                The cornerstone architecture shaping West Africa’s premier equestrian and cultural gathering.
-              </p>
-            </div>
-            <span className="hidden text-xs font-semibold uppercase tracking-wider text-muted-brand md:block">
-              Abeokuta Polo Club · Founded 1928
-            </span>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              {
-                num: "01",
-                name: "Sport",
-                desc: "High-goal polo competition featuring distinguished players, 80+ thoroughbred ponies, and intense chukkas.",
-                tag: "High-Goal Calibre",
-              },
-              {
-                num: "02",
-                name: "Heritage",
-                desc: "The sacred traditions and sovereign history of Egbaland, commemorating royal lineage and centuries-old culture.",
-                tag: "Royal Lineage",
-              },
-              {
-                num: "03",
-                name: "Tourism",
-                desc: "A destination landmark welcoming royal rulers, diplomatic corps, regional tourists, and international visitors.",
-                tag: "Destination Gateway",
-              },
-              {
-                num: "04",
-                name: "Lifestyle",
-                desc: "Refined equestrian fashion, high-society lawn gatherings, chukka terraces, and twilight celebrations.",
-                tag: "Equestrian Chic",
-              },
-              {
-                num: "05",
-                name: "Brand Reach",
-                desc: "Strategic partner visibility connecting high-net-worth audiences through tailored physical and digital activations.",
-                tag: "Strategic Impact",
-              },
-            ].map((pillar) => (
+            {/* ───────────────────────────────────────────────────────────── */}
+            {/* PRIORITY REGISTRATION COCKPIT & LIVE COUNTDOWN AT TOP         */}
+            {/* ───────────────────────────────────────────────────────────── */}
+            <div className="lg:col-span-5 rounded-3xl border-2 border-gold/50 bg-forest-deep/95 p-6 sm:p-7 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-5">
               <div
-                key={pillar.num}
-                className="group relative flex flex-col justify-between rounded-xl border border-line bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gold hover:shadow-md"
-              >
+                aria-hidden
+                className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-gold/15 blur-2xl"
+              />
+
+              {/* Live Countdown Component */}
+              <FestivalCountdown variant="full" />
+
+              {/* Registration Direct CTA Card */}
+              <div className="rounded-2xl border border-gold/30 bg-forest/80 p-5 space-y-3 shadow-inner">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-gold text-forest font-bold text-[10px]">
+                    <Ticket className="mr-1 size-3" /> OFFICIAL GATE ACCREDITATION
+                  </Badge>
+                  <span className="text-[11px] text-emerald-400 font-semibold">● Instant Digital Drop</span>
+                </div>
+
                 <div>
-                  <span className="text-xs font-bold text-gold">{pillar.num}</span>
-                  <h3 className="mt-2 font-display text-xl font-semibold text-forest">
-                    {pillar.name}
+                  <h3 className="font-display text-lg font-semibold text-ivory">
+                    Register for Your Festival Gate Pass
                   </h3>
-                  <p className="mt-3 text-xs leading-relaxed text-muted-brand sm:text-sm">
-                    {pillar.desc}
+                  <p className="text-xs text-ivory/70 mt-1">
+                    State individual attendance, host member, or corporate delegation. Pass drops directly onto your phone for offline turnstile access.
                   </p>
                 </div>
-                <div className="mt-6 border-t border-line/60 pt-3">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-forest-interactive">
-                    {pillar.tag}
-                  </span>
+
+                <div className="grid grid-cols-3 gap-2 text-center text-[10px] pt-1">
+                  <div className="rounded bg-emerald-950/80 p-2 border border-emerald-500/40 text-emerald-300">
+                    <span className="block font-bold">Day 1 (Fri 18)</span>
+                    <span className="text-[9px] text-ivory/80">FREE ENTRY</span>
+                  </div>
+                  <div className="rounded bg-amber-950/80 p-2 border border-amber-500/40 text-amber-300">
+                    <span className="block font-bold">Day 2 (Sat 19)</span>
+                    <span className="text-[9px] text-ivory/80">THROUGH TICKET</span>
+                  </div>
+                  <div className="rounded bg-amber-950/80 p-2 border border-amber-500/40 text-amber-300">
+                    <span className="block font-bold">Day 3 (Sun 20)</span>
+                    <span className="text-[9px] text-ivory/80">THROUGH TICKET</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="w-full bg-gold font-bold text-forest hover:bg-gold/90 shadow-md text-sm py-5"
+                  >
+                    <Link href="/register">
+                      Register Gate Pass Now →
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="w-full border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 text-xs py-5"
+                  >
+                    <Link href="/pass/lookup">Look Up Pass</Link>
+                  </Button>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 4. PROGRAMME HIGHLIGHTS & TOURNAMENT SHOWCASES                      */}
+      {/* 1B. OFFICIAL FESTIVAL TEASER & CINEMATIC SHOWCASE                   */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="bg-sage/25 py-20">
+      <section className="bg-forest-deep text-ivory py-16 border-b border-gold/30">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-5 space-y-4">
+              <Badge variant="outline" className="border-gold bg-gold/15 text-gold font-bold text-[11px]">
+                <Film className="mr-1.5 size-3.5" /> CINEMATIC PREVIEW
+              </Badge>
+              <h2 className="font-display text-3xl sm:text-4xl font-semibold text-ivory leading-tight">
+                Experience the Spirit of <br />
+                <span className="text-gold italic font-normal">Abeokuta Polo 2026</span>
+              </h2>
+              <p className="text-sm leading-relaxed text-ivory/80">
+                Witness high-speed equestrian thunder, sovereign Yoruba fanfare, and high-fashion society. Three historic days unfolding at Abeokuta Polo Club &amp; Country Resort.
+              </p>
+              <div className="space-y-2 pt-2 text-xs text-ivory/90">
+                <div className="flex items-center gap-2">
+                  <span className="size-1.5 rounded-full bg-gold" />
+                  <span>Day 1: 100% Free Public Entry &amp; Media Light-Up</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="size-1.5 rounded-full bg-gold" />
+                  <span>Day 2: Royal Opening by HRM The Alake &amp; 3 Foundation-Layings</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="size-1.5 rounded-full bg-gold" />
+                  <span>Day 3: Royal Cup Grand Finale, 100 Kings Celebration &amp; ARISTOS BAND</span>
+                </div>
+              </div>
+              <div className="pt-4 flex flex-wrap gap-3">
+                <Button asChild className="bg-gold font-bold text-forest hover:bg-gold/90 text-xs">
+                  <Link href="/register">Claim Free Gate Pass</Link>
+                </Button>
+                <Button asChild variant="outline" className="border-ivory/30 text-ivory hover:bg-white/10 text-xs">
+                  <Link href="/gallery">Explore Media Gallery</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="lg:col-span-7">
+              <FestivalVideoPlayer
+                src="/videos/abeokuta-polo-trailer.mp4"
+                autoPlay={false}
+                muted={false}
+                loop={true}
+                className="w-full shadow-2xl"
+                title="Abeokuta Polo Festival 2026 — Official Teaser Trailer"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 2. THREE-DAY OFFICIAL PROGRAMME SECTION (Updated Build)              */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <section className="bg-sage/25 py-20 border-b border-line">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+                Official Festival Itinerary
+              </span>
+              <h2 className="mt-2 font-display text-3xl font-semibold text-forest sm:text-5xl">
+                The 3-Day Programme
+              </h2>
+              <p className="mt-2 text-sm text-muted-brand sm:text-base max-w-2xl">
+                Complete timetable and ceremonial events taking place at the Abeokuta Polo Club &amp; Country Resort.
+              </p>
+            </div>
+            <Button asChild className="bg-forest text-ivory hover:bg-forest-interactive shrink-0">
+              <Link href="/programme">
+                Explore Detailed Programme <ArrowRight className="ml-2 size-4" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {/* Day 1 Card */}
+            <div className="flex flex-col justify-between rounded-3xl border border-line bg-card p-7 shadow-sm transition hover:shadow-lg hover:border-gold/50">
+              <div>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-emerald-800 text-ivory text-[10px]">100% FREE ENTRY</Badge>
+                  <span className="text-xs font-semibold text-muted-brand">Fri 18 Dec 2026</span>
+                </div>
+                <h3 className="mt-3 font-display text-2xl font-semibold text-forest">
+                  Day 1: Media, Tour &amp; Light-Up
+                </h3>
+                <p className="mt-2 text-xs text-muted-brand">
+                  Official commencement welcoming journalists, accredited delegates, and participating polo players.
+                </p>
+
+                <div className="mt-5 space-y-3 border-t border-line/60 pt-4 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-gold-deep shrink-0">10:00 AM – 12:00 PM:</span>
+                    <span className="text-ink/80">Press Conference and Media Tour of Abeokuta Polo Club &amp; Country Resort.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-gold-deep shrink-0">EVENING:</span>
+                    <span className="text-ink/80">Official Festival Light-Up Ceremony, Welcome Dinner &amp; Player Networking.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 border-t border-line/60 pt-4">
+                <Button asChild variant="link" className="p-0 text-forest font-semibold hover:text-gold text-xs">
+                  <Link href="/programme">View Day 1 Full Schedule →</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Day 2 Card */}
+            <div className="flex flex-col justify-between rounded-3xl border border-line bg-card p-7 shadow-sm transition hover:shadow-lg hover:border-gold/50">
+              <div>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-amber-800 text-ivory text-[10px]">THROUGH TICKET</Badge>
+                  <span className="text-xs font-semibold text-muted-brand">Sat 19 Dec 2026</span>
+                </div>
+                <h3 className="mt-3 font-display text-2xl font-semibold text-forest">
+                  Day 2: Royal Opening &amp; Polo
+                </h3>
+                <p className="mt-2 text-xs text-muted-brand">
+                  Royal declarations, 3 foundation-laying milestones, literature, sip &amp; paint, and polo chukkas.
+                </p>
+
+                <div className="mt-5 space-y-3 border-t border-line/60 pt-4 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-gold-deep shrink-0">12:00 NOON:</span>
+                    <span className="text-ink/80">
+                      Royal Declaration by HRM Oba Dr. Michael Aremu Gbadebo, CFR; Opening of Festival Market Square; Foundation-Laying for Trauma Centre, Festival Complex &amp; 500-Horse Stable.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-gold-deep shrink-0">ACTIVITIES:</span>
+                    <span className="text-ink/80">
+                      Queens Polo Match, Literary Debate, Poetry Recitation, Sip and Paint, DJ &amp; Evening Polo Match.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 border-t border-line/60 pt-4">
+                <Button asChild variant="link" className="p-0 text-forest font-semibold hover:text-gold text-xs">
+                  <Link href="/programme">View Day 2 Full Schedule →</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Day 3 Card */}
+            <div className="flex flex-col justify-between rounded-3xl border border-line bg-card p-7 shadow-sm transition hover:shadow-lg hover:border-gold/50">
+              <div>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-amber-800 text-ivory text-[10px]">THROUGH TICKET</Badge>
+                  <span className="text-xs font-semibold text-muted-brand">Sun 20 Dec 2026</span>
+                </div>
+                <h3 className="mt-3 font-display text-2xl font-semibold text-forest">
+                  Day 3: The Grand Finale
+                </h3>
+                <p className="mt-2 text-xs text-muted-brand">
+                  The Royal Cup and Queens Cup Finals, 100 Kings Celebration, Aristos Band, and Berryola headline.
+                </p>
+
+                <div className="mt-5 space-y-3 border-t border-line/60 pt-4 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-gold-deep shrink-0">12:00 NOON:</span>
+                    <span className="text-ink/80">
+                      Grand Finale Begins. Arrival of Dignitaries, Cultural Performances, Royal Cup Final &amp; Queens Cup Final.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-gold-deep shrink-0">HIGHLIGHTS:</span>
+                    <span className="text-ink/80">
+                      Speeches by Chairman &amp; Club President Dr. Sheriff Adams Abdulrahman; ARISTOS BAND performances; Celebrating the 100 Kings; Headline close by BERRYOLA.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 border-t border-line/60 pt-4">
+                <Button asChild variant="link" className="p-0 text-forest font-semibold hover:text-gold text-xs">
+                  <Link href="/programme">View Day 3 Full Schedule →</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 3. SIGNATURE SPECTACLES & ROYAL CUP HIGHLIGHTS                       */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <section className="bg-ivory py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
@@ -246,7 +379,7 @@ export default function HomePage() {
               Signature Spectacles
             </h2>
             <p className="mt-2 text-sm text-muted-brand sm:text-base">
-              The sporting pinnacle of the festival, combining historic trophies and sovereign ceremonies.
+              The sporting pinnacle of the festival combining historic championship trophies and sovereign ceremonies.
             </p>
           </div>
 
@@ -265,7 +398,7 @@ export default function HomePage() {
                   The Royal Cup
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-brand">
-                  The premier heritage polo trophy presented in honor of His Royal Majesty, the Alake and Paramount Ruler of Egbaland, convening 100+ crowned monarchs.
+                  The premier heritage polo trophy presented in honor of His Royal Majesty, the Alake and Paramount Ruler of Egbaland, convening crowned monarchs and distinguished leaders.
                 </p>
               </div>
               <div className="mt-8 border-t border-line/60 pt-4">
@@ -277,21 +410,21 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Polo Queens Match */}
+            {/* Queens Polo Match */}
             <div className="flex flex-col justify-between rounded-2xl border border-line bg-card p-8 shadow-sm transition hover:shadow-md">
               <div>
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" className="border-line bg-sage/60 text-forest font-semibold">
                     <Sparkles className="mr-1 size-3.5 text-forest" />
-                    All-Female Showcase
+                    Women in Polo
                   </Badge>
                   <span className="text-xs font-semibold text-muted-brand">Saturday, 19 Dec</span>
                 </div>
                 <h3 className="mt-4 font-display text-2xl font-semibold text-forest">
-                  Polo Queens Invitational
+                  Queens Polo Match
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-brand">
-                  An elite invitational celebrating the prowess, elegance, and distinction of women in polo, creating a landmark showcase for leadership in the sport.
+                  Celebrating women in polo, sporting excellence, and inclusion with high-calibre chukkas leading to the Queens Cup Final on Sunday.
                 </p>
               </div>
               <div className="mt-8 border-t border-line/60 pt-4">
@@ -303,27 +436,27 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* All-Stars International Game */}
+            {/* Celebrating the 100 Kings */}
             <div className="flex flex-col justify-between rounded-2xl border border-line bg-card p-8 shadow-sm transition hover:shadow-md">
               <div>
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" className="border-gold/60 bg-gold/15 text-forest font-semibold">
                     <Award className="mr-1 size-3.5 text-gold" />
-                    King of Games
+                    One Field, One Legacy
                   </Badge>
-                  <span className="text-xs font-semibold text-muted-brand">18–20 Dec 2026</span>
+                  <span className="text-xs font-semibold text-muted-brand">Sunday, 20 Dec</span>
                 </div>
                 <h3 className="mt-4 font-display text-2xl font-semibold text-forest">
-                  All-Stars International
+                  Celebrating the 100 Kings
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-brand">
-                  High-profile chukkas featuring Africa’s top professional players and distinguished patrons competing in a world-class equestrian exhibition.
+                  &ldquo;ONE FIELD, ONE LEGACY&rdquo; — honouring traditional rulers and their monumental contributions to cultural preservation, unity, and community leadership.
                 </p>
               </div>
               <div className="mt-8 border-t border-line/60 pt-4">
                 <Button asChild variant="link" className="p-0 text-forest font-semibold hover:text-gold">
-                  <Link href="/programme">
-                    Tournament Schedule →
+                  <Link href="/experiences">
+                    Explore Royal Confluence →
                   </Link>
                 </Button>
               </div>
@@ -333,7 +466,7 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 5. EXPERIENCES & HOSPITALITY (Deep Emerald Atmosphere)               */}
+      {/* 4. HOSPITALITY & CULTURAL CELEBRATIONS                               */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-forest text-ivory py-20">
         <div
@@ -348,10 +481,10 @@ export default function HomePage() {
                 Curated Prestige
               </span>
               <h2 className="mt-2 font-display text-3xl font-semibold text-ivory sm:text-4xl">
-                Hospitality & Celebrations
+                Hospitality, Culture &amp; Entertainment
               </h2>
               <p className="mt-2 max-w-2xl text-sm text-ivory/80 sm:text-base">
-                Immersive enclosures, private chukka chalets, cultural ceremonies, and night spectacles.
+                Festival Market Square, debate contests, poetry recitation, sip &amp; paint, live musical sets by ARISTOS BAND and BERRYOLA.
               </p>
             </div>
             <Button asChild variant="outline" className="border-gold text-gold hover:bg-gold/20 hover:text-ivory">
@@ -360,7 +493,28 @@ export default function HomePage() {
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* Corporate Hospitality */}
+            {/* Market Square & Arts */}
+            <div className="rounded-2xl border border-line/20 bg-forest-deep/60 p-8 shadow-xl backdrop-blur-sm">
+              <div className="flex size-14 items-center justify-center rounded-xl bg-gold/15 text-gold">
+                <Sparkles className="size-7" />
+              </div>
+              <span className="mt-6 block text-xs font-semibold uppercase tracking-widest text-gold">
+                Culture &amp; Ideas
+              </span>
+              <h3 className="mt-2 font-display text-2xl font-semibold text-ivory">
+                Festival Market Square
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-ivory/80">
+                Official opening by His Royal Majesty the Alake. Featuring the two-team Literary Debate Competition, Poetry Recitation, and interactive Sip &amp; Paint.
+              </p>
+              <div className="mt-8 border-t border-line/20 pt-4">
+                <Button asChild variant="outline" className="w-full border-ivory/30 text-ivory hover:bg-ivory/10">
+                  <Link href="/experiences">Learn More</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Corporate Chalets */}
             <div className="rounded-2xl border border-line/20 bg-forest-deep/60 p-8 shadow-xl backdrop-blur-sm">
               <div className="flex size-14 items-center justify-center rounded-xl bg-gold/15 text-gold">
                 <Wine className="size-7" />
@@ -369,10 +523,10 @@ export default function HomePage() {
                 Executive Enclosures
               </span>
               <h3 className="mt-2 font-display text-2xl font-semibold text-ivory">
-                Chalet & Corporate Suites
+                Chalet &amp; Corporate Suites
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-ivory/80">
-                Reserved field-side chukka chalets for executive delegations, private banking associates, and VIP patrons with bespoke culinary service.
+                Reserved field-side chukka chalets for executive delegations, private banking associates, and VIP patrons with bespoke hospitality.
               </p>
               <div className="mt-8 border-t border-line/20 pt-4">
                 <EnquiryDialog
@@ -384,44 +538,23 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Cultural Pageantry */}
+            {/* Headline Musical Concerts */}
             <div className="rounded-2xl border border-line/20 bg-forest-deep/60 p-8 shadow-xl backdrop-blur-sm">
               <div className="flex size-14 items-center justify-center rounded-xl bg-gold/15 text-gold">
-                <Theater className="size-7" />
+                <Music className="size-7" />
               </div>
               <span className="mt-6 block text-xs font-semibold uppercase tracking-widest text-gold">
-                Sovereign Heritage
+                Grand Celebration
               </span>
               <h3 className="mt-2 font-display text-2xl font-semibold text-ivory">
-                Kings Procession & Durbar
+                ARISTOS BAND &amp; BERRYOLA
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-ivory/80">
-                A grand ceremonial procession of southwest royalty, ceremonial drumming, and traditional equestrian horsemanship celebrating Yoruba lineage.
+                Electrifying live performances by ARISTOS BAND during the royal celebration and headline musical finale by BERRYOLA to close the festival.
               </p>
               <div className="mt-8 border-t border-line/20 pt-4">
                 <Button asChild variant="outline" className="w-full border-ivory/30 text-ivory hover:bg-ivory/10">
-                  <Link href="/experiences">Learn More</Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* Bonfire & Fireworks */}
-            <div className="rounded-2xl border border-line/20 bg-forest-deep/60 p-8 shadow-xl backdrop-blur-sm">
-              <div className="flex size-14 items-center justify-center rounded-xl bg-gold/15 text-gold">
-                <Flame className="size-7" />
-              </div>
-              <span className="mt-6 block text-xs font-semibold uppercase tracking-widest text-gold">
-                Festival Climax
-              </span>
-              <h3 className="mt-2 font-display text-2xl font-semibold text-ivory">
-                Bonfire Night & Fireworks
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-ivory/80">
-                Spectacular evening fireworks and grand lawn bonfire ushering in the year-end celebration under the starlit skies of Abeokuta.
-              </p>
-              <div className="mt-8 border-t border-line/20 pt-4">
-                <Button asChild variant="outline" className="w-full border-ivory/30 text-ivory hover:bg-ivory/10">
-                  <Link href="/programme">View Evening Schedule</Link>
+                  <Link href="/programme">View Musical Schedule</Link>
                 </Button>
               </div>
             </div>
@@ -430,88 +563,18 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 6. CURATED FESTIVAL SHOWCASES (Gallery, Publications, Sponsorship)  */}
+      {/* 5. OFFICIAL TAGLINE BANNER                                          */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="bg-ivory py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              Archives & Engagement
-            </span>
-            <h2 className="mt-2 font-display text-3xl font-semibold text-forest sm:text-4xl">
-              Curated Festival Portals
-            </h2>
-            <p className="mt-2 text-sm text-muted-brand sm:text-base">
-              Explore official gazettes, photographic archives, and corporate sponsorship tiers.
-            </p>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
-            {/* Gallery Portal */}
-            <div className="flex flex-col justify-between rounded-xl border border-line bg-card p-6 shadow-sm hover:shadow-md">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-forest-interactive">
-                  Photo Archive
-                </span>
-                <h3 className="mt-2 font-display text-xl font-semibold text-forest">
-                  Media & Gallery Hub
-                </h3>
-                <p className="mt-2 text-xs leading-relaxed text-muted-brand sm:text-sm">
-                  Curated photographic coverage from past chukkas, ceremonial gatherings, and tournament highlights.
-                </p>
-              </div>
-              <div className="mt-6">
-                <Button asChild variant="outline" size="sm" className="border-line text-forest hover:bg-sage">
-                  <Link href="/gallery">Open Gallery →</Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* Publications Portal */}
-            <div className="flex flex-col justify-between rounded-xl border border-line bg-card p-6 shadow-sm hover:shadow-md">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-forest-interactive">
-                  Official Gazette
-                </span>
-                <h3 className="mt-2 font-display text-xl font-semibold text-forest">
-                  Publications & Gazette
-                </h3>
-                <p className="mt-2 text-xs leading-relaxed text-muted-brand sm:text-sm">
-                  Official tournament gazette, festival guides, rules of play, and commemorative historical issues.
-                </p>
-              </div>
-              <div className="mt-6">
-                <Button asChild variant="outline" size="sm" className="border-line text-forest hover:bg-sage">
-                  <Link href="/publications">View Publications →</Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* Sponsorship Portal */}
-            <div className="flex flex-col justify-between rounded-xl border border-line bg-card p-6 shadow-sm hover:shadow-md">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-forest-interactive">
-                  Partnership Packages
-                </span>
-                <h3 className="mt-2 font-display text-xl font-semibold text-forest">
-                  Sponsorship Tiers
-                </h3>
-                <p className="mt-2 text-xs leading-relaxed text-muted-brand sm:text-sm">
-                  Proposed sponsorship tiers ranging from ₦2.5M to ₦75M headline partnership with verified brand rights.
-                </p>
-              </div>
-              <div className="mt-6">
-                <Button asChild variant="outline" size="sm" className="border-line text-forest hover:bg-sage">
-                  <Link href="/sponsorship">Review Packages →</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
+      <section className="bg-forest-deep text-gold py-8 border-y border-gold/30">
+        <div className="mx-auto max-w-7xl px-4 text-center">
+          <p className="font-display text-sm sm:text-base font-semibold tracking-widest uppercase">
+            {FESTIVAL_METADATA.tagline}
+          </p>
         </div>
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 7. FREQUENTLY ASKED QUESTIONS                                       */}
+      {/* 6. FREQUENTLY ASKED QUESTIONS                                       */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="bg-sage/20 py-20">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -532,7 +595,20 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 8. PRE-FOOTER REGISTRATION & INQUIRY INVITATION                     */}
+      {/* 6B. ATTENDANCE & VIRAL COMMUNITY ACCELERATOR                        */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <section className="bg-ivory pt-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <AttendanceMilestoneWidget
+            currentCount={1840}
+            targetCount={2500}
+            className="w-full"
+          />
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 7. PRE-FOOTER INQUIRY & REGISTRATION INVITATION                     */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="bg-ivory py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -545,13 +621,13 @@ export default function HomePage() {
             <div className="relative z-10 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
               <div className="max-w-2xl">
                 <Badge variant="outline" className="border-gold/50 bg-gold/10 text-gold uppercase tracking-widest text-[11px]">
-                  Royal Invitational · December 2026
+                  Official Accreditation · 18–20 December 2026
                 </Badge>
                 <h2 className="mt-4 font-display text-3xl font-semibold text-ivory sm:text-4xl">
-                  Secure Your Accredited Festival Pass
+                  Obtain Your Digital Access Card
                 </h2>
                 <p className="mt-3 text-base text-ivory/80">
-                  18–20 December 2026 at the Abeokuta Polo Club. Prior digital registration is mandatory for gate entrance.
+                  Day 1 is 100% Free Public Admission. Day 2 &amp; Day 3 admission is Through Ticket. Your pass code and QR card are generated immediately and saved to your phone.
                 </p>
 
                 <div className="mt-6 flex flex-wrap items-center gap-6 text-xs text-gold">
@@ -574,15 +650,15 @@ export default function HomePage() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-gold font-semibold text-forest-deep shadow hover:bg-gold/90"
+                  className="bg-gold font-bold text-forest-deep shadow hover:bg-gold/90 text-sm"
                 >
-                  <Link href="/register">Register For Free Pass</Link>
+                  <Link href="/register">Register For Gate Pass</Link>
                 </Button>
                 <EnquiryDialog
                   title="Festival Secretariat Inquiries"
-                  triggerText="Protocol & Hospitality Inquiries"
+                  triggerText="Secretariat & Protocol Inquiries"
                   variant="outline"
-                  className="border-ivory/30 bg-transparent text-ivory hover:bg-ivory/10 hover:text-ivory"
+                  className="border-ivory/30 bg-transparent text-ivory hover:bg-ivory/10 hover:text-ivory text-xs"
                 />
               </div>
             </div>

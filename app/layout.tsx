@@ -16,6 +16,12 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+export const viewport = {
+  themeColor: "#062D1D",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
@@ -28,6 +34,14 @@ export const metadata: Metadata = {
     "Official information and management platform for the 2026 Abeokuta Polo Festival. Attendance is free; entry requires prior registration and an accredited credential.",
   applicationName: "Abeokuta Polo Festival 2026",
   keywords: ["Abeokuta", "Polo", "Festival", "2026", "Royal Cup", "Abeokuta Polo Club"],
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/icons/icon-192x192.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -3,130 +3,24 @@ import {
   Handshake,
   CheckCircle2,
   ShieldAlert,
+  Crown,
+  Building,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnquiryDialog } from "@/components/design/public/enquiry-dialog";
+import { SponsorshipPdfButton } from "@/components/shared/sponsorship-pdf-button";
+import {
+  CORPORATE_SPONSORSHIP_TIERS,
+  SPECIALISED_SPONSORS,
+} from "@/lib/data/sponsorship";
 
 export const metadata = {
-  title: "Partnerships & Sponsorships — 2026 Abeokuta Polo Festival",
+  title: "Corporate Sponsorship & Partnerships — 2026 Abeokuta Polo Festival",
   description:
-    "Official corporate sponsorship tiers, brand alignment packages, and partnership rights for the 2026 Abeokuta Polo Festival.",
+    "Official corporate sponsorship tiers, guaranteed deliverables, and bespoke rights for the 2026 Abeokuta Polo Festival under the Royal Patronage of HRM The Alake of Egbaland.",
 };
-
-interface SponsorshipTier {
-  id: string;
-  name: string;
-  proposedAmount: string;
-  badge: string;
-  description: string;
-  highlights: string[];
-  isPrimary?: boolean;
-}
-
-const TIERS: SponsorshipTier[] = [
-  {
-    id: "headline",
-    name: "Title Partner",
-    proposedAmount: "₦75,000,000",
-    badge: "Exclusive Title Integration",
-    isPrimary: true,
-    description:
-      "Exclusive co-naming rights of the 2026 festival, supreme brand presence on all national broadcast media, Royal Cup ball branding, and premier field perimeter placement.",
-    highlights: [
-      "Exclusive '2026 Abeokuta Polo Festival presented by [Brand]' title rights",
-      "Two private 30-person VIP Chukka Chalets on the main field boards",
-      "40 VIP and All-Access credentials for executive brand guests",
-      "Prime front-and-centre branding across player jerseys and tournament balls",
-      "Keynote speaking and trophy co-presentation alongside HRM The Alake",
-    ],
-  },
-  {
-    id: "presenting",
-    name: "Presenting Partner",
-    proposedAmount: "₦40,000,000",
-    badge: "Principal Brand Alignment",
-    description:
-      "Premier category exclusivity, major perimeter turf boards, dedicated hospitality chalet, and prominent inclusion in all national press and media.",
-    highlights: [
-      "Official Presenting Category Exclusivity (e.g. Official Bank / Telco / Energy)",
-      "Dedicated 25-person VIP Chukka Chalet with full catering",
-      "25 VIP and Hospitality credentials with clubhouse access",
-      "Prominent perimeter field boards and digital screen advertising",
-      "Official co-presentation of the Polo Queens Invitational Trophy",
-    ],
-  },
-  {
-    id: "royal-cup",
-    name: "Royal Cup Partner",
-    proposedAmount: "₦25,000,000",
-    badge: "Major Tournament Sponsor",
-    description:
-      "High-visibility brand integration, exhibition pavilion spaces, executive box allocations, and official gazette features.",
-    highlights: [
-      "Category partner recognition across all festival communications",
-      "One private 15-person field-side chalet",
-      "15 VIP passes and priority car park allocations",
-      "Two premier field-side banner positions along tournament chukkas",
-      "Full-page feature in the official leather-bound 2026 Gazette",
-    ],
-  },
-  {
-    id: "platinum",
-    name: "Platinum Property",
-    proposedAmount: "₦15,000,000",
-    badge: "Associate Sponsor",
-    description:
-      "Targeted brand alignment, brand activation booth on the lifestyle lawn, and reserved VIP seating.",
-    highlights: [
-      "Branded exhibition lounge space in the festival lifestyle village",
-      "10 VIP credentials with clubhouse and chukka terrace access",
-      "Field-side perimeter banner board during all 3 tournament days",
-      "Half-page color spread in the 2026 Tournament Gazette",
-    ],
-  },
-  {
-    id: "gold",
-    name: "Gold Property",
-    proposedAmount: "₦8,000,000",
-    badge: "Supporting Sponsor",
-    description:
-      "Essential visibility for growing corporate brands seeking association with prestigious equestrian heritage.",
-    highlights: [
-      "Official recognition on festival sponsor boards and web portals",
-      "6 VIP credentials with dedicated parking access",
-      "Perimeter banner display on secondary tournament chukka field",
-      "Quarter-page inclusion in tournament gazette",
-    ],
-  },
-  {
-    id: "silver",
-    name: "Silver Partner",
-    proposedAmount: "₦4,000,000",
-    badge: "Official Category",
-    description:
-      "Direct patronage contribution supporting tournament logistics, youth polo clinics, and festival pageantry.",
-    highlights: [
-      "Official listing on the festival website and event programme",
-      "4 VIP passes with Chukka Terrace access",
-      "Supporter listing in the official commemorative gazette",
-      "Certificate of sovereign festival patronage",
-    ],
-  },
-  {
-    id: "official",
-    name: "Official Category",
-    proposedAmount: "₦2,500,000",
-    badge: "Heritage Contributor",
-    description:
-      "Formal association for indigenous brands and patron syndicates supporting Ogun State equestrian sports.",
-    highlights: [
-      "Official club partner listing on website and event programme",
-      "2 VIP passes with access to the Chukka Terrace",
-      "Tournament banner placement on clubhouse grounds",
-    ],
-  },
-];
 
 export default function SponsorshipPage() {
   return (
@@ -141,15 +35,18 @@ export default function SponsorshipPage() {
         />
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Badge variant="outline" className="border-gold/40 bg-gold/10 text-gold uppercase tracking-widest text-[11px]">
-            Commercial & Strategic Partnerships
+          <Badge
+            variant="outline"
+            className="border-gold/40 bg-gold/10 text-gold uppercase tracking-widest text-[11px]"
+          >
+            Corporate &amp; Sovereign Partnerships
           </Badge>
-          <h1 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-6xl">
+          <h1 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-6xl text-ivory">
             Align Your Enterprise With <br />
             <span className="font-normal italic text-gold">West Africa&apos;s Sovereign Sport</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-base text-ivory/80 sm:text-lg">
-            Connect directly with Royal Monarchs, Fortune 500 executives, diplomatic leadership, and high-net-worth patrons across three days of historic polo in Abeokuta.
+          <p className="mt-4 max-w-3xl text-base text-ivory/80 sm:text-lg">
+            Connect directly with Royal Monarchs, Fortune 500 executives, diplomatic leadership, and over 2,500 accredited patrons across three historic days at the Abeokuta Polo Club &amp; Country Resort.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -157,10 +54,14 @@ export default function SponsorshipPage() {
               title="Corporate Sponsorship Inquiries"
               category="sponsorship"
               triggerText="Connect with Secretariat"
-              className="bg-gold font-semibold text-forest-deep shadow hover:bg-gold/90"
+              className="bg-gold font-semibold text-forest-deep shadow hover:bg-gold/90 text-sm"
             />
-            <Button asChild variant="outline" className="border-ivory/30 text-ivory hover:bg-ivory/10 hover:text-ivory">
-              <Link href="/programme">View Tournament Schedule</Link>
+            <SponsorshipPdfButton
+              variant="outline"
+              className="border-gold/50 bg-gold/10 text-gold hover:bg-gold/20 text-sm"
+            />
+            <Button asChild variant="ghost" className="text-ivory/80 hover:text-ivory text-xs">
+              <Link href="/programme">View Tournament Schedule →</Link>
             </Button>
           </div>
         </div>
@@ -173,144 +74,280 @@ export default function SponsorshipPage() {
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8 text-xs text-forest-deep sm:text-sm">
           <ShieldAlert className="size-5 text-gold shrink-0" />
           <p>
-            <strong>Official Transparency Notice:</strong> In accordance with festival governance, all monetary sponsorship figures displayed below represent proposed tier values from the Festival Blueprint. Packages and rights allocations are finalized upon bilateral approval with the Secretariat. No payments are accepted online.
+            <strong>Official Transparency Notice:</strong> In accordance with festival governance, all sponsorship figures displayed below represent tier values from the Festival Blueprint. Packages and rights allocations are finalized upon bilateral contract approval with the Festival Secretariat. No payments are accepted online.
           </p>
         </div>
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 3. SPONSORSHIP TIERS MATRIX                                         */}
+      {/* 3. CORPORATE SPONSORSHIP TIERS MATRIX                               */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-3xl mx-auto mb-14">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              Proposed Investment Architecture
+              Guaranteed Deliverables &amp; Rights Architecture
             </span>
             <h2 className="mt-2 font-display text-3xl font-semibold text-forest sm:text-4xl">
-              Sponsorship Tier Packages
+              Corporate Sponsorship Tiers
             </h2>
             <p className="mt-2 text-sm text-muted-brand sm:text-base">
-              Bespoke brand properties offering category exclusivity, luxury hospitality, and pan-African visibility.
+              From Title Partner exclusivity to distinguished community patronage, each package delivers tangible corporate prestige and measurable return on brand investment.
             </p>
           </div>
 
-          <div className="space-y-6">
-            {TIERS.map((tier) => (
+          <div className="space-y-8">
+            {CORPORATE_SPONSORSHIP_TIERS.map((tier) => (
               <div
                 key={tier.id}
-                className={`flex flex-col justify-between rounded-2xl border p-6 transition sm:p-8 ${
+                className={`flex flex-col justify-between rounded-3xl border p-6 transition sm:p-8 ${
                   tier.isPrimary
-                    ? "border-gold/60 bg-forest text-ivory shadow-xl"
+                    ? "border-2 border-gold bg-forest text-ivory shadow-2xl relative overflow-hidden"
                     : "border-line bg-card text-ink shadow-sm hover:shadow-md"
                 }`}
               >
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center">
-                  <div className="lg:col-span-5">
+                {tier.isPrimary && (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full bg-gold/15 blur-3xl"
+                  />
+                )}
+
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+                  {/* Left Column: Title, Tier Amount, Positioning */}
+                  <div className="lg:col-span-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge
                         variant="outline"
                         className={
                           tier.isPrimary
-                            ? "border-gold bg-gold/20 text-gold font-semibold text-[11px]"
+                            ? "border-gold bg-gold/25 text-gold font-bold text-[11px]"
                             : "border-gold/50 bg-gold/10 text-forest font-semibold text-[11px]"
                         }
                       >
                         {tier.badge}
                       </Badge>
                       <Badge variant="outline" className="border-line/40 text-[10px] uppercase text-muted-brand">
-                        Proposed · Pending Approval
+                        Official Tier
                       </Badge>
                     </div>
 
                     <h3
-                      className={`mt-3 font-display text-2xl font-semibold sm:text-3xl ${
+                      className={`font-display text-2xl sm:text-3xl font-semibold ${
                         tier.isPrimary ? "text-ivory" : "text-forest"
                       }`}
                     >
                       {tier.name}
                     </h3>
+
                     <p
-                      className={`mt-2 font-display text-2xl font-bold tracking-tight ${
+                      className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight ${
                         tier.isPrimary ? "text-gold" : "text-forest-interactive"
                       }`}
                     >
-                      {tier.proposedAmount}
+                      {tier.amount}
                     </p>
+
                     <p
-                      className={`mt-3 text-sm leading-relaxed ${
+                      className={`text-xs sm:text-sm leading-relaxed ${
                         tier.isPrimary ? "text-ivory/80" : "text-muted-brand"
                       }`}
                     >
                       {tier.description}
                     </p>
-                  </div>
 
-                  <div className="lg:col-span-4 border-t border-line/20 pt-4 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
-                    <p
-                      className={`text-xs font-semibold uppercase tracking-wider mb-3 ${
-                        tier.isPrimary ? "text-gold" : "text-forest"
-                      }`}
-                    >
-                      Key Rights & Entitlements:
-                    </p>
-                    <div className="space-y-2">
-                      {tier.highlights.map((h, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs leading-relaxed">
-                          <CheckCircle2
-                            className={`size-4 shrink-0 mt-0.5 ${
-                              tier.isPrimary ? "text-gold" : "text-forest-interactive"
-                            }`}
-                          />
-                          <span className={tier.isPrimary ? "text-ivory/90" : "text-muted-brand"}>
-                            {h}
-                          </span>
-                        </div>
-                      ))}
+                    <div className="pt-2">
+                      <EnquiryDialog
+                        title={`Inquire on ${tier.name}`}
+                        category="sponsorship"
+                        tierName={`${tier.name} (${tier.amount})`}
+                        triggerText="Inquire on This Tier"
+                        className={
+                          tier.isPrimary
+                            ? "w-full bg-gold font-semibold text-forest-deep shadow hover:bg-gold/90 text-sm"
+                            : "w-full bg-forest font-semibold text-ivory hover:bg-forest-interactive text-xs"
+                        }
+                      />
                     </div>
                   </div>
 
-                  <div className="lg:col-span-3 flex flex-col justify-center gap-2 border-t border-line/20 pt-4 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
-                    <EnquiryDialog
-                      title={`Inquire on ${tier.name}`}
-                      category="sponsorship"
-                      tierName={`${tier.name} (${tier.proposedAmount})`}
-                      triggerText="Inquire on Package"
-                      className={
-                        tier.isPrimary
-                          ? "w-full bg-gold font-semibold text-forest-deep shadow hover:bg-gold/90"
-                          : "w-full bg-forest font-semibold text-ivory hover:bg-forest-interactive"
-                      }
-                    />
-                    <p
-                      className={`text-center text-[11px] ${
-                        tier.isPrimary ? "text-ivory/60" : "text-muted-brand"
+                  {/* Right Column: Categorized Deliverables */}
+                  <div className="lg:col-span-8 border-t border-line/20 pt-6 lg:border-t-0 lg:border-l lg:pl-8 lg:pt-0">
+                    <span
+                      className={`text-xs font-semibold uppercase tracking-wider block mb-4 ${
+                        tier.isPrimary ? "text-gold" : "text-forest"
                       }`}
                     >
-                      Custom activation riders available
-                    </p>
+                      Guaranteed Deliverables &amp; Entitlements:
+                    </span>
+
+                    <div className="space-y-5">
+                      {tier.deliverables.map((categoryGroup, idx) => (
+                        <div key={idx} className="space-y-2">
+                          <h4
+                            className={`text-xs font-bold uppercase tracking-wider ${
+                              tier.isPrimary ? "text-gold/90" : "text-forest-deep"
+                            }`}
+                          >
+                            {categoryGroup.category}
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {categoryGroup.items.map((item, itemIdx) => (
+                              <div
+                                key={itemIdx}
+                                className="flex items-start gap-2 text-xs leading-relaxed"
+                              >
+                                <CheckCircle2
+                                  className={`size-4 shrink-0 mt-0.5 ${
+                                    tier.isPrimary ? "text-gold" : "text-forest-interactive"
+                                  }`}
+                                />
+                                <span
+                                  className={
+                                    tier.isPrimary ? "text-ivory/90" : "text-muted-brand"
+                                  }
+                                >
+                                  {item}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Partnership Direct Secretariat Box */}
-          <div className="mt-16 rounded-2xl border border-line bg-sage/30 p-8 text-center sm:p-12">
-            <Handshake className="size-10 text-gold mx-auto" />
-            <h3 className="mt-4 font-display text-2xl font-semibold text-forest">
-              Bespoke Commercial & Government Activations
-            </h3>
-            <p className="mt-2 text-sm text-muted-brand max-w-xl mx-auto">
-              Our Sponsorship & Business Development Team works directly with your brand team to structure bespoke product placements, lounge hosting, and media co-productions.
+          {/* Download Brochure Banner */}
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-gold/40 bg-forest p-6 text-ivory shadow-lg">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gold block">
+                Official Document Archive
+              </span>
+              <h3 className="font-display text-xl font-semibold text-ivory">
+                Download the Complete 6-Page Corporate Sponsorship Brochure
+              </h3>
+              <p className="text-xs text-ivory/70">
+                Detailed deliverables, branding dimensions, VIP allocations, and hospitality riders in printable PDF format.
+              </p>
+            </div>
+            <SponsorshipPdfButton
+              className="bg-gold font-bold text-forest hover:bg-gold/90 shrink-0 text-xs py-3"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 4. SPECIALISED EVENT SPONSORSHIPS                                   */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <section className="bg-sage/20 py-20 border-t border-line">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <Badge
+              variant="outline"
+              className="border-gold bg-gold/15 text-forest font-semibold text-[11px] mb-2"
+            >
+              <Crown className="mr-1 size-3 text-gold" /> Exclusive Event Properties
+            </Badge>
+            <h2 className="font-display text-3xl font-semibold text-forest sm:text-4xl">
+              Specialised Event Sponsors
+            </h2>
+            <p className="mt-2 text-sm text-muted-brand sm:text-base">
+              Anchor key ceremonial properties of the festival with direct co-branding on historic trophies, female empowerment matches, and grand finale concerts.
             </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-4">
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {SPECIALISED_SPONSORS.map((prop) => (
+              <div
+                key={prop.id}
+                className="flex flex-col justify-between rounded-3xl border border-line bg-card p-7 shadow-sm transition hover:shadow-lg hover:border-gold/50"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="border-gold/50 bg-gold/10 text-forest text-[11px] font-bold">
+                      Specialised Property
+                    </Badge>
+                    <span className="text-xs text-muted-brand font-semibold">18–20 Dec 2026</span>
+                  </div>
+
+                  <h3 className="mt-4 font-display text-2xl font-semibold text-forest">
+                    {prop.name}
+                  </h3>
+                  <p className="mt-2 text-xs sm:text-sm text-muted-brand leading-relaxed">
+                    {prop.desc}
+                  </p>
+
+                  <div className="mt-5 border-t border-line/60 pt-4 space-y-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-forest block">
+                      Guaranteed Rights:
+                    </span>
+                    {prop.deliverables.map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs text-ink/80">
+                        <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-forest-interactive" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 border-t border-line/60 pt-4">
+                  <EnquiryDialog
+                    title={`Inquire on ${prop.name}`}
+                    category="sponsorship"
+                    tierName={prop.name}
+                    triggerText="Inquire on This Property"
+                    className="w-full bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bespoke Secretariat Box */}
+          <div className="mt-16 rounded-3xl border-2 border-gold/40 bg-forest p-8 text-center text-ivory sm:p-12 shadow-2xl relative overflow-hidden">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -left-20 -bottom-20 size-80 rounded-full bg-gold/10 blur-3xl"
+            />
+            <Handshake className="size-12 text-gold mx-auto" />
+            <h3 className="mt-4 font-display text-2xl sm:text-3xl font-semibold text-ivory">
+              Bespoke Commercial &amp; Government Activations
+            </h3>
+            <p className="mt-2 text-sm text-ivory/80 max-w-2xl mx-auto leading-relaxed">
+              Our Sponsorship &amp; Business Development Team works directly with corporate leadership, public institutions, and brand marketing teams to structure bespoke lounges, broadcast integration, and experiential showcases.
+            </p>
+
+            <div className="mt-6 flex flex-wrap justify-center items-center gap-6 text-xs text-gold">
+              <span className="flex items-center gap-1.5">
+                <Phone className="size-3.5" />
+                Secretariat Desk: +234 818 188 8884
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Phone className="size-3.5" />
+                0803 681 8916
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Building className="size-3.5" />
+                Abeokuta Polo Club &amp; Country Resort
+              </span>
+            </div>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
               <EnquiryDialog
                 title="Bespoke Partnership Inquiries"
                 category="sponsorship"
                 tierName="Bespoke Enterprise Activation"
                 triggerText="Contact Sponsorship Secretariat"
-                className="bg-forest font-semibold text-ivory hover:bg-forest-interactive"
+                className="bg-gold font-semibold text-forest-deep hover:bg-gold/90 text-sm"
+              />
+              <SponsorshipPdfButton
+                variant="outline"
+                className="border-ivory/30 text-ivory hover:bg-white/10 text-xs"
               />
             </div>
           </div>

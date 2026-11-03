@@ -7,11 +7,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnquiryDialog } from "@/components/design/public/enquiry-dialog";
+import { FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export const metadata = {
-  title: "The Royal Cup — 2026 Abeokuta Polo Festival",
+  title: "The Royal Cup & Queens Cup — 2026 Abeokuta Polo Festival",
   description:
-    "Signature high-goal polo championship presented in honor of HRM Oba Adedotun Aremu Gbadebo, CFR, Okukenu IV, Alake of Egbaland.",
+    "Signature high-goal polo championship presented in honor of His Royal Majesty, Oba Dr. Michael Aremu Gbadebo, CFR, the Alake and Paramount Ruler of Egbaland.",
 };
 
 export default function RoyalCupPage() {
@@ -28,11 +29,11 @@ export default function RoyalCupPage() {
             </span>
             <span className="hidden text-ivory/40 md:inline">·</span>
             <span className="text-ivory/80">
-              Under the Distinguished Auspices of His Royal Majesty, Oba Adedotun Aremu Gbadebo, CFR, Okukenu IV
+              Under the Distinguished Auspices of {FESTIVAL_METADATA.patron}
             </span>
           </div>
           <div className="hidden items-center gap-3 text-gold lg:flex">
-            <span>Kobape Grounds, Ogun State</span>
+            <span>{FESTIVAL_METADATA.venue}</span>
             <span>•</span>
             <span>Sunday, 20 December 2026</span>
           </div>
@@ -58,7 +59,7 @@ export default function RoyalCupPage() {
               In Honour of HRM The Alake of Egbaland
             </Badge>
             <Badge variant="outline" className="border-line bg-sage/50 text-muted-brand font-semibold uppercase tracking-widest text-[11px]">
-              High-Goal Tournament Pinnacle
+              Admission: Through Ticket
             </Badge>
           </div>
 
@@ -69,12 +70,14 @@ export default function RoyalCupPage() {
                 The Grand Sovereign Championship
               </span>
               <h1 className="mt-4 font-display text-4xl font-semibold leading-tight text-forest sm:text-6xl lg:text-7xl">
-                The Royal Cup: <br />
-                <span className="font-normal italic text-gold">100 Kings.</span> One Field. <br />
-                One Legacy.
+                The Royal Cup &amp; <br />
+                <span className="font-normal italic text-gold">Queens Cup Finals</span>
               </h1>
-              <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-brand sm:text-lg">
-                West Africa’s most distinguished high-goal polo championship, convening sovereign rulers, state leadership, diplomatic missions, and premier equestrian sportsmanship upon the sacred polo greens of Egbaland.
+              <p className="mt-4 text-lg font-display text-gold italic">
+                &ldquo;ONE FIELD, ONE LEGACY&rdquo;
+              </p>
+              <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-brand sm:text-lg">
+                West Africa’s most distinguished polo championship, convening sovereign rulers, state leadership, diplomatic missions, and premier equestrian sportsmanship at the {FESTIVAL_METADATA.venue}.
               </p>
             </div>
 
@@ -86,7 +89,7 @@ export default function RoyalCupPage() {
                 </span>
               </div>
               <p className="mt-3 text-xs italic leading-relaxed text-muted-brand">
-                &ldquo;Where the Game of Kings meets the King of Games — A solemn tribute to equestrian nobility and 1928 club heritage.&rdquo;
+                &ldquo;{FESTIVAL_METADATA.tagline}&rdquo;
               </p>
               <div className="mt-6 flex flex-col gap-2.5">
                 <EnquiryDialog
@@ -113,15 +116,15 @@ export default function RoyalCupPage() {
               <span className="mt-1 block text-xs font-semibold uppercase tracking-wider text-muted-brand">
                 Crowned Monarchs
               </span>
-              <span className="text-xs text-forest-interactive">Egbaland & Southwest Royalty</span>
+              <span className="text-xs text-forest-interactive">Egbaland &amp; Southwest Royalty</span>
             </div>
 
             <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
-              <span className="font-display text-3xl font-semibold text-forest">80+</span>
+              <span className="font-display text-3xl font-semibold text-forest">2 Cups</span>
               <span className="mt-1 block text-xs font-semibold uppercase tracking-wider text-muted-brand">
-                Polo Ponies
+                Final Matches
               </span>
-              <span className="text-xs text-forest-interactive">Thoroughbred Argentine & Local</span>
+              <span className="text-xs text-forest-interactive">The Royal Cup &amp; Queens Cup</span>
             </div>
 
             <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
@@ -133,11 +136,11 @@ export default function RoyalCupPage() {
             </div>
 
             <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
-              <span className="font-display text-3xl font-semibold text-forest">Free</span>
+              <span className="font-display text-3xl font-semibold text-forest">Ticket</span>
               <span className="mt-1 block text-xs font-semibold uppercase tracking-wider text-muted-brand">
-                Public Attendance
+                Sunday Admission
               </span>
-              <span className="text-xs text-forest-interactive">Digital Pass Registration Required</span>
+              <span className="text-xs text-forest-interactive">Through Ticket Required</span>
             </div>
           </div>
         </div>
@@ -157,11 +160,11 @@ export default function RoyalCupPage() {
                 His Royal Majesty, The Alake of Egbaland
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-muted-brand">
-                His Royal Majesty, Oba Adedotun Aremu Gbadebo, CFR, Okukenu IV, serves as the Supreme Royal Patron of the Abeokuta Polo Club. The Royal Cup represents the supreme sporting tribute offered by polo players and patrons from across the continent in celebration of this paramount lineage.
+                {FESTIVAL_METADATA.patron} serves as the Supreme Royal Patron. The Royal Declaration opens the festival on Saturday 19th December, with the presentation of the prestigious Royal Cup on Sunday 20th December.
               </p>
               <div className="mt-6 flex items-center gap-3 rounded-lg border border-gold/40 bg-gold/10 p-4 text-xs font-medium text-forest">
                 <CheckCircle2 className="size-5 text-gold shrink-0" />
-                <span>Ceremonial ball throw-in and trophy presentation by HRM on Sunday, 20 December 2026.</span>
+                <span>Player decorations, awards &amp; presentation of the Royal Cup by HRM on Sunday, 20 December 2026.</span>
               </div>
             </div>
 
@@ -170,33 +173,33 @@ export default function RoyalCupPage() {
                 Championship Heritage
               </span>
               <h2 className="font-display text-3xl font-semibold text-forest sm:text-4xl">
-                The Confluence of Royalty & High-Goal Sportsmanship
+                The Confluence of Royalty &amp; High-Goal Sportsmanship
               </h2>
               <p className="text-sm leading-relaxed text-muted-brand sm:text-base">
-                Unlike any other polo tournament on the continent, the Abeokuta Royal Cup is celebrated within an authentic amphitheatre of African heritage. Traditional royal obas, emirs, and chiefs assemble alongside international diplomats and captains of commerce to witness Nigeria’s most competitive chukkas.
+                Celebrating the 100 Kings under the banner &ldquo;ONE FIELD, ONE LEGACY&rdquo; honours traditional rulers and their monumental contributions to cultural preservation, unity, and community leadership.
               </p>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-4">
                 <div className="rounded-xl border border-line bg-card p-5">
-                  <h3 className="font-display text-base font-semibold text-forest">The Kings Durbar & Procession</h3>
+                  <h3 className="font-display text-base font-semibold text-forest">Presidential Address</h3>
                   <p className="mt-2 text-xs text-muted-brand">
-                    A ceremonial royal procession featuring ornate regalia, royal horsemen, and ancestral trumpet calls opening the championship match.
+                    Official address by {FESTIVAL_METADATA.president} during the Grand Finale ceremonies.
                   </p>
                 </div>
                 <div className="rounded-xl border border-line bg-card p-5">
-                  <h3 className="font-display text-base font-semibold text-forest">The Royal Patrons Enclosure</h3>
+                  <h3 className="font-display text-base font-semibold text-forest">Live Musical Celebrations</h3>
                   <p className="mt-2 text-xs text-muted-brand">
-                    An exclusive grandstand reserved for royal guests, state dignitaries, corporate benefactors, and visiting delegations.
+                    Two live musical performances by ARISTOS BAND and grand finale headline show by BERRYOLA.
                   </p>
                 </div>
               </div>
 
               <div className="pt-4 flex flex-wrap gap-4">
-                <Button asChild size="lg" className="bg-gold font-semibold text-forest-deep hover:bg-gold/90">
-                  <Link href="/register">Register For Free Entry</Link>
+                <Button asChild size="lg" className="bg-gold font-bold text-forest-deep hover:bg-gold/90">
+                  <Link href="/register">Register For Gate Pass</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="border-line text-forest hover:bg-sage">
-                  <Link href="/programme">View Tournament Itinerary</Link>
+                  <Link href="/programme">View 3-Day Programme Itinerary</Link>
                 </Button>
               </div>
             </div>

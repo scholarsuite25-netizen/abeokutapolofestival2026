@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { PassViewActions } from "@/components/shared/pass-view-actions";
+import { AttendanceMilestoneWidget } from "@/components/shared/attendance-milestone-widget";
 import { generateSignedPassToken, hashPassToken, verifyPassToken } from "@/lib/qr/token";
 import type { StoredPass } from "@/lib/storage/pass-storage";
 
@@ -345,6 +346,16 @@ async function PassContent({ params }: PassPageProps) {
             Show this screen or your downloaded offline pass at turnstiles. Gate officers scan this
             pass code on each tournament day to log your admission.
           </div>
+        </div>
+
+        {/* 2,500 Attendance Accelerator & WhatsApp Share Widget */}
+        <div className="print:hidden">
+          <AttendanceMilestoneWidget
+            passCode={cred.pass_code}
+            holderName={cred.holder_name}
+            currentCount={1840}
+            targetCount={2500}
+          />
         </div>
 
         {/* Return Controls */}
