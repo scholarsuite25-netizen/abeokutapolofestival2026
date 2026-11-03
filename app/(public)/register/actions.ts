@@ -241,35 +241,35 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       to: email,
       subject: `Your Gate Access Card: 2026 Abeokuta Polo Festival (${passCode})`,
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #111827; background-color: #FAF9F5; border-radius: 16px; border: 1px solid #DCD5C2;">
-          <div style="background-color: #062D1D; padding: 24px; border-radius: 12px; text-align: center; color: #FAF9F5;">
-            <p style="color: #DFBE75; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0; font-weight: bold;">Official Gate Access Pass & Schedule</p>
-            <h1 style="margin: 0; font-size: 24px; font-weight: 700;">Abeokuta Polo Festival 2026</h1>
-            <p style="margin: 6px 0 0 0; font-size: 13px; color: #DFBE75; font-style: italic;">The Blueprint — Building the Future from Our Heritage</p>
-            <p style="margin: 4px 0 0 0; font-size: 12px; color: #DCD5C2;">18–20 December 2026 · Abeokuta Polo Club & Country Resort, Ogun State</p>
+        <div style="font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #1B1C1C; background-color: #FCF9F8; border-radius: 16px; border: 1px solid #C1C9BF;">
+          <div style="background-color: #002F1A; padding: 24px; border-radius: 12px; text-align: center; color: #FCF9F8;">
+            <p style="color: #D4AF37; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0; font-weight: bold;">Official Gate Access Pass & Schedule</p>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 700; font-family: 'Cormorant Garamond', Georgia, serif;">Abeokuta Polo Festival 2026</h1>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #D4AF37; font-style: italic;">The Blueprint — Building the Future from Our Heritage</p>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #C1C9BF;">18–20 December 2026 · Abeokuta Polo Club & Country Resort, Ogun State</p>
           </div>
           <div style="padding: 24px 0;">
             <p style="font-size: 15px; margin: 0 0 12px 0;">Dear <strong>${holderName}</strong>,</p>
-            <p style="font-size: 14px; line-height: 1.6; color: #414843;">
+            <p style="font-size: 14px; line-height: 1.6; color: #55635A;">
               Your digital gate access card for the <strong>2026 Abeokuta Polo Festival</strong> has been successfully issued. Keep this email or download your offline card for gate entry.
             </p>
 
             <!-- Digital Pass Card Box -->
-            <div style="background-color: #FFFFFF; border: 2px dashed #062D1D; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
-              <p style="color: #795910; font-size: 11px; text-transform: uppercase; font-weight: 700; margin: 0; letter-spacing: 0.1em;">Pass Reference Code</p>
-              <h2 style="font-size: 28px; color: #062D1D; margin: 6px 0; letter-spacing: 0.12em; font-family: monospace; font-weight: 800;">${passCode}</h2>
-              <p style="color: #414843; font-size: 13px; margin: 4px 0 0 0;">Category: <strong>${category}</strong></p>
-              <p style="color: #795910; font-size: 12px; margin: 4px 0 0 0; font-weight: 600;">${affiliationDisplay}</p>
-              <p style="color: #414843; font-size: 12px; margin: 4px 0 0 0;">Entitlement: <strong>Festival Grounds & Grandstand</strong></p>
+            <div style="background-color: #FFFFFF; border: 2px dashed #002F1A; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
+              <p style="color: #C9A84C; font-size: 11px; text-transform: uppercase; font-weight: 700; margin: 0; letter-spacing: 0.1em;">Pass Reference Code</p>
+              <h2 style="font-size: 28px; color: #002F1A; margin: 6px 0; letter-spacing: 0.12em; font-family: monospace; font-weight: 800;">${passCode}</h2>
+              <p style="color: #55635A; font-size: 13px; margin: 4px 0 0 0;">Category: <strong>${category}</strong></p>
+              <p style="color: #C9A84C; font-size: 12px; margin: 4px 0 0 0; font-weight: 600;">${affiliationDisplay}</p>
+              <p style="color: #55635A; font-size: 12px; margin: 4px 0 0 0;">Entitlement: <strong>Festival Grounds & Grandstand</strong></p>
             </div>
 
             <!-- Download Official PDF Schedule CTA -->
-            <div style="background-color: #062D1D; border-radius: 12px; padding: 18px; margin: 20px 0; text-align: center; color: #FAF9F5;">
-              <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #DFBE75;">Official 3-Day Festival Programme (PDF)</p>
-              <p style="margin: 0 0 14px 0; font-size: 12px; color: #FAF9F5; opacity: 0.9;">
+            <div style="background-color: #002F1A; border-radius: 12px; padding: 18px; margin: 20px 0; text-align: center; color: #FCF9F8;">
+              <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #D4AF37;">Official 3-Day Festival Programme (PDF)</p>
+              <p style="margin: 0 0 14px 0; font-size: 12px; color: #FCF9F8; opacity: 0.9;">
                 Download the beautifully designed 3-day itinerary covering all ceremonial events, royal matches, foundation-layings, debate, sip & paint, and ARISTOS BAND performances.
               </p>
-              <a href="https://abeokuta-polo-festival-2026.vercel.app/api/programme/pdf" style="display: inline-block; background-color: #DFBE75; color: #062D1D; padding: 10px 22px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">
+              <a href="https://abeokuta-polo-festival-2026.vercel.app/api/programme/pdf" style="display: inline-block; background-color: #D4AF37; color: #002F1A; padding: 10px 22px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">
                 📄 Download Official PDF Programme
               </a>
             </div>

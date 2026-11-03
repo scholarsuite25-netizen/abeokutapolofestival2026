@@ -16,23 +16,27 @@ export function generateProgrammeHTML(): string {
       margin: 20mm 18mm 20mm 18mm;
     }
     :root {
-      --forest: #062D1D;
-      --forest-deep: #031A10;
-      --gold: #795910;
-      --gold-light: #DFBE75;
-      --ink: #111827;
-      --muted: #4B5563;
-      --line: #DCD5C2;
+      --forest: #002F1A;
+      --forest-deep: #00210E;
+      --gold: #D4AF37;
+      --gold-light: #F2D46B;
+      --ink: #1B1C1C;
+      --muted: #55635A;
+      --line: #C1C9BF;
+      --bg-cream: #FCF9F8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: var(--ink);
       background: #FFFFFF;
       line-height: 1.5;
       font-size: 13px;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+    }
+    h1, h2, h3, .main-title, .day-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
     }
     .page {
       max-width: 800px;

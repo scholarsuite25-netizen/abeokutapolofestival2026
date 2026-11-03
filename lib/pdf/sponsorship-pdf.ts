@@ -16,23 +16,28 @@ export function generateSponsorshipHTML(): string {
       margin: 18mm 16mm 18mm 16mm;
     }
     :root {
-      --forest: #062D1D;
-      --forest-deep: #031A10;
-      --gold: #795910;
-      --gold-light: #DFBE75;
-      --ink: #111827;
-      --muted: #4B5563;
-      --line: #DCD5C2;
-      --bg-cream: #FAF8F4;
+      --forest: #002F1A;
+      --forest-deep: #00210E;
+      --gold: #D4AF37;
+      --gold-light: #F2D46B;
+      --ink: #1B1C1C;
+      --muted: #55635A;
+      --line: #C1C9BF;
+      --bg-cream: #FCF9F8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: var(--ink);
       background: #FFFFFF;
       line-height: 1.5;
       font-size: 12px;
       -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    h1, h2, h3, .main-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
       print-color-adjust: exact;
     }
     .page {

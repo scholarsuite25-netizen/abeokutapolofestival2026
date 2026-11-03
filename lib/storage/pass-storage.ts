@@ -142,24 +142,27 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
   <title>Abeokuta Polo Festival 2026 Gate Pass - ${pass.passCode}</title>
   <style>
     :root {
-      --forest: #062D1D;
-      --forest-deep: #031A10;
-      --gold: #DFBE75;
-      --gold-deep: #795910;
-      --ivory: #FAF9F5;
+      --forest: #002F1A;
+      --forest-deep: #00210E;
+      --gold: #D4AF37;
+      --gold-deep: #C9A84C;
+      --ivory: #FCF9F8;
       --card-bg: #FFFFFF;
-      --border: #DCD5C2;
+      --border: #C1C9BF;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #062D1D;
-      color: #111827;
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #002F1A;
+      color: #1B1C1C;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 16px;
+    }
+    h1, h2, h3, .pass-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
     }
     .pass-card {
       background: var(--card-bg);
