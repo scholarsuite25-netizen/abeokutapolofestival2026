@@ -45,10 +45,10 @@
   --color-ivory-warm: #fdfcf8;
   --color-paper: #ffffff;
   --color-sage: #e1e4e1;
-  --color-gold: #d4af37;
-  --color-gold-deep: #c9a84c;
-  --color-gold-light: #f2d46b;
-  --color-gold-dim: #ddbd42;
+  --color-gold: #c9a84c;
+  --color-gold-deep: #b38f34;
+  --color-gold-light: #d4af37;
+  --color-gold-dim: #997520;
   --color-ink: #1b1c1c;
   --color-muted-brand: #55635a;
   --color-line: #c1c9bf;
@@ -91,9 +91,9 @@
   --ring: #004225;
 
   --chart-1: #002f1a;
-  --chart-2: #d4af37;
+  --chart-2: #c9a84c;
   --chart-3: #004225;
-  --chart-4: #c9a84c;
+  --chart-4: #b38f34;
   --chart-5: #1b4d2e;
 }
 

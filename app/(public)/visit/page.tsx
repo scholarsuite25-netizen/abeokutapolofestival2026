@@ -82,11 +82,19 @@ export default function VisitPage() {
                   </div>
                   <div>
                     <span className="font-semibold text-forest block">Entry Requirement:</span>
-                    <span className="text-forest-interactive font-medium">Free Digital QR Pass (Prior registration mandatory)</span>
+                    <span className="text-forest-interactive font-medium">Digital Access Card (Turnstile accreditation mandatory)</span>
                   </div>
                   <div>
                     <span className="font-semibold text-forest block">Gate Locations:</span>
                     <span className="text-muted-brand">Gate 1 (Royal & VIP) · Gate 2 & 3 (General Guests & Accreditations)</span>
+                  </div>
+                  <div className="rounded-lg border border-gold/50 bg-forest/5 p-3 space-y-1">
+                    <span className="font-bold text-forest uppercase tracking-wider text-[10px] block">
+                      Mandatory Gate Protocol
+                    </span>
+                    <p className="text-muted-brand text-[11px] leading-snug">
+                      <strong>All attendees must be duly registered to attend any of the three festival days.</strong> No turnstile admission is permitted without an official digital access card.
+                    </p>
                   </div>
                 </div>
 

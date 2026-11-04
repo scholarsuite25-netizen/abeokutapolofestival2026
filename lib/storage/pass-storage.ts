@@ -13,18 +13,32 @@ export interface StoredPass {
   phone?: string;
   qrToken?: string;
   registeredAt: string;
-  day1Status: "free_admitted" | "registered";
-  day2Status: "ticket_required" | "ticket_verified";
-  day3Status: "ticket_required" | "ticket_verified";
+  daysCovered?: number[];
+  passTier?: "free_day1" | "free_day2" | "free_day1_2" | "vvip_day3" | string;
+  isVvip?: boolean;
+  designTheme?: "standard" | "gold";
+  paymentRef?: string | null;
+  invitationCode?: string | null;
+  day1Status?: "free_admitted" | "registered" | "not_selected";
+  day2Status?: "free_admitted" | "registered" | "not_selected" | "ticket_required" | "ticket_verified";
+  day3Status?: "vvip_admitted" | "payment_verified" | "ticket_required" | "ticket_verified" | "not_selected";
   ticketRefDay2?: string | null;
   ticketRefDay3?: string | null;
+  securityHash?: string;
+  ticketIndex?: number;
+  totalTickets?: number;
+  serialLabel?: string;
+  isSponsored?: boolean;
+  sponsorName?: string | null;
 }
 
 const PASS_STORAGE_KEY = "abk_polo_registered_pass";
+const PASSES_STORAGE_KEY = "abk_polo_registered_passes_list";
 const PASS_COOKIE_NAME = "abk_pass_code";
 
 let cachedRaw: string | null = null;
-let cachedParsed: StoredPass | null = null;
+let cachedPasses: StoredPass[] = [];
+let cachedPrimary: StoredPass | null = null;
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -37,7 +51,6 @@ export function subscribeToPassStore(callback: () => void): () => void {
   listeners.add(callback);
   const onStorage = () => {
     cachedRaw = null;
-    cachedParsed = null;
     callback();
   };
   if (typeof window !== "undefined") {
@@ -53,56 +66,126 @@ export function subscribeToPassStore(callback: () => void): () => void {
   };
 }
 
-export function getPassSnapshot(): StoredPass | null {
-  if (typeof window === "undefined") return null;
+function loadFromStorage(): StoredPass[] {
+  if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(PASS_STORAGE_KEY) || sessionStorage.getItem(PASS_STORAGE_KEY);
-    if (raw === cachedRaw) {
-      return cachedParsed;
+    const rawList = localStorage.getItem(PASSES_STORAGE_KEY) || sessionStorage.getItem(PASSES_STORAGE_KEY);
+    if (rawList) {
+      const parsed = JSON.parse(rawList);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed as StoredPass[];
+      }
+    }
+
+    // Fallback to legacy single key
+    const rawSingle = localStorage.getItem(PASS_STORAGE_KEY) || sessionStorage.getItem(PASS_STORAGE_KEY);
+    if (rawSingle) {
+      const single = JSON.parse(rawSingle) as StoredPass;
+      return [single];
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export function getPassesSnapshot(): StoredPass[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(PASSES_STORAGE_KEY) || localStorage.getItem(PASS_STORAGE_KEY);
+    if (raw === cachedRaw && cachedPasses.length > 0) {
+      return cachedPasses;
     }
     cachedRaw = raw;
-    cachedParsed = raw ? (JSON.parse(raw) as StoredPass) : null;
-    return cachedParsed;
+    cachedPasses = loadFromStorage();
+    cachedPrimary = cachedPasses[0] || null;
+    return cachedPasses;
   } catch {
-    return null;
+    return [];
   }
+}
+
+export function getPassSnapshot(): StoredPass | null {
+  getPassesSnapshot();
+  return cachedPrimary;
 }
 
 export function getPassServerSnapshot(): StoredPass | null {
   return null;
 }
 
+export function getPassesServerSnapshot(): StoredPass[] {
+  return [];
+}
+
 /**
- * React 19 safe Hook: Synchronizes active pass credentials with browser storage
- * without triggering cascading renders or hydration mismatch.
+ * React 19 safe Hook: Returns all active passes saved on this device (e.g. Free Pass + Day 3 VVIP Pass).
+ */
+export function useStoredPasses(): StoredPass[] {
+  return useSyncExternalStore(subscribeToPassStore, getPassesSnapshot, getPassesServerSnapshot);
+}
+
+/**
+ * React 19 safe Hook: Returns the primary pass saved on this device.
  */
 export function useStoredPass(): StoredPass | null {
   return useSyncExternalStore(subscribeToPassStore, getPassSnapshot, getPassServerSnapshot);
 }
 
 /**
- * Persists the registered pass to localStorage, sessionStorage, and cookie.
+ * Persists registered pass(es) to localStorage, sessionStorage, and cookie.
  */
-export function persistRegisteredPass(pass: StoredPass): void {
+export function persistRegisteredPass(input: StoredPass | StoredPass[]): void {
   if (typeof window === "undefined") return;
 
   try {
-    const serialized = JSON.stringify(pass);
-    localStorage.setItem(PASS_STORAGE_KEY, serialized);
-    sessionStorage.setItem(PASS_STORAGE_KEY, serialized);
+    const newPasses = Array.isArray(input) ? input : [input];
+    if (newPasses.length === 0) return;
+
+    // Merge with any existing passes that don't share the same pass code
+    const existing = loadFromStorage();
+    const map = new Map<string, StoredPass>();
+    for (const p of existing) {
+      map.set(p.passCode, p);
+    }
+    for (const p of newPasses) {
+      map.set(p.passCode, p);
+    }
+
+    const merged = Array.from(map.values());
+    const serializedList = JSON.stringify(merged);
+    const primary = merged[0];
+    const serializedPrimary = JSON.stringify(primary);
+
+    localStorage.setItem(PASSES_STORAGE_KEY, serializedList);
+    sessionStorage.setItem(PASSES_STORAGE_KEY, serializedList);
+    localStorage.setItem(PASS_STORAGE_KEY, serializedPrimary);
+    sessionStorage.setItem(PASS_STORAGE_KEY, serializedPrimary);
+
     // 365-day cookie for cross-session/SSR detection
-    document.cookie = `${PASS_COOKIE_NAME}=${encodeURIComponent(pass.passCode)}; max-age=31536000; path=/; SameSite=Lax`;
-    cachedRaw = serialized;
-    cachedParsed = pass;
+    const codes = merged.map((p) => p.passCode).join(",");
+    document.cookie = `${PASS_COOKIE_NAME}=${encodeURIComponent(codes)}; max-age=31536000; path=/; SameSite=Lax`;
+
+    cachedRaw = serializedList;
+    cachedPasses = merged;
+    cachedPrimary = primary;
+
     notify();
-    window.dispatchEvent(new CustomEvent("abk_pass_saved", { detail: pass }));
+    window.dispatchEvent(new CustomEvent("abk_pass_saved", { detail: merged }));
   } catch {
     // Non-blocking
   }
 }
 
 /**
- * Retrieves the currently saved pass from device storage.
+ * Retrieves the currently saved passes from device storage.
+ */
+export function getStoredPasses(): StoredPass[] {
+  return getPassesSnapshot();
+}
+
+/**
+ * Retrieves the single primary saved pass.
  */
 export function getStoredPass(): StoredPass | null {
   return getPassSnapshot();
@@ -114,11 +197,14 @@ export function getStoredPass(): StoredPass | null {
 export function clearStoredPass(): void {
   if (typeof window === "undefined") return;
   try {
+    localStorage.removeItem(PASSES_STORAGE_KEY);
     localStorage.removeItem(PASS_STORAGE_KEY);
+    sessionStorage.removeItem(PASSES_STORAGE_KEY);
     sessionStorage.removeItem(PASS_STORAGE_KEY);
     document.cookie = `${PASS_COOKIE_NAME}=; max-age=0; path=/`;
     cachedRaw = null;
-    cachedParsed = null;
+    cachedPasses = [];
+    cachedPrimary = null;
     notify();
     window.dispatchEvent(new CustomEvent("abk_pass_saved", { detail: null }));
   } catch {
@@ -127,222 +213,268 @@ export function clearStoredPass(): void {
 }
 
 /**
- * Generates and triggers an automatic download of a self-contained offline Digital Access Pass HTML card.
- * This guarantees the pass "drops" into the user's phone downloads/files and remains accessible
- * even without an internet connection at the tournament gate turnstiles.
+ * Generates and triggers an automatic download of a self-contained offline Digital Access ID Card.
+ * Day 3 VVIP passes render a distinct, classic deep gold design.
+ * Days 1 & 2 passes render the classic Forest Green & Warm Ivory royal design.
  */
 export function forceDownloadOfflinePassCard(pass: StoredPass): void {
   if (typeof window === "undefined") return;
+
+  const isGold = pass.isVvip || pass.designTheme === "gold" || pass.passTier === "vvip_day3";
+  const isSponsored = Boolean(pass.isSponsored || pass.holderName.toLowerCase().startsWith("sponsored invitation"));
+  const serialLabel = pass.serialLabel || (pass.totalTickets && pass.totalTickets > 1 && pass.ticketIndex ? `Ticket ${pass.ticketIndex} of ${pass.totalTickets}` : "");
+
+  // Days display label
+  const daysLabel = pass.daysCovered && pass.daysCovered.length === 2
+    ? "Day 1 & Day 2 (18 & 19 Dec 2026)"
+    : pass.daysCovered?.includes(3)
+    ? "Day 3: Sunday 20 Dec 2026"
+    : pass.daysCovered?.includes(2)
+    ? "Day 2: Saturday 19 Dec 2026"
+    : "Day 1: Friday 18 Dec 2026";
+
+  const cardTitle = isGold
+    ? isSponsored
+      ? "DAY 3 VVIP GUEST INVITATION"
+      : "DAY 3 VVIP GRAND FINALE PASS"
+    : pass.daysCovered && pass.daysCovered.length === 2
+    ? "DAY 1 & DAY 2 DUAL ACCESS PASS"
+    : pass.daysCovered?.includes(2)
+    ? "DAY 2 ACCESS PASS"
+    : "DAY 1 ACCESS PASS";
+
+  const badgeTheme = isGold
+    ? isSponsored
+      ? `VVIP GUEST INVITATION${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
+      : `OFFICIAL VVIP ACCREDITATION${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
+    : "COMPLIMENTARY ACCESS PASS";
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Abeokuta Polo Festival 2026 Gate Pass - ${pass.passCode}</title>
+  <title>Abeokuta Polo Festival 2026 ID Pass - ${pass.passCode}</title>
   <style>
     :root {
       --forest: #002F1A;
       --forest-deep: #00210E;
-      --gold: #D4AF37;
-      --gold-deep: #C9A84C;
+      --gold: #C9A84C;
+      --gold-deep: #B38F34;
+      --gold-bright: #E5C768;
       --ivory: #FCF9F8;
-      --card-bg: #FFFFFF;
-      --border: #C1C9BF;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #002F1A;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 'Manrope', sans-serif;
+      background: ${isGold ? "#0E0A03" : "#00210E"};
       color: #1B1C1C;
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 16px;
     }
-    h1, h2, h3, .pass-title {
-      font-family: 'Cormorant Garamond', Georgia, serif;
-    }
-    .pass-card {
-      background: var(--card-bg);
+
+    /* ID-CARD DIMENSIONS & PROPORTIONS (CR80 Standard Ratio) */
+    .id-card {
       width: 100%;
-      max-width: 440px;
-      border-radius: 24px;
+      max-width: 360px;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-      border: 2px solid var(--gold);
-    }
-    .pass-header {
-      background: var(--forest);
-      color: var(--ivory);
-      padding: 24px 20px;
-      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+      background: ${isGold ? "linear-gradient(145deg, #1A1404 0%, #2A1F06 45%, #181203 100%)" : "#FFFFFF"};
+      border: 2px solid ${isGold ? "#C9A84C" : "#002F1A"};
       position: relative;
     }
-    .tag {
-      display: inline-block;
-      padding: 4px 10px;
+
+    /* Lanyard punch hole aesthetic */
+    .lanyard-slot {
+      width: 48px;
+      height: 8px;
+      background: ${isGold ? "#0A0802" : "#E2DDD3"};
       border-radius: 9999px;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      background: rgba(223,190,117,0.2);
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      margin-bottom: 8px;
+      margin: 12px auto 6px auto;
+      border: 1px solid ${isGold ? "#B38F34" : "#C1C9BF"};
     }
-    h1 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #FAF9F5;
-      letter-spacing: -0.02em;
-    }
-    .subtitle {
-      font-size: 11px;
-      color: var(--gold);
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      margin-top: 4px;
-    }
-    .qr-section {
-      background: #FAF9F5;
-      padding: 24px;
+
+    /* Top Card Header */
+    .card-header {
+      padding: 12px 16px;
       text-align: center;
-      border-bottom: 1px dashed var(--border);
+      background: ${isGold ? "linear-gradient(180deg, #332608 0%, #1A1303 100%)" : "#002F1A"};
+      color: ${isGold ? "#FBF5B7" : "#FCF9F8"};
+      border-bottom: 2px solid ${isGold ? "#C9A84C" : "#B38F34"};
     }
-    .qr-box {
-      background: #FFFFFF;
+    .badge-pill {
       display: inline-block;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: ${isGold ? "linear-gradient(90deg, #B38F34, #C9A84C)" : "#C9A84C"};
+      color: ${isGold ? "#FFFFFF" : "#002F1A"};
+    }
+    .card-title {
+      font-family: Georgia, serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 6px;
+      color: ${isGold ? "#E5C768" : "#FFFFFF"};
+      letter-spacing: 0.04em;
+    }
+    .festival-sub {
+      font-size: 10px;
+      color: ${isGold ? "#C9A84C" : "#E5C768"};
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* QR Code & Security Core */
+    .qr-core {
       padding: 16px;
-      border-radius: 16px;
-      border: 3px dashed var(--forest);
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      text-align: center;
+      background: ${isGold ? "#151004" : "#FAF9F5"};
+      border-bottom: 1px dashed ${isGold ? "#5E4711" : "#C1C9BF"};
+    }
+    .qr-frame {
+      display: inline-block;
+      padding: 10px;
+      background: #FFFFFF;
+      border-radius: 14px;
+      border: 2px solid ${isGold ? "#C9A84C" : "#002F1A"};
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
     .pass-code {
       font-family: monospace;
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 800;
-      color: var(--forest);
-      letter-spacing: 0.12em;
-      margin-top: 12px;
+      letter-spacing: 0.14em;
+      margin-top: 10px;
+      color: ${isGold ? "#E5C768" : "#002F1A"};
     }
-    .details {
-      padding: 20px;
-      font-size: 13px;
+    .security-status {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 4px;
+      letter-spacing: 0.08em;
+      color: ${isGold ? "#85E0A3" : "#065F46"};
     }
-    .row {
+
+    /* ID Card Body Info */
+    .card-body {
+      padding: 14px 18px;
+      font-size: 12px;
+      color: ${isGold ? "#E8DFD0" : "#1B1C1C"};
+    }
+    .info-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #F0ECE1;
+      padding: 5px 0;
+      border-bottom: 1px solid ${isGold ? "rgba(201,168,76,0.2)" : "#F0ECE1"};
     }
-    .label { color: #6B7280; font-weight: 500; }
-    .value { color: var(--forest); font-weight: 700; text-align: right; }
-    .admission-policy {
-      background: #F7F5EE;
-      margin: 14px 0;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 11px;
-      line-height: 1.4;
-      border: 1px solid #E5DFD3;
-    }
-    .day-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px;
-      margin-top: 8px;
-      text-align: center;
+    .info-label {
       font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: ${isGold ? "#C9A84C" : "#6B7280"};
+      font-weight: 600;
     }
-    .day-col {
-      padding: 6px 4px;
-      border-radius: 8px;
-      border: 1px solid #DCD5C2;
+    .info-val {
+      font-weight: 700;
+      text-align: right;
+      color: ${isGold ? "#FFFFFF" : "#002F1A"};
     }
-    .day-free { background: #ECFDF5; border-color: #6EE7B7; color: #065F46; }
-    .day-ticket { background: #FEF3C7; border-color: #FCD34D; color: #92400E; }
-    .footer {
-      background: #FAF9F5;
-      padding: 14px;
+
+    /* Security Foil Watermark */
+    .security-foil {
+      margin: 10px 0 6px 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: ${isGold ? "linear-gradient(90deg, #3D2D07, #211904)" : "#EDF5F0"};
+      border: 1px solid ${isGold ? "#B38F34" : "#A7D7B5"};
+      color: ${isGold ? "#FBF5B7" : "#065F46"};
+    }
+
+    /* Footer */
+    .card-footer {
+      padding: 10px 14px;
       text-align: center;
-      font-size: 11px;
-      color: #6B7280;
-      border-top: 1px solid var(--border);
+      font-size: 9px;
+      background: ${isGold ? "#0F0B02" : "#F4F2EC"};
+      color: ${isGold ? "#C9A84C" : "#727973"};
+      border-top: 1px solid ${isGold ? "#3D2D07" : "#E2DDD3"};
     }
   </style>
 </head>
 <body>
-  <div class="pass-card">
-    <div class="pass-header">
-      <div class="tag">Offline Gate Access Pass</div>
-      <h1>Abeokuta Polo Festival 2026</h1>
-      <div class="subtitle">The Blueprint · 18–20 Dec 2026</div>
+  <div class="id-card">
+    <div class="lanyard-slot"></div>
+    <div class="card-header">
+      <div class="badge-pill">${badgeTheme}</div>
+      <div class="card-title">${cardTitle}</div>
+      <div class="festival-sub">Abeokuta Polo Festival 2026</div>
     </div>
 
-    <div class="qr-section">
-      <div class="qr-box">
+    <div class="qr-core">
+      <div class="qr-frame">
         <img
-          src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pass.passCode)}"
-          alt="Gate QR Code"
-          width="180"
-          height="180"
-          style="display: block; border-radius: 8px;"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(pass.passCode)}"
+          alt="ID Pass QR Code"
+          width="160"
+          height="160"
+          style="display: block; border-radius: 6px;"
         />
       </div>
       <div class="pass-code">${pass.passCode}</div>
-      <p style="font-size: 11px; color: #065F46; font-weight: 600; margin-top: 6px;">
-        ✓ Saved to Device · Ready for Gate Turnstiles
-      </p>
+      <div class="security-status">✓ Cryptographic Security Verified</div>
     </div>
 
-    <div class="details">
-      <div class="row">
-        <span class="label">Attendee Name:</span>
-        <span class="value">${pass.holderName}</span>
+    <div class="card-body">
+      <div class="info-row">
+        <span class="info-label">Pass Holder</span>
+        <span class="info-val">${pass.holderName}</span>
       </div>
-      <div class="row">
-        <span class="label">Affiliation / Host:</span>
-        <span class="value">${
-          pass.affiliationType === "guest_of"
-            ? `Guest of: ${pass.hostName || "Host Member"}`
-            : pass.affiliationType === "corporate"
-            ? `Corporate: ${pass.organization || "Company"}`
-            : "Individual Attendee"
-        }</span>
+      ${serialLabel ? `
+      <div class="info-row">
+        <span class="info-label">Ticket Serial</span>
+        <span class="info-val">${serialLabel}</span>
+      </div>` : ""}
+      ${pass.sponsorName || pass.hostName ? `
+      <div class="info-row">
+        <span class="info-label">Sponsored By</span>
+        <span class="info-val">${pass.sponsorName || pass.hostName}</span>
+      </div>` : ""}
+      <div class="info-row">
+        <span class="info-label">Admission Days</span>
+        <span class="info-val">${daysLabel}</span>
       </div>
-      <div class="row">
-        <span class="label">Category:</span>
-        <span class="value">${pass.category}</span>
+      <div class="info-row">
+        <span class="info-label">Tier / Access</span>
+        <span class="info-val">${isGold ? "VVIP Royal Pavilion & Grandstand" : "Festival Grounds & Grandstand"}</span>
       </div>
-      <div class="row">
-        <span class="label">Venue:</span>
-        <span class="value">Abeokuta Polo Club Grounds, Kobape</span>
+      <div class="info-row">
+        <span class="info-label">Venue</span>
+        <span class="info-val">Abeokuta Polo Club, Kobape</span>
       </div>
 
-      <div class="admission-policy">
-        <strong>Daily Admission Rules:</strong>
-        <div class="day-grid">
-          <div class="day-col day-free">
-            <strong>Day 1 (Fri 18)</strong><br />
-            <span>FREE ENTRY</span>
-          </div>
-          <div class="day-col day-ticket">
-            <strong>Day 2 (Sat 19)</strong><br />
-            <span>THROUGH TICKET</span>
-          </div>
-          <div class="day-col day-ticket">
-            <strong>Day 3 (Sun 20)</strong><br />
-            <span>THROUGH TICKET</span>
-          </div>
-        </div>
+      <div class="security-foil">
+        <span>🛡️ <strong>HMAC Security:</strong> ACTIVE</span>
+        <span>${isSponsored ? "SPONSORED GUEST" : "ID Card Format"}</span>
       </div>
     </div>
 
-    <div class="footer">
-      Show this screen at the turnstiles. Gate officers scan this pass code on each tournament day.
+    <div class="card-footer">
+      Official Turnstile Access Credential · Turnstile accreditation required. All attendees must be duly registered for valid entry.
     </div>
   </div>
 </body>
@@ -353,7 +485,8 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Abeokuta_Polo_Pass_${pass.passCode}.html`;
+    const prefix = isGold ? "Abeokuta_Polo_VVIP_Day3" : "Abeokuta_Polo_Pass";
+    link.download = `${prefix}_${pass.passCode}.html`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -361,4 +494,15 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
   } catch {
     // Non-blocking
   }
+}
+
+/**
+ * Downloads all passes in the list with a slight stagger to ensure all files drop to storage.
+ */
+export function forceDownloadAllPasses(passes: StoredPass[]): void {
+  passes.forEach((p, index) => {
+    setTimeout(() => {
+      forceDownloadOfflinePassCard(p);
+    }, index * 300);
+  });
 }

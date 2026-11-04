@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FestivalCountdown } from "@/components/shared/festival-countdown";
+import { ReadMoreSection } from "@/components/shared/read-more-section";
 import { OFFICIAL_PROGRAMME, FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export const metadata = {
@@ -65,7 +66,7 @@ export default function ProgrammePage() {
             </span>
             <span className="flex items-center gap-1.5 text-emerald-400">
               <ShieldCheck className="size-4" />
-              Day 1 Free · Day 2 &amp; 3 Through Ticket
+              Day 1 &amp; Day 2 Free · Day 3 Paid VVIP / Special Invite
             </span>
           </div>
 
@@ -93,13 +94,38 @@ export default function ProgrammePage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 2. PROGRAMME STATUS NOTICE & ADMISSION POLICY                       */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="border-b border-line bg-sage/40 py-5">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="border-b border-line bg-sage/40 py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-4">
+          {/* Mandatory Gate Protocol Notice */}
+          <div className="rounded-2xl border-2 border-gold/60 bg-forest p-4 sm:p-5 text-ivory shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-gold text-forest shrink-0 shadow-sm mt-0.5 sm:mt-0">
+                <ShieldCheck className="size-5.5 text-forest" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-gold text-forest font-black uppercase tracking-wider text-[10px] px-2.5 py-0.5 shadow-xs">
+                    Mandatory Gate Protocol
+                  </Badge>
+                  <span className="text-[11px] font-semibold text-gold uppercase tracking-widest hidden sm:inline">
+                    All 3 Tournament Days
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-ivory/95 font-medium leading-relaxed">
+                  <strong>All attendees must be duly registered to attend any of the three festival days.</strong> No turnstile admission is permitted without an official digital access card.
+                </p>
+              </div>
+            </div>
+            <Button asChild size="sm" className="bg-gold font-bold text-forest hover:bg-gold/90 text-xs shrink-0 w-full sm:w-auto">
+              <Link href="/register">Register Gate Pass →</Link>
+            </Button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div className="flex items-start gap-3 rounded-xl bg-card p-3.5 border border-line">
               <div className="rounded-lg bg-emerald-100 p-2 text-emerald-800 shrink-0 font-bold">D1</div>
               <div>
-                <strong className="text-forest block text-sm">Friday 18 Dec · Free Public Entry</strong>
+                <strong className="text-forest block text-sm">Friday 18 Dec · 100% Free Public Entry</strong>
                 <p className="text-muted-brand mt-0.5">
                   Press Conference, Media Tour, Festival Light-Up &amp; Welcome Dinner. 100% Free upon registration.
                 </p>
@@ -107,11 +133,11 @@ export default function ProgrammePage() {
             </div>
 
             <div className="flex items-start gap-3 rounded-xl bg-card p-3.5 border border-line">
-              <div className="rounded-lg bg-amber-100 p-2 text-amber-800 shrink-0 font-bold">D2</div>
+              <div className="rounded-lg bg-emerald-100 p-2 text-emerald-800 shrink-0 font-bold">D2</div>
               <div>
-                <strong className="text-forest block text-sm">Saturday 19 Dec · Through Ticket</strong>
+                <strong className="text-forest block text-sm">Saturday 19 Dec · 100% Free Public Entry</strong>
                 <p className="text-muted-brand mt-0.5">
-                  Royal Opening by HRM The Alake, Market Square opening, 3 Foundation-Layings, Queens Polo &amp; Art.
+                  Royal Opening by HRM The Alake, Market Square opening, 3 Foundation-Layings, Queens Polo &amp; Art. 100% Free upon registration.
                 </p>
               </div>
             </div>
@@ -119,7 +145,7 @@ export default function ProgrammePage() {
             <div className="flex items-start gap-3 rounded-xl bg-card p-3.5 border border-line">
               <div className="rounded-lg bg-amber-100 p-2 text-amber-800 shrink-0 font-bold">D3</div>
               <div>
-                <strong className="text-forest block text-sm">Sunday 20 Dec · Through Ticket</strong>
+                <strong className="text-forest block text-sm">Sunday 20 Dec · Paid VVIP / Special Invite</strong>
                 <p className="text-muted-brand mt-0.5">
                   Grand Finale, Royal Cup &amp; Queens Cup Finals, 100 Kings Celebration, ARISTOS BAND &amp; BERRYOLA.
                 </p>
@@ -200,14 +226,44 @@ export default function ProgrammePage() {
                         </div>
                       </div>
 
-                      <ul className="mt-4 space-y-2.5 pl-4 sm:pl-12">
-                        {block.items.map((item, itemIdx) => (
-                          <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
-                            <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {block.items.length <= 2 ? (
+                        <ul className="mt-4 space-y-2.5 pl-4 sm:pl-12">
+                          {block.items.map((item, itemIdx) => (
+                            <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                              <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="mt-4 pl-4 sm:pl-12">
+                          <ReadMoreSection
+                            summary={
+                              <ul className="space-y-2.5">
+                                {block.items.slice(0, 2).map((item, itemIdx) => (
+                                  <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                                    <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            }
+                            details={
+                              <ul className="space-y-2.5">
+                                {block.items.slice(2).map((item, itemIdx) => (
+                                  <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                                    <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            }
+                            moreText={`View all ${block.items.length} schedule activities`}
+                            lessText="Show fewer activities"
+                            variant="pill"
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -229,8 +285,8 @@ export default function ProgrammePage() {
                       {OFFICIAL_PROGRAMME[1].leadSummary}
                     </p>
                   </div>
-                  <Badge className="bg-amber-800 text-ivory text-xs px-3 py-1 shrink-0 self-start sm:self-center">
-                    ADMISSION THROUGH TICKET
+                  <Badge className="bg-emerald-800 text-ivory text-xs px-3 py-1 shrink-0 self-start sm:self-center">
+                    100% FREE PUBLIC ENTRY
                   </Badge>
                 </div>
 
@@ -258,14 +314,44 @@ export default function ProgrammePage() {
                         </div>
                       </div>
 
-                      <ul className="mt-4 space-y-2.5 pl-4 sm:pl-12">
-                        {block.items.map((item, itemIdx) => (
-                          <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
-                            <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {block.items.length <= 2 ? (
+                        <ul className="mt-4 space-y-2.5 pl-4 sm:pl-12">
+                          {block.items.map((item, itemIdx) => (
+                            <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                              <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="mt-4 pl-4 sm:pl-12">
+                          <ReadMoreSection
+                            summary={
+                              <ul className="space-y-2.5">
+                                {block.items.slice(0, 2).map((item, itemIdx) => (
+                                  <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                                    <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            }
+                            details={
+                              <ul className="space-y-2.5">
+                                {block.items.slice(2).map((item, itemIdx) => (
+                                  <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                                    <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            }
+                            moreText={`View all ${block.items.length} schedule activities`}
+                            lessText="Show fewer activities"
+                            variant="pill"
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -288,7 +374,7 @@ export default function ProgrammePage() {
                     </p>
                   </div>
                   <Badge className="bg-amber-800 text-ivory text-xs px-3 py-1 shrink-0 self-start sm:self-center">
-                    ADMISSION THROUGH TICKET
+                    PAID VVIP / SPECIAL INVITATION
                   </Badge>
                 </div>
 
@@ -316,14 +402,44 @@ export default function ProgrammePage() {
                         </div>
                       </div>
 
-                      <ul className="mt-4 space-y-2.5 pl-4 sm:pl-12">
-                        {block.items.map((item, itemIdx) => (
-                          <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
-                            <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {block.items.length <= 2 ? (
+                        <ul className="mt-4 space-y-2.5 pl-4 sm:pl-12">
+                          {block.items.map((item, itemIdx) => (
+                            <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                              <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="mt-4 pl-4 sm:pl-12">
+                          <ReadMoreSection
+                            summary={
+                              <ul className="space-y-2.5">
+                                {block.items.slice(0, 2).map((item, itemIdx) => (
+                                  <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                                    <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            }
+                            details={
+                              <ul className="space-y-2.5">
+                                {block.items.slice(2).map((item, itemIdx) => (
+                                  <li key={itemIdx} className="flex items-start gap-2.5 text-sm text-ink/80">
+                                    <span className="size-1.5 rounded-full bg-forest mt-2 shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            }
+                            moreText={`View all ${block.items.length} schedule activities`}
+                            lessText="Show fewer activities"
+                            variant="pill"
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -348,7 +464,7 @@ export default function ProgrammePage() {
                 </h3>
               </div>
               <p className="text-xs text-muted-brand max-w-xl">
-                Pass is generated immediately and downloaded to your phone for offline gate entry. Day 1 is 100% Free Public Admission; Day 2 &amp; Day 3 admission is Through Ticket.
+                <strong>Mandatory Gate Protocol:</strong> All attendees must be duly registered to attend any of the three festival days. Pass is generated immediately and downloaded to your phone for offline turnstile entry. Day 1 &amp; Day 2 are 100% Free Public Admission; Day 3 admission is Paid VVIP or by Special Royal Invitation.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 shrink-0">

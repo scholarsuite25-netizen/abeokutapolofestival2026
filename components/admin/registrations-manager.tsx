@@ -12,6 +12,10 @@ import {
   Building,
   UserCheck,
   ExternalLink,
+  Crown,
+  Calendar,
+  CreditCard,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,9 +41,15 @@ export interface ParticipantRecord {
   host_name?: string | null;
   organization?: string | null;
   created_at: string;
+  day1?: boolean;
+  day2?: boolean;
+  day3?: boolean;
+  day3_payment_ref?: string | null;
+  day3_invitation_code?: string | null;
   credentials?: Array<{
     id: string;
     pass_code: string;
+    pass_type?: string;
     status: string;
     day1_checked_in_at?: string | null;
     day2_checked_in_at?: string | null;
@@ -53,6 +63,7 @@ interface RegistrationsManagerProps {
 
 export function RegistrationsManager({ initialParticipants }: RegistrationsManagerProps) {
   const [participants, setParticipants] = useState<ParticipantRecord[]>(initialParticipants);
+  const [activeDayTab, setActiveDayTab] = useState<"all" | "day1" | "day2" | "day3">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -71,19 +82,77 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
     email: "",
     phone: "",
     category: "Individual Attendee",
-    groupSize: 1,
+    day1: true,
+    day2: true,
+    day3: false,
+    day3PaymentRef: "",
+    day3InvitationCode: "",
     affiliationType: "individual" as "individual" | "guest_of" | "corporate",
     hostName: "",
     organization: "",
     autoApprove: true,
   });
 
+  // Day filter predicates
+  const isDay1 = (p: ParticipantRecord) => {
+    if (p.day1 !== undefined) return p.day1;
+    // Derive from credentials or category
+    return (
+      p.credentials?.some(
+        (c) =>
+          c.pass_code.includes("D1") ||
+          c.pass_code.includes("D12") ||
+          c.day1_checked_in_at !== null ||
+          (!c.pass_code.includes("VVIP") && !c.pass_code.includes("D2-")),
+      ) ?? true
+    );
+  };
+
+  const isDay2 = (p: ParticipantRecord) => {
+    if (p.day2 !== undefined) return p.day2;
+    return (
+      p.credentials?.some(
+        (c) =>
+          c.pass_code.includes("D2") ||
+          c.pass_code.includes("D12") ||
+          c.day2_checked_in_at !== null ||
+          (!c.pass_code.includes("VVIP") && !c.pass_code.includes("D1-")),
+      ) ?? true
+    );
+  };
+
+  const isDay3 = (p: ParticipantRecord) => {
+    if (p.day3 !== undefined) return p.day3;
+    return (
+      p.credentials?.some(
+        (c) =>
+          c.pass_code.includes("VVIP") ||
+          c.pass_type?.includes("VVIP") ||
+          c.pass_type?.includes("Day 3") ||
+          c.day3_checked_in_at !== null,
+      ) ||
+      p.category.includes("VVIP") ||
+      p.category.includes("Patron") ||
+      Boolean(p.day3_payment_ref || p.day3_invitation_code)
+    );
+  };
+
+  // Summary counts
+  const day1Count = participants.filter(isDay1).length;
+  const day2Count = participants.filter(isDay2).length;
+  const day3Count = participants.filter(isDay3).length;
+
   // Filter logic
   const filtered = participants.filter((p) => {
+    // 1. Day tab filtering
+    if (activeDayTab === "day1" && !isDay1(p)) return false;
+    if (activeDayTab === "day2" && !isDay2(p)) return false;
+    if (activeDayTab === "day3" && !isDay3(p)) return false;
+
+    // 2. Search query filtering
     const fullName = `${p.first_name} ${p.last_name}`.toLowerCase();
     const query = searchQuery.toLowerCase();
-    const cred = p.credentials?.[0];
-    const passCode = cred?.pass_code?.toLowerCase() || "";
+    const passCodes = p.credentials?.map((c) => c.pass_code.toLowerCase()).join(" ") || "";
     const host = (p.host_name || "").toLowerCase();
     const org = (p.organization || "").toLowerCase();
 
@@ -91,24 +160,27 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
       fullName.includes(query) ||
       p.email.toLowerCase().includes(query) ||
       p.phone.includes(query) ||
-      passCode.includes(query) ||
+      passCodes.includes(query) ||
       host.includes(query) ||
       org.includes(query);
 
+    // 3. Category filtering
     const matchesCategory =
       selectedCategory === "all" ||
-      (selectedCategory === "individual" && (p.affiliation_type === "individual" || p.category.includes("Individual"))) ||
-      (selectedCategory === "guest_of" && (p.affiliation_type === "guest_of" || p.category.includes("Guest of"))) ||
-      (selectedCategory === "corporate" && (p.affiliation_type === "corporate" || p.category.includes("Corporate")));
+      (selectedCategory === "individual" &&
+        (p.affiliation_type === "individual" || p.category.includes("Individual"))) ||
+      (selectedCategory === "guest_of" &&
+        (p.affiliation_type === "guest_of" || p.category.includes("Guest of"))) ||
+      (selectedCategory === "corporate" &&
+        (p.affiliation_type === "corporate" || p.category.includes("Corporate")));
 
-    const matchesStatus =
-      selectedStatus === "all" ||
-      p.status === selectedStatus;
+    // 4. Status filtering
+    const matchesStatus = selectedStatus === "all" || p.status === selectedStatus;
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // CSV Export
+  // CSV Export for active view
   const handleExportCSV = () => {
     const headers = [
       "ID",
@@ -117,10 +189,8 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
       "Email",
       "Phone",
       "Category",
-      "Affiliation Type",
-      "Host Name",
-      "Organization",
-      "Pass Code",
+      "Affiliation",
+      "Pass Codes",
       "Status",
       "Day 1 Attended",
       "Day 2 Attended",
@@ -129,7 +199,12 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
     ];
 
     const rows = filtered.map((p) => {
-      const cred = p.credentials?.[0];
+      const creds = p.credentials || [];
+      const passCodes = creds.map((c) => c.pass_code).join(" | ") || "N/A";
+      const d1Checked = creds.some((c) => c.day1_checked_in_at) ? "YES" : "NO";
+      const d2Checked = creds.some((c) => c.day2_checked_in_at) ? "YES" : "NO";
+      const d3Checked = creds.some((c) => c.day3_checked_in_at) ? "YES" : "NO";
+
       return [
         p.id,
         `"${p.first_name.replace(/"/g, '""')}"`,
@@ -138,13 +213,11 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
         `"${p.phone.replace(/"/g, '""')}"`,
         `"${p.category.replace(/"/g, '""')}"`,
         p.affiliation_type,
-        `"${(p.host_name || "").replace(/"/g, '""')}"`,
-        `"${(p.organization || "").replace(/"/g, '""')}"`,
-        cred?.pass_code || "N/A",
+        `"${passCodes}"`,
         p.status,
-        cred?.day1_checked_in_at ? "YES" : "NO",
-        cred?.day2_checked_in_at ? "YES" : "NO",
-        cred?.day3_checked_in_at ? "YES" : "NO",
+        d1Checked,
+        d2Checked,
+        d3Checked,
         new Date(p.created_at).toLocaleString(),
       ].join(",");
     });
@@ -155,7 +228,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
     link.setAttribute("href", encodedUri);
     link.setAttribute(
       "download",
-      `Abeokuta_Polo_Participants_${selectedCategory}_${new Date().toISOString().slice(0, 10)}.csv`
+      `Abeokuta_Polo_Attendees_${activeDayTab.toUpperCase()}_${new Date().toISOString().slice(0, 10)}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -169,24 +242,43 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
     setActionSuccess(null);
 
     startTransition(async () => {
-      const res = await createParticipantAction(formData);
+      const res = await createParticipantAction({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        category: formData.day3 ? "Day 3 VVIP Grand Finale Pass" : formData.category,
+        groupSize: 1, // Single registration only
+        affiliationType: formData.affiliationType,
+        hostName: formData.hostName,
+        organization: formData.organization,
+        autoApprove: formData.autoApprove,
+      });
+
       if (res.ok) {
-        setActionSuccess(`Participant added successfully! ${res.passCode ? `Pass Code: ${res.passCode}` : ""}`);
+        setActionSuccess(
+          `Participant added successfully! ${res.passCode ? `Pass Code: ${res.passCode}` : ""}`,
+        );
         setIsAddOpen(false);
-        // Refresh local view
+
         const newRecord: ParticipantRecord = {
           id: crypto.randomUUID(),
           first_name: formData.firstName,
           last_name: formData.lastName,
           email: formData.email,
           phone: formData.phone,
-          category: formData.category,
-          group_size: formData.groupSize,
+          category: formData.day3 ? "Day 3 VVIP Grand Finale Pass" : formData.category,
+          group_size: 1,
           status: formData.autoApprove ? "confirmed" : "pending_approval",
           affiliation_type: formData.affiliationType,
           host_name: formData.hostName || null,
           organization: formData.organization || null,
           created_at: new Date().toISOString(),
+          day1: formData.day1,
+          day2: formData.day2,
+          day3: formData.day3,
+          day3_payment_ref: formData.day3PaymentRef || null,
+          day3_invitation_code: formData.day3InvitationCode || null,
           credentials: res.passCode
             ? [{ id: crypto.randomUUID(), pass_code: res.passCode, status: "active" }]
             : null,
@@ -197,8 +289,12 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
           lastName: "",
           email: "",
           phone: "",
-          category: "General Public Admission",
-          groupSize: 1,
+          category: "Individual Attendee",
+          day1: true,
+          day2: true,
+          day3: false,
+          day3PaymentRef: "",
+          day3InvitationCode: "",
           affiliationType: "individual",
           hostName: "",
           organization: "",
@@ -224,7 +320,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
         email: editingParticipant.email,
         phone: editingParticipant.phone,
         category: editingParticipant.category,
-        groupSize: editingParticipant.group_size,
+        groupSize: 1,
         affiliationType: editingParticipant.affiliation_type,
         hostName: editingParticipant.host_name || "",
         organization: editingParticipant.organization || "",
@@ -233,7 +329,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
       if (res.ok) {
         setActionSuccess("Participant updated successfully.");
         setParticipants((prev) =>
-          prev.map((p) => (p.id === editingParticipant.id ? editingParticipant : p))
+          prev.map((p) => (p.id === editingParticipant.id ? editingParticipant : p)),
         );
         setEditingParticipant(null);
       } else {
@@ -244,9 +340,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
 
   // Delete Participant
   const handleDelete = (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete participant ${name}? This action cascades and deletes their issued credentials.`)) {
-      return;
-    }
+    if (!confirm(`Are you sure you want to delete participant ${name}?`)) return;
     setActionError(null);
     setActionSuccess(null);
 
@@ -268,7 +362,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
       if (res.ok) {
         setActionSuccess("Registration approved and credential issued!");
         setParticipants((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, status: "confirmed" } : p))
+          prev.map((p) => (p.id === id ? { ...p, status: "confirmed" } : p)),
         );
       } else {
         setActionError(res.error || "Approval failed.");
@@ -284,7 +378,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
       if (res.ok) {
         setActionSuccess("Registration declined.");
         setParticipants((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, status: "declined" } : p))
+          prev.map((p) => (p.id === id ? { ...p, status: "declined" } : p)),
         );
       } else {
         setActionError(res.error || "Decline action failed.");
@@ -303,21 +397,103 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
       {actionSuccess && (
         <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-800 flex items-center justify-between">
           <span>{actionSuccess}</span>
-          <button onClick={() => setActionSuccess(null)} className="font-bold">×</button>
+          <button onClick={() => setActionSuccess(null)} className="font-bold">
+            ×
+          </button>
         </div>
       )}
 
-      {/* Top Controls: Search, Category Filters, Export, Add */}
-      <div className="flex flex-col gap-4 rounded-xl border border-line bg-card p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 size-4 text-muted-brand" />
-            <Input
-              placeholder="Search by name, email, phone, pass code, host, or corporate..."
-              className="pl-9 bg-ivory text-xs"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      {/* ── METRIC CARDS ROW: SUMMARY BY DAY ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-line bg-card p-4 shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-brand block">
+            Total Unique Registrants
+          </span>
+          <span className="text-2xl font-bold text-forest mt-1 block">
+            {participants.length}
+          </span>
+          <span className="text-[11px] text-muted-brand">All event attendees</span>
+        </div>
+
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 p-4 shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
+            Day 1 Attendees (Fri 18)
+          </span>
+          <span className="text-2xl font-bold text-emerald-950 mt-1 block">
+            {day1Count}
+          </span>
+          <span className="text-[11px] text-emerald-700">100% Free Public Entry</span>
+        </div>
+
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 p-4 shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
+            Day 2 Attendees (Sat 19)
+          </span>
+          <span className="text-2xl font-bold text-emerald-950 mt-1 block">
+            {day2Count}
+          </span>
+          <span className="text-[11px] text-emerald-700">100% Free Public Entry</span>
+        </div>
+
+        <div className="rounded-xl border border-amber-500/40 bg-amber-50/60 p-4 shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 block flex items-center gap-1">
+            <Crown className="size-3 text-amber-600" /> Day 3 VVIP (Sun 20)
+          </span>
+          <span className="text-2xl font-bold text-amber-950 mt-1 block">
+            {day3Count}
+          </span>
+          <span className="text-[11px] text-amber-800">Paid VVIP &amp; Special Invites</span>
+        </div>
+      </div>
+
+      {/* ── BACKEND SEPARATE DAY TABLES NAVIGATION ── */}
+      <div className="rounded-xl border border-line bg-card p-4 shadow-xs space-y-4">
+        {/* Day Tabs Navigation */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setActiveDayTab("all")}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                activeDayTab === "all"
+                  ? "bg-forest text-ivory shadow-xs"
+                  : "bg-sage/40 text-muted-brand hover:bg-sage hover:text-forest"
+              }`}
+            >
+              All Attendees ({participants.length})
+            </button>
+
+            <button
+              onClick={() => setActiveDayTab("day1")}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeDayTab === "day1"
+                  ? "bg-emerald-800 text-ivory shadow-xs"
+                  : "bg-emerald-50 text-emerald-900 border border-emerald-300 hover:bg-emerald-100"
+              }`}
+            >
+              <Calendar className="size-3.5" /> Day 1 Attendees (Fri 18 - Free) [{day1Count}]
+            </button>
+
+            <button
+              onClick={() => setActiveDayTab("day2")}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeDayTab === "day2"
+                  ? "bg-emerald-800 text-ivory shadow-xs"
+                  : "bg-emerald-50 text-emerald-900 border border-emerald-300 hover:bg-emerald-100"
+              }`}
+            >
+              <Calendar className="size-3.5" /> Day 2 Attendees (Sat 19 - Free) [{day2Count}]
+            </button>
+
+            <button
+              onClick={() => setActiveDayTab("day3")}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeDayTab === "day3"
+                  ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-xs"
+                  : "bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100"
+              }`}
+            >
+              <Crown className="size-3.5" /> Day 3 Attendees (Sun 20 - Paid VVIP) [{day3Count}]
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -325,15 +501,15 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
               onClick={handleExportCSV}
               variant="outline"
               size="sm"
-              className="border-line text-forest font-semibold"
+              className="border-line text-forest font-semibold text-xs"
             >
               <Download className="mr-1.5 size-3.5 text-gold-deep" />
-              Download CSV ({filtered.length})
+              Download {activeDayTab === "all" ? "All" : activeDayTab.toUpperCase()} CSV ({filtered.length})
             </Button>
             <Button
               onClick={() => setIsAddOpen(true)}
               size="sm"
-              className="bg-forest text-ivory hover:bg-forest-interactive font-semibold"
+              className="bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs"
             >
               <Plus className="mr-1.5 size-3.5" />
               Add Participant
@@ -341,58 +517,81 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
           </div>
         </div>
 
-        {/* Category & Status Filter Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-line/60">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-semibold text-muted-brand mr-1 flex items-center gap-1">
-              <Filter className="size-3" /> Category:
-            </span>
-            {[
-              { id: "all", label: "All Categories" },
-              { id: "individual", label: "Individual Attendees" },
-              { id: "guest_of", label: "Guests of Members" },
-              { id: "corporate", label: "Corporate Guests" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedCategory(tab.id)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  selectedCategory === tab.id
-                    ? "bg-forest text-ivory shadow-xs"
-                    : "bg-sage/40 text-muted-brand hover:bg-sage hover:text-forest"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 size-4 text-muted-brand" />
+            <Input
+              placeholder={`Search ${activeDayTab === "all" ? "all" : activeDayTab.toUpperCase()} attendees by name, email, phone, pass code...`}
+              className="pl-9 bg-ivory text-xs"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-semibold text-muted-brand">Status:</span>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="rounded-md border border-line bg-ivory px-2 py-1 text-xs text-forest"
-            >
-              <option value="all">All Statuses</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending_approval">Pending Review</option>
-              <option value="declined">Declined</option>
-            </select>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-muted-brand flex items-center gap-1">
+                <Filter className="size-3" /> Category:
+              </span>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="rounded-md border border-line bg-ivory px-2 py-1 text-xs text-forest"
+              >
+                <option value="all">All</option>
+                <option value="individual">Individual</option>
+                <option value="guest_of">Guest of Member</option>
+                <option value="corporate">Corporate</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-muted-brand">Status:</span>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="rounded-md border border-line bg-ivory px-2 py-1 text-xs text-forest"
+              >
+                <option value="all">All</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending_approval">Pending Review</option>
+                <option value="declined">Declined</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Participants Table */}
+      {/* ── ATTENDEES TABLE (SHOWING EACH DAY SEPARATELY) ── */}
       <div className="overflow-hidden rounded-xl border border-line bg-card shadow-xs">
+        <div className="border-b border-line bg-sage/20 px-4 py-2.5 flex items-center justify-between">
+          <span className="text-xs font-bold text-forest uppercase tracking-wider">
+            {activeDayTab === "all"
+              ? "All Event Registrations"
+              : activeDayTab === "day1"
+              ? "Day 1 Attendees (Friday 18 Dec 2026 — 100% Free Entry)"
+              : activeDayTab === "day2"
+              ? "Day 2 Attendees (Saturday 19 Dec 2026 — 100% Free Entry)"
+              : "Day 3 Attendees (Sunday 20 Dec 2026 — Paid VVIP / Special Invitation)"}
+          </span>
+          <span className="text-[11px] text-muted-brand">
+            Showing {filtered.length} attendee{filtered.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="border-b border-line bg-sage/30 text-forest font-semibold">
               <tr>
-                <th className="px-4 py-3">Participant</th>
+                <th className="px-4 py-3">Attendee</th>
                 <th className="px-4 py-3">Category &amp; Affiliation</th>
-                <th className="px-4 py-3">Access Pass Code</th>
-                <th className="px-4 py-3">Daily Attendance</th>
+                <th className="px-4 py-3">Issued ID Pass(es)</th>
+                {activeDayTab === "day3" ? (
+                  <th className="px-4 py-3">VVIP Verification / Paystack</th>
+                ) : (
+                  <th className="px-4 py-3">Daily Attendance</th>
+                )}
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -401,12 +600,17 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-muted-brand">
-                    No registered participants found matching your criteria.
+                    No attendees found for this view matching your criteria.
                   </td>
                 </tr>
               ) : (
                 filtered.map((p) => {
-                  const cred = p.credentials?.[0];
+                  const creds = p.credentials || [];
+                  const primaryCred = creds[0];
+                  const hasVvipCred = creds.some(
+                    (c) => c.pass_code.includes("VVIP") || c.pass_type?.includes("VVIP"),
+                  );
+
                   return (
                     <tr key={p.id} className="hover:bg-sage/10 transition-colors">
                       {/* Name & Contact */}
@@ -423,7 +627,11 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                       <td className="px-4 py-3">
                         <Badge
                           variant="outline"
-                          className="border-gold text-gold-deep text-[10px] font-semibold"
+                          className={`text-[10px] font-semibold ${
+                            hasVvipCred || activeDayTab === "day3"
+                              ? "border-amber-500 text-amber-900 bg-amber-50"
+                              : "border-gold text-gold-deep"
+                          }`}
                         >
                           {p.category}
                         </Badge>
@@ -439,67 +647,114 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                               <span>Corporate: <strong className="text-forest">{p.organization || "N/A"}</strong></span>
                             </>
                           ) : (
-                            <span className="text-muted-brand">Individual Guest</span>
+                            <span className="text-muted-brand">Individual Attendee</span>
                           )}
                         </div>
                       </td>
 
-                      {/* Pass Code & Access Card */}
+                      {/* Pass Code(s) */}
                       <td className="px-4 py-3">
-                        {cred?.pass_code ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono font-bold text-forest text-xs">
-                              {cred.pass_code}
-                            </span>
-                            <Link
-                              href={`/pass/${cred.pass_code}`}
-                              target="_blank"
-                              title="View Digital Access Card"
-                              className="text-muted-brand hover:text-forest"
-                            >
-                              <ExternalLink className="size-3.5 text-gold-deep" />
-                            </Link>
+                        {creds.length > 0 ? (
+                          <div className="space-y-1">
+                            {creds.map((c) => {
+                              const isGoldPass = c.pass_code.includes("VVIP");
+                              return (
+                                <div key={c.id} className="flex items-center gap-1.5">
+                                  <span
+                                    className={`font-mono font-bold text-xs px-1.5 py-0.5 rounded ${
+                                      isGoldPass
+                                        ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                        : "bg-forest/10 text-forest"
+                                    }`}
+                                  >
+                                    {c.pass_code}
+                                  </span>
+                                  <Link
+                                    href={`/pass/${c.pass_code}`}
+                                    target="_blank"
+                                    title="View Digital ID Pass"
+                                    className="text-muted-brand hover:text-forest"
+                                  >
+                                    <ExternalLink className="size-3.5 text-gold-deep" />
+                                  </Link>
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <span className="text-muted-brand italic">Not yet issued</span>
                         )}
                       </td>
 
-                      {/* 3-Day Attendance Indicators */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 text-[10px]">
-                          <span
-                            title="Day 1: Fri 18 Dec"
-                            className={`rounded px-1.5 py-0.5 font-semibold ${
-                              cred?.day1_checked_in_at
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-gray-100 text-gray-500"
-                            }`}
-                          >
-                            D1: {cred?.day1_checked_in_at ? "In" : "—"}
-                          </span>
-                          <span
-                            title="Day 2: Sat 19 Dec"
-                            className={`rounded px-1.5 py-0.5 font-semibold ${
-                              cred?.day2_checked_in_at
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-gray-100 text-gray-500"
-                            }`}
-                          >
-                            D2: {cred?.day2_checked_in_at ? "In" : "—"}
-                          </span>
-                          <span
-                            title="Day 3: Sun 20 Dec"
-                            className={`rounded px-1.5 py-0.5 font-semibold ${
-                              cred?.day3_checked_in_at
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-gray-100 text-gray-500"
-                            }`}
-                          >
-                            D3: {cred?.day3_checked_in_at ? "In" : "—"}
-                          </span>
-                        </div>
-                      </td>
+                      {/* Attendance / Payment Column */}
+                      {activeDayTab === "day3" ? (
+                        <td className="px-4 py-3">
+                          {p.day3_payment_ref ? (
+                            <div className="text-xs">
+                              <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                                <CreditCard className="size-3" /> Paid via Paystack
+                              </span>
+                              <span className="font-mono text-[10px] text-muted-brand">
+                                {p.day3_payment_ref}
+                              </span>
+                            </div>
+                          ) : p.day3_invitation_code ? (
+                            <div className="text-xs">
+                              <span className="text-amber-700 font-semibold flex items-center gap-1">
+                                <KeyRound className="size-3" /> Special VIP Invite
+                              </span>
+                              <span className="font-mono text-[10px] text-muted-brand">
+                                Code: {p.day3_invitation_code}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-xs">
+                              <span className="text-amber-800 font-semibold flex items-center gap-1">
+                                <Crown className="size-3" /> VVIP Accreditation
+                              </span>
+                              <span className="text-[10px] text-muted-brand">
+                                Turnstile check-in: {primaryCred?.day3_checked_in_at ? "Checked In" : "Pending"}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                      ) : (
+                        /* Daily Attendance Indicators */
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 text-[10px]">
+                            <span
+                              title="Day 1: Fri 18 Dec (Free)"
+                              className={`rounded px-1.5 py-0.5 font-semibold ${
+                                primaryCred?.day1_checked_in_at
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              D1: {primaryCred?.day1_checked_in_at ? "In" : "—"}
+                            </span>
+                            <span
+                              title="Day 2: Sat 19 Dec (Free)"
+                              className={`rounded px-1.5 py-0.5 font-semibold ${
+                                primaryCred?.day2_checked_in_at
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              D2: {primaryCred?.day2_checked_in_at ? "In" : "—"}
+                            </span>
+                            <span
+                              title="Day 3: Sun 20 Dec (VVIP)"
+                              className={`rounded px-1.5 py-0.5 font-semibold ${
+                                primaryCred?.day3_checked_in_at
+                                  ? "bg-amber-100 text-amber-900"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              D3: {primaryCred?.day3_checked_in_at ? "In" : "—"}
+                            </span>
+                          </div>
+                        </td>
+                      )}
 
                       {/* Status */}
                       <td className="px-4 py-3">
@@ -520,7 +775,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                         </span>
                       </td>
 
-                      {/* Actions: Approve/Deny, Edit, Delete */}
+                      {/* Actions */}
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {p.status === "pending_approval" && (
@@ -556,7 +811,9 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleDelete(p.id, `${p.first_name} ${p.last_name}`)}
+                            onClick={() =>
+                              handleDelete(p.id, `${p.first_name} ${p.last_name}`)
+                            }
                             title="Delete Participant"
                             className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
                           >
@@ -573,12 +830,12 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
         </div>
       </div>
 
-      {/* ── MODAL 1: ADD PARTICIPANT ────────────────────────────────────────── */}
+      {/* ── MODAL 1: ADD PARTICIPANT (SINGLE REGISTRATION ONLY) ── */}
       {isAddOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-lg rounded-2xl border border-line bg-card p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-line pb-3">
-              <h3 className="font-display text-lg font-semibold text-forest">Add Participant</h3>
+              <h3 className="font-serif text-lg font-semibold text-forest">Add Participant</h3>
               <button
                 onClick={() => setIsAddOpen(false)}
                 className="text-muted-brand hover:text-forest font-bold"
@@ -631,45 +888,67 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-forest">Category / Affiliation *</label>
-                  <select
-                    value={formData.affiliationType}
-                    onChange={(e) => {
-                      const val = e.target.value as "individual" | "guest_of" | "corporate";
-                      const catName =
+              {/* Day Selection Ticks in Admin */}
+              <div className="rounded-lg border border-line bg-sage/20 p-3 space-y-2">
+                <span className="font-bold text-forest block text-xs">
+                  Event Days to Issue ID Passes For:
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer bg-card p-2 rounded border border-line">
+                    <input
+                      type="checkbox"
+                      checked={formData.day1}
+                      onChange={(e) => setFormData({ ...formData, day1: e.target.checked })}
+                      className="rounded text-forest"
+                    />
+                    <span className="font-medium text-[11px]">Day 1 (Free)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer bg-card p-2 rounded border border-line">
+                    <input
+                      type="checkbox"
+                      checked={formData.day2}
+                      onChange={(e) => setFormData({ ...formData, day2: e.target.checked })}
+                      className="rounded text-forest"
+                    />
+                    <span className="font-medium text-[11px]">Day 2 (Free)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer bg-amber-50 p-2 rounded border border-amber-300">
+                    <input
+                      type="checkbox"
+                      checked={formData.day3}
+                      onChange={(e) => setFormData({ ...formData, day3: e.target.checked })}
+                      className="rounded text-amber-600"
+                    />
+                    <span className="font-bold text-amber-900 text-[11px]">Day 3 (VVIP)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-semibold text-forest">Category / Affiliation *</label>
+                <select
+                  value={formData.affiliationType}
+                  onChange={(e) => {
+                    const val = e.target.value as "individual" | "guest_of" | "corporate";
+                    setFormData({
+                      ...formData,
+                      affiliationType: val,
+                      category:
                         val === "guest_of"
-                          ? "Guest of Member / Dignitary"
+                          ? "Guest of Member"
                           : val === "corporate"
                           ? "Corporate Guest"
-                          : "Individual Attendee";
-                      setFormData({
-                        ...formData,
-                        affiliationType: val,
-                        category: catName,
-                      });
-                    }}
-                    className="w-full rounded-md border border-line bg-ivory p-2"
-                  >
-                    <option value="individual">Individual Attendee</option>
-                    <option value="guest_of">Guest of Member / Dignitary</option>
-                    <option value="corporate">Corporate Guest</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-forest">Total Passes (Group Size)</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="10"
-                    className="bg-ivory"
-                    value={formData.groupSize}
-                    onChange={(e) =>
-                      setFormData({ ...formData, groupSize: parseInt(e.target.value, 10) || 1 })
-                    }
-                  />
-                </div>
+                          : "Individual Attendee",
+                    });
+                  }}
+                  className="w-full rounded-md border border-line bg-ivory p-2"
+                >
+                  <option value="individual">Individual Attendee</option>
+                  <option value="guest_of">Guest of Member / Dignitary</option>
+                  <option value="corporate">Corporate Guest</option>
+                </select>
               </div>
 
               {formData.affiliationType === "guest_of" && (
@@ -707,16 +986,12 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                   className="rounded text-forest"
                 />
                 <label htmlFor="autoApprove" className="text-xs text-forest">
-                  Auto-approve and immediately issue cryptographic QR gate credential
+                  Auto-approve and immediately issue cryptographic QR ID passes
                 </label>
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-line">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAddOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
                 <Button
@@ -732,12 +1007,12 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
         </div>
       )}
 
-      {/* ── MODAL 2: EDIT PARTICIPANT ───────────────────────────────────────── */}
+      {/* ── MODAL 2: EDIT PARTICIPANT ── */}
       {editingParticipant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-lg rounded-2xl border border-line bg-card p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-line pb-3">
-              <h3 className="font-display text-lg font-semibold text-forest">Edit Participant</h3>
+              <h3 className="font-serif text-lg font-semibold text-forest">Edit Participant</h3>
               <button
                 onClick={() => setEditingParticipant(null)}
                 className="text-muted-brand hover:text-forest font-bold"
@@ -799,63 +1074,18 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-forest">Category / Affiliation *</label>
-                <select
-                  value={editingParticipant.affiliation_type}
-                  onChange={(e) => {
-                    const val = e.target.value as "individual" | "guest_of" | "corporate";
-                    const catName =
-                      val === "guest_of"
-                        ? "Guest of Member / Dignitary"
-                        : val === "corporate"
-                        ? "Corporate Guest"
-                        : "Individual Attendee";
-                    setEditingParticipant({
-                      ...editingParticipant,
-                      affiliation_type: val,
-                      category: catName,
-                    });
-                  }}
-                  className="w-full rounded-md border border-line bg-ivory p-2"
-                >
-                  <option value="individual">Individual Attendee</option>
-                  <option value="guest_of">Guest of Member / Dignitary</option>
-                  <option value="corporate">Corporate Guest</option>
-                </select>
+                <label className="font-semibold text-forest">Category</label>
+                <Input
+                  className="bg-ivory"
+                  value={editingParticipant.category}
+                  onChange={(e) =>
+                    setEditingParticipant({ ...editingParticipant, category: e.target.value })
+                  }
+                />
               </div>
 
-              {editingParticipant.affiliation_type === "guest_of" && (
-                <div className="space-y-1 rounded-md border border-gold/40 bg-gold/10 p-2.5">
-                  <label className="font-semibold text-forest">Host / Member Name</label>
-                  <Input
-                    className="bg-ivory"
-                    value={editingParticipant.host_name || ""}
-                    onChange={(e) =>
-                      setEditingParticipant({ ...editingParticipant, host_name: e.target.value })
-                    }
-                  />
-                </div>
-              )}
-
-              {editingParticipant.affiliation_type === "corporate" && (
-                <div className="space-y-1 rounded-md border border-gold/40 bg-gold/10 p-2.5">
-                  <label className="font-semibold text-forest">Company or Organization</label>
-                  <Input
-                    className="bg-ivory"
-                    value={editingParticipant.organization || ""}
-                    onChange={(e) =>
-                      setEditingParticipant({ ...editingParticipant, organization: e.target.value })
-                    }
-                  />
-                </div>
-              )}
-
               <div className="flex justify-end gap-2 pt-4 border-t border-line">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditingParticipant(null)}
-                >
+                <Button type="button" variant="outline" onClick={() => setEditingParticipant(null)}>
                   Cancel
                 </Button>
                 <Button
@@ -873,4 +1103,3 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
     </div>
   );
 }
-

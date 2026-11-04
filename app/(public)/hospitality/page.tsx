@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnquiryDialog } from "@/components/design/public/enquiry-dialog";
+import { ReadMoreSection } from "@/components/shared/read-more-section";
 
 export const metadata = {
   title: "Hospitality & Enclosures — 2026 Abeokuta Polo Festival",
@@ -158,16 +159,35 @@ export default function HospitalityPage() {
                     {enclosure.description}
                   </p>
 
-                  <div className="mt-6 space-y-2.5 border-t border-line/60 pt-5">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-forest">
+                  <div className="mt-6 border-t border-line/60 pt-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-forest mb-2.5">
                       Included Privileges:
                     </p>
-                    {enclosure.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs text-muted-brand">
-                        <CheckCircle2 className="size-4 text-gold shrink-0 mt-0.5" />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
+                    <ReadMoreSection
+                      summary={
+                        <div className="space-y-2">
+                          {enclosure.features.slice(0, 2).map((feature, idx) => (
+                            <div key={idx} className="flex items-start gap-2.5 text-xs text-muted-brand">
+                              <CheckCircle2 className="size-4 text-gold shrink-0 mt-0.5" />
+                              <span>{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      }
+                      details={
+                        <div className="space-y-2">
+                          {enclosure.features.slice(2).map((feature, idx) => (
+                            <div key={idx} className="flex items-start gap-2.5 text-xs text-muted-brand">
+                              <CheckCircle2 className="size-4 text-gold shrink-0 mt-0.5" />
+                              <span>{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      }
+                      moreText={`View all ${enclosure.features.length} privileges`}
+                      lessText="Show fewer privileges"
+                      variant="pill"
+                    />
                   </div>
                 </div>
 
@@ -188,18 +208,18 @@ export default function HospitalityPage() {
           <div className="mt-16 rounded-2xl border border-gold/40 bg-forest p-8 text-ivory text-center sm:text-left sm:flex sm:items-center sm:justify-between sm:p-10">
             <div>
               <Badge variant="outline" className="border-gold text-gold text-[11px] uppercase tracking-widest">
-                Complimentary Festival Entry
+                Official Festival Admission
               </Badge>
               <h3 className="mt-2 font-display text-2xl font-semibold text-ivory">
                 Tournament Attendance &amp; Gate Access
               </h3>
               <p className="mt-1 text-sm text-ivory/80 max-w-xl">
-                Attendance is complimentary across all three festival days. Pre-registration is mandatory for security credential accreditation and gate passage.
+                Day 1 &amp; Day 2 feature 100% Free Public Admission. Day 3 is Paid VVIP or by Special Royal Invitation. Digital registration is mandatory for security credential accreditation and fast gate passage.
               </p>
             </div>
             <div className="mt-6 sm:mt-0 shrink-0">
-              <Button asChild size="lg" className="bg-gold font-semibold text-forest-deep hover:bg-gold/90">
-                <Link href="/register">Register For Free Pass →</Link>
+              <Button asChild size="lg" className="bg-gold font-semibold text-forest-deep hover:bg-gold/90 shadow-md">
+                <Link href="/register">Register For Gate Pass →</Link>
               </Button>
             </div>
           </div>

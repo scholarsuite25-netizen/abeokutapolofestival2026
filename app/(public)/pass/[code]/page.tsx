@@ -23,6 +23,7 @@ import type { StoredPass } from "@/lib/storage/pass-storage";
 
 interface PassPageProps {
   params: Promise<{ code: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export const metadata = {
@@ -30,16 +31,17 @@ export const metadata = {
   description: "Official Gate Entry Access Card for Abeokuta Polo Festival 2026. Day 1 Free, Day 2 & 3 Through Ticket.",
 };
 
-export default function PublicPassPage({ params }: PassPageProps) {
+export default function PublicPassPage({ params, searchParams }: PassPageProps) {
   return (
     <Suspense fallback={<PageSkeleton />}>
-      <PassContent params={params} />
+      <PassContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function PassContent({ params }: PassPageProps) {
+async function PassContent({ params, searchParams }: PassPageProps) {
   const { code } = await params;
+  const sp = searchParams ? await searchParams : {};
   const normalizedCode = decodeURIComponent(code).toUpperCase().trim();
 
   let cred: {
@@ -112,15 +114,24 @@ async function PassContent({ params }: PassPageProps) {
   } else {
     // Demo fallback for offline/preview environments
     if (normalizedCode.startsWith("ABK-2026-")) {
+      const isVvip = normalizedCode.includes("VVIP");
+      const vvipMatch = normalizedCode.match(/VVIP(\d+)/);
+      const ticketIdx = vvipMatch ? parseInt(vvipMatch[1], 10) : 1;
+      const isSponsored = ticketIdx > 1 || Boolean(sp.holder && String(sp.holder).toLowerCase().startsWith("sponsored invitation"));
+      const sponsorFromUrl = sp.sponsor ? String(sp.sponsor) : sp.buyer ? String(sp.buyer) : null;
+      const holderFromUrl = sp.holder ? String(sp.holder) : (isSponsored ? (sponsorFromUrl ? `Sponsored Invitation by ${sponsorFromUrl}` : "Sponsored Invitation by Event Patron") : "Accredited Guest");
+
       cred = {
         id: "demo-cred",
         pass_code: normalizedCode,
-        pass_type: "Individual Attendee",
-        holder_name: "Accredited Guest",
-        affiliation_type: "individual",
-        host_name: null,
+        pass_type: isVvip ? "Day 3 VVIP Grand Finale Pass" : "Individual Attendee",
+        holder_name: holderFromUrl,
+        affiliation_type: isSponsored ? "guest_of" : "individual",
+        host_name: sponsorFromUrl || (isSponsored ? "Event Patron" : null),
         organization: null,
-        zone_access: ["Festival Grounds & Grandstand"],
+        zone_access: isVvip
+          ? ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
+          : ["Festival Grounds & Grandstand"],
         status: "active",
         issued_at: new Date().toISOString(),
         day1_checked_in_at: null,
@@ -159,12 +170,17 @@ async function PassContent({ params }: PassPageProps) {
   }
 
   const isActive = cred.status === "active";
+  const isSponsored = cred.holder_name.toLowerCase().startsWith("sponsored invitation") || cred.affiliation_type === "guest_of";
   const affiliationLabel =
     cred.affiliation_type === "guest_of" && cred.host_name
       ? `Guest of: ${cred.host_name}`
+      : isSponsored && cred.host_name
+      ? `Sponsored by: ${cred.host_name}`
       : cred.affiliation_type === "corporate" && cred.organization
       ? `Corporate: ${cred.organization}`
       : "Individual Attendee";
+
+  const isGold = cred.pass_code.includes("VVIP") || cred.pass_type.toLowerCase().includes("vvip") || cred.pass_type.toLowerCase().includes("day 3");
 
   const passStorageData: StoredPass = {
     passCode: cred.pass_code,
@@ -175,11 +191,16 @@ async function PassContent({ params }: PassPageProps) {
     organization: cred.organization,
     qrToken: qrToken || undefined,
     registeredAt: cred.issued_at || new Date().toISOString(),
+    daysCovered: isGold ? [3] : cred.pass_code.includes("D12") ? [1, 2] : cred.pass_code.includes("D2") ? [2] : [1],
+    isVvip: isGold,
+    designTheme: isGold ? "gold" : "standard",
     day1Status: "free_admitted",
-    day2Status: cred.has_day2_ticket ? "ticket_verified" : "ticket_required",
-    day3Status: cred.has_day3_ticket ? "ticket_verified" : "ticket_required",
+    day2Status: "free_admitted",
+    day3Status: isGold ? "vvip_admitted" : "not_selected",
     ticketRefDay2: cred.day2_ticket_ref,
     ticketRefDay3: cred.day3_ticket_ref,
+    isSponsored,
+    sponsorName: cred.host_name,
   };
 
   return (
@@ -195,9 +216,11 @@ async function PassContent({ params }: PassPageProps) {
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
-              className="border-gold/50 bg-gold/10 text-forest text-[10px] uppercase tracking-wider"
+              className={`text-[10px] uppercase tracking-wider ${
+                isGold ? "border-amber-500 bg-amber-500/10 text-amber-900" : "border-gold/50 bg-gold/10 text-forest"
+              }`}
             >
-              Official Gate Access Card
+              {isGold ? (isSponsored ? "VVIP Sponsored Guest Card" : "VVIP Gate Access ID Card") : "Official Gate Access Card"}
             </Badge>
           </div>
         </div>
@@ -206,31 +229,46 @@ async function PassContent({ params }: PassPageProps) {
         <PassViewActions passData={passStorageData} />
 
         {/* Access Card Container */}
-        <div className="overflow-hidden rounded-3xl border-2 border-forest/20 bg-card shadow-2xl print:border-2 print:border-black print:shadow-none">
+        <div
+          className={`overflow-hidden rounded-3xl border-2 shadow-2xl print:border-2 print:border-black print:shadow-none ${
+            isGold ? "border-[#C9A84C] bg-[#161104] text-[#FAF9F5]" : "border-forest/20 bg-card"
+          }`}
+        >
           {/* Header */}
-          <div className="bg-forest p-6 text-ivory text-center relative overflow-hidden print:bg-black print:text-white">
+          <div
+            className={`p-6 text-center relative overflow-hidden print:bg-black print:text-white ${
+              isGold ? "bg-gradient-to-b from-[#2D2108] to-[#161104] text-[#FBF5B7]" : "bg-forest text-ivory"
+            }`}
+          >
             <div className="flex justify-center mb-2">
               <Badge
                 variant="outline"
-                className="border-gold bg-gold/20 text-gold text-[10px] uppercase tracking-widest print:border-white print:text-white"
+                className={`text-[10px] uppercase tracking-widest ${
+                  isGold ? "border-[#C9A84C] bg-[#C9A84C]/20 text-[#E5C768]" : "border-gold bg-gold/20 text-gold"
+                }`}
               >
                 Abeokuta Polo Festival 2026
               </Badge>
             </div>
-            <h1 className="font-display text-2xl font-semibold sm:text-3xl text-ivory">
-              Official Gate Access Card
+            <h1 className="font-serif text-2xl font-semibold sm:text-3xl">
+              {isGold ? (isSponsored ? "Day 3 VVIP Guest Pass" : "Day 3 VVIP Grand Finale Pass") : "Official Gate Access Card"}
             </h1>
-            <p className="mt-1 text-xs text-ivory/80">
-              The Blueprint — Where Heritage Meets Excellence · 18–20 Dec 2026
+            <p className={`mt-1 text-xs ${isGold ? "text-[#C9A84C]" : "text-ivory/80"}`}>
+              {isGold ? "Royal Cup Grand Finale & 100 Kings Celebration · 20 Dec 2026" : "The Blueprint — Where Heritage Meets Excellence · 18–20 Dec 2026"}
             </p>
+            {isSponsored && cred.host_name && (
+              <p className="mt-1 text-xs font-semibold text-[#E5C768]">
+                👑 Sponsored Guest Invitation by {cred.host_name}
+              </p>
+            )}
             <div className="mt-3 flex justify-center">
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-                  isActive ? "bg-emerald-800 text-ivory" : "bg-red-800 text-ivory"
+                  isActive ? (isGold ? "bg-amber-600 text-white" : "bg-emerald-800 text-ivory") : "bg-red-800 text-ivory"
                 }`}
               >
                 <CheckCircle2 className="size-3.5" />
-                {isActive ? "Active Credential" : cred.status.toUpperCase()}
+                {isActive ? (isGold ? "VVIP Active Credential" : "Active Credential") : cred.status.toUpperCase()}
               </span>
             </div>
           </div>
@@ -308,43 +346,49 @@ async function PassContent({ params }: PassPageProps) {
                   </span>
                 </div>
 
-                {/* Day 2: Through Ticket */}
+                {/* Day 2: Free */}
                 <div
                   className={`rounded-lg p-2.5 border ${
                     cred.day2_checked_in_at
                       ? "bg-emerald-50 border-emerald-400 text-emerald-900"
-                      : "bg-amber-50/50 border-amber-300 text-amber-900"
+                      : "bg-emerald-50/50 border-emerald-300 text-emerald-900"
                   }`}
                 >
                   <span className="block font-bold">Day 2 (Sat 19)</span>
-                  <Badge className="bg-amber-700 text-ivory text-[9px] my-1">THROUGH TICKET</Badge>
-                  <span className="text-[10px] font-semibold block text-amber-800">
-                    {cred.day2_checked_in_at ? "✓ Checked In" : "Ticket Required"}
+                  <Badge className="bg-emerald-700 text-ivory text-[9px] my-1">FREE ENTRY</Badge>
+                  <span className="text-[10px] font-semibold block text-emerald-800">
+                    {cred.day2_checked_in_at ? "✓ Checked In" : "Ready for Gate"}
                   </span>
                 </div>
 
-                {/* Day 3: Through Ticket */}
+                {/* Day 3: Paid VVIP */}
                 <div
                   className={`rounded-lg p-2.5 border ${
                     cred.day3_checked_in_at
                       ? "bg-emerald-50 border-emerald-400 text-emerald-900"
-                      : "bg-amber-50/50 border-amber-300 text-amber-900"
+                      : isGold
+                      ? "bg-amber-500/10 border-amber-500 text-amber-950"
+                      : "bg-sage/40 border-line text-muted-brand"
                   }`}
                 >
                   <span className="block font-bold">Day 3 (Sun 20)</span>
-                  <Badge className="bg-amber-700 text-ivory text-[9px] my-1">THROUGH TICKET</Badge>
-                  <span className="text-[10px] font-semibold block text-amber-800">
-                    {cred.day3_checked_in_at ? "✓ Checked In" : "Ticket Required"}
+                  <Badge className="bg-amber-600 text-ivory text-[9px] my-1">PAID VVIP</Badge>
+                  <span className="text-[10px] font-semibold block text-amber-900">
+                    {cred.day3_checked_in_at ? "✓ Checked In" : isGold ? "VVIP Access Confirmed" : "Ticket Required"}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Gate Scanning Instructions */}
-          <div className="bg-sage/40 p-4 text-center border-t border-line text-[11px] text-muted-brand">
-            Show this screen or your downloaded offline pass at turnstiles. Gate officers scan this
-            pass code on each tournament day to log your admission.
+          {/* Gate Scanning Instructions & Mandatory Protocol */}
+          <div className="bg-forest-deep text-ivory p-4 text-center border-t-2 border-gold/40 text-[11px] space-y-1">
+            <p className="font-bold text-gold uppercase tracking-wider text-[10px] flex items-center justify-center gap-1.5">
+              <ShieldCheck className="size-3.5 text-gold inline" /> Mandatory Gate Protocol
+            </p>
+            <p className="text-ivory/90 leading-relaxed">
+              <strong>All attendees must be duly registered to attend any of the three festival days.</strong> Turnstile accreditation required. Show this screen or your downloaded offline pass at turnstiles for fast contactless scanning.
+            </p>
           </div>
         </div>
 

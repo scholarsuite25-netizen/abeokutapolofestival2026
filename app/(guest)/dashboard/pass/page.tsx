@@ -197,9 +197,13 @@ async function PassContent() {
             ) : null}
           </div>
 
-          <div className="bg-sage/40 p-4 text-center border-t border-line text-[11px] text-muted-brand">
-            Present this QR pass on your mobile device at Gate 1, 2 or 3. Valid photo
-            identification may be requested.
+          <div className="bg-forest-deep text-ivory p-4 text-center border-t-2 border-gold/40 text-[11px] space-y-1">
+            <p className="font-bold text-gold uppercase tracking-wider text-[10px] flex items-center justify-center gap-1.5">
+              <ShieldCheck className="size-3.5 text-gold inline" /> Mandatory Gate Protocol
+            </p>
+            <p className="text-ivory/90 leading-relaxed">
+              <strong>All attendees must be duly registered to attend any of the three festival days.</strong> Turnstile accreditation required. Present this QR pass on your mobile device at Gate 1, 2 or 3.
+            </p>
           </div>
         </div>
       </div>

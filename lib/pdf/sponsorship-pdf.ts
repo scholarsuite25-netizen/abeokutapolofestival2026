@@ -18,8 +18,8 @@ export function generateSponsorshipHTML(): string {
     :root {
       --forest: #002F1A;
       --forest-deep: #00210E;
-      --gold: #D4AF37;
-      --gold-light: #F2D46B;
+      --gold: #C9A84C;
+      --gold-light: #B38F34;
       --ink: #1B1C1C;
       --muted: #55635A;
       --line: #C1C9BF;

@@ -14,9 +14,8 @@ const ROOT = process.cwd();
 const SCAN_DIRS = ["app", "components", "lib"];
 const ALLOWED_EXTENSIONS = new Set([".ts", ".tsx", ".css"]);
 
-/** Symbols that must never appear in application source. */
+/** Symbols that must never appear in application source (Paystack is designated for Day 3 VVIP). */
 const FORBIDDEN = [
-  "paystack",
   "flutterwave",
   "stripe",
   "payment_intent",

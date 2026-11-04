@@ -36,7 +36,7 @@ const FAQS: FAQItem[] = [
     id: "admission-policy",
     question: "What is the admission policy for the 3-day tournament?",
     answer:
-      "Day 1 (Friday, 18th December 2026) is 100% Free Public Admission upon completing digital registration. Day 2 (Saturday, 19th December) and Day 3 (Sunday, 20th December) gate admission is strictly Through Ticket. Registered participants must present their digital pass QR code at the turnstiles each day.",
+      "Mandatory Gate Protocol: All attendees must be duly registered to attend any of the three festival days. No turnstile admission is permitted without an official digital access card. Day 1 (Friday, 18th December 2026) is 100% Free Public Admission upon completing digital registration. Day 2 (Saturday, 19th December) and Day 3 (Sunday, 20th December) gate admission is strictly Through Ticket. Registered participants must present their digital pass QR code at the turnstiles each day.",
   },
   {
     id: "programme-schedule",

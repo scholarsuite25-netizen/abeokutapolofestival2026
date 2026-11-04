@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 
 const CONTACT = {
   phone1: "+234 818 188 8884",
@@ -58,6 +59,34 @@ export function PublicFooter() {
   return (
     <footer className="border-t border-line bg-forest text-ivory">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        {/* Pre-Footer Gate Protocol Notice */}
+        <div className="mb-12 rounded-2xl border-2 border-gold/60 bg-forest-deep p-4 sm:p-5 shadow-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-gold text-forest shrink-0 shadow-sm mt-0.5 sm:mt-0">
+                <ShieldCheck className="size-5.5 text-forest" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gold">
+                    Mandatory Gate Protocol
+                  </span>
+                  <span className="text-[10px] text-ivory/60 hidden sm:inline">· 18–20 Dec 2026</span>
+                </div>
+                <p className="text-xs sm:text-sm text-ivory/95 font-medium leading-relaxed">
+                  <strong>All attendees must be duly registered to attend any of the three festival days.</strong> No turnstile admission is permitted without an official digital access card.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center rounded-lg bg-gold px-4 py-2 text-xs font-bold text-forest hover:bg-gold/90 transition-colors shrink-0 shadow-sm w-full sm:w-auto text-center"
+            >
+              Register for Pass →
+            </Link>
+          </div>
+        </div>
+
         <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
           <div>
             <p className="font-display text-xl font-bold tracking-tight text-ivory">
@@ -67,8 +96,8 @@ export function PublicFooter() {
               The Blueprint · 18–20 Dec 2026
             </p>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-ivory/80">
-              Attendance is free; entry requires prior registration and an accredited
-              credential. This website does not take payments.
+              All attendees must be duly registered to attend any of the three festival days.
+              Entry requires an official digital access card for contactless turnstile admission.
             </p>
             <div className="mt-5 space-y-1.5 text-sm text-ivory/80">
               <p>
