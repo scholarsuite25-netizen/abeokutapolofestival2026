@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import ModelSelector from "@/components/shared/model-selector";
 import { PermissionError, requirePermission } from "@/lib/auth/require";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -92,6 +93,12 @@ async function CommandCentreContent() {
 
   return (
     <div className="space-y-8">
+      {/* AI Model Selector — allows admin to switch to zero-cost local model */}
+      <div className="flex justify-end">
+        <div className="w-72">
+          <ModelSelector />
+        </div>
+      </div>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="flex items-center gap-2">
