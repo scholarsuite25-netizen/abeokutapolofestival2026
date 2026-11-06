@@ -25,6 +25,8 @@ const serverSchema = z.object({
   EMAILBUMP_SMTP_PORT: z.string().optional(),
   EMAILBUMP_SMTP_PASSWORD: z.string().optional(),
   EMAIL_FROM: z.string().min(1).optional(),
+  PAYSTACK_SECRET_KEY: z.string().min(1).optional(),
+  VVIP_INVITATION_CODES: z.string().optional(),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 });
 
@@ -42,7 +44,11 @@ export type PublicEnv = z.infer<typeof publicSchema>;
 
 /** Server-side env, validated on first call. Throws a readable error if incomplete. */
 export function requireServerEnv() {
-  const parsed = serverSchema.safeParse(process.env);
+  // A blank value (e.g. copied from .env.example) means "not set", not "invalid".
+  const present = Object.fromEntries(
+    Object.entries(process.env).filter(([, value]) => value !== undefined && value !== ""),
+  );
+  const parsed = serverSchema.safeParse(present);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((i) => `  - ${i.path.join(".")}: ${i.message}`)

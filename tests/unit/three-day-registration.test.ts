@@ -1,20 +1,43 @@
-import { describe, expect, it } from "vitest";
-import { submitRegistration, isValidSpecialInvitation } from "@/app/(public)/register/actions";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { submitRegistration } from "@/app/(public)/register/actions";
+import { isValidSpecialInvitation } from "@/lib/invitations/validate";
+import { resetMemoryClaimsForTests } from "@/lib/paystack/claims";
+
+// Invitation codes come only from the server environment. Payments in these tests
+// use simulated references (ABK-VVIP-SIM-<qty>-...), which verification accepts only
+// outside production and only when no PAYSTACK_SECRET_KEY is set.
+beforeEach(() => {
+  vi.stubEnv("VVIP_INVITATION_CODES", "ROYAL-VIP, PRESIDENTIAL, VIP2026, SPECIAL-GUEST");
+  vi.stubEnv("PAYSTACK_SECRET_KEY", "");
+  resetMemoryClaimsForTests();
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("Three-Day Event Registration & Pass Issuance Rules", () => {
   describe("Special Invitation Code Validation", () => {
-    it("recognizes authorized VIP invitation codes", async () => {
-      expect(await isValidSpecialInvitation("ROYAL-VIP")).toBe(true);
-      expect(await isValidSpecialInvitation("PRESIDENTIAL")).toBe(true);
-      expect(await isValidSpecialInvitation("VIP2026")).toBe(true);
-      expect(await isValidSpecialInvitation("SPECIAL-GUEST")).toBe(true);
-      expect(await isValidSpecialInvitation("vip-emir")).toBe(true);
+    it("recognizes codes listed in VVIP_INVITATION_CODES (case-insensitive)", () => {
+      expect(isValidSpecialInvitation("ROYAL-VIP")).toBe(true);
+      expect(isValidSpecialInvitation("PRESIDENTIAL")).toBe(true);
+      expect(isValidSpecialInvitation("vip2026")).toBe(true);
+      expect(isValidSpecialInvitation("  special-guest ")).toBe(true);
     });
 
-    it("rejects empty or invalid codes", async () => {
-      expect(await isValidSpecialInvitation("")).toBe(false);
-      expect(await isValidSpecialInvitation(undefined)).toBe(false);
-      expect(await isValidSpecialInvitation("abc")).toBe(false);
+    it("rejects empty, unlisted, or look-alike codes", () => {
+      expect(isValidSpecialInvitation("")).toBe(false);
+      expect(isValidSpecialInvitation(undefined)).toBe(false);
+      expect(isValidSpecialInvitation("abc")).toBe(false);
+      // The old prefix/length rules let these through — they must not.
+      expect(isValidSpecialInvitation("vip-emir")).toBe(false);
+      expect(isValidSpecialInvitation("ABCDE")).toBe(false);
+      expect(isValidSpecialInvitation("ROYAL-ANYTHING")).toBe(false);
+    });
+
+    it("accepts nothing when no codes are configured", () => {
+      vi.stubEnv("VVIP_INVITATION_CODES", "");
+      expect(isValidSpecialInvitation("ROYAL-VIP")).toBe(false);
     });
   });
 
@@ -132,7 +155,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
         day1: false,
         day2: false,
         day3: true,
-        day3PaymentRef: "PSTK-ABK-TEST-9900",
+        day3PaymentRef: "ABK-VVIP-SIM-1-TEST9900",
       });
 
       expect(res.success).toBe(true);
@@ -142,7 +165,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       expect(vvipPass.passCode).toMatch(/^ABK-2026-VVIP[A-Z0-9]+$/);
       expect(vvipPass.isVvip).toBe(true);
       expect(vvipPass.designTheme).toBe("gold");
-      expect(vvipPass.paymentRef).toBe("PSTK-ABK-TEST-9900");
+      expect(vvipPass.paymentRef).toBe("ABK-VVIP-SIM-1-TEST9900");
     });
 
     it("issues 2 DISTINCT passes when Day 1 AND Day 3 are ticked", async () => {
@@ -154,7 +177,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
         day1: true,
         day2: false,
         day3: true,
-        day3PaymentRef: "PSTK-ABK-8812",
+        day3PaymentRef: "ABK-VVIP-SIM-1-TEST8812",
       });
 
       expect(res.success).toBe(true);
@@ -215,7 +238,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
         day1: true,
         day2: true,
         day3: true,
-        day3PaymentRef: "PSTK-ABK-ALLDAYS",
+        day3PaymentRef: "ABK-VVIP-SIM-1-TESTALLDAYS",
       });
 
       expect(res.success).toBe(true);
@@ -248,7 +271,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
         day2: false,
         day3: true,
         day3TicketCount: 3,
-        day3PaymentRef: "ABK-VVIP-DEMO-TEST1",
+        day3PaymentRef: "ABK-VVIP-SIM-3-TEST1",
       });
 
       expect(res.success).toBe(true);
@@ -282,7 +305,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
         day2: true,
         day3: true,
         day3TicketCount: 3,
-        day3PaymentRef: "ABK-VVIP-DEMO-TEST2",
+        day3PaymentRef: "ABK-VVIP-SIM-3-TEST2",
       });
 
       expect(res.success).toBe(true);
@@ -313,7 +336,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
         phone: "+234 809 111 2222",
         day3: true,
         day3TicketCount: 1,
-        day3PaymentRef: "ABK-VVIP-DEMO-SINGLE",
+        day3PaymentRef: "ABK-VVIP-SIM-1-SINGLE",
       });
 
       expect(res.success).toBe(true);

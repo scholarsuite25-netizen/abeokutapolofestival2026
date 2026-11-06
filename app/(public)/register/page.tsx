@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -20,7 +20,6 @@ import {
   KeyRound,
   ExternalLink,
   Share2,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,44 +76,54 @@ function RegisterContent() {
     organization: "",
   });
 
-  // Handle return from Paystack redirect
+  // Handle return from Paystack. The URL is NOT proof of payment: the reference is
+  // sent to the server, which verifies it with Paystack and issues passes only if
+  // the payment is genuine, large enough, made with this email, and unused.
+  const returnHandled = useRef(false);
   useEffect(() => {
-    const paymentRef = searchParams.get("payment_ref") || searchParams.get("reference");
-    const isPaid = searchParams.get("paid") === "true" || searchParams.get("status") === "success";
+    const paymentRef = searchParams.get("reference") || searchParams.get("payment_ref");
+    if (!paymentRef || returnHandled.current) return;
+    returnHandled.current = true;
 
-    if (paymentRef && isPaid && !result?.success) {
-      const fn = searchParams.get("fn") || "";
-      const ln = searchParams.get("ln") || "";
-      const em = searchParams.get("em") || "";
-      const ph = searchParams.get("ph") || "";
-      const d1 = searchParams.get("day1") === "1";
-      const d2 = searchParams.get("day2") === "1";
-      const d3 = true;
+    const fn = searchParams.get("fn") || "";
+    const ln = searchParams.get("ln") || "";
+    const em = searchParams.get("em") || "";
+    const ph = searchParams.get("ph") || "";
 
-      void Promise.resolve().then(async () => {
-        setLoading(true);
-        const res = await submitRegistration({
-          firstName: fn || "VVIP",
-          lastName: ln || "Guest",
-          email: em || "guest@abeokutapolofestival.com",
-          phone: ph || "+2348000000000",
-          day1: d1,
-          day2: d2,
-          day3: d3,
-          day3PaymentRef: paymentRef,
-        });
-
-        setLoading(false);
-        if (res.success && res.passes && res.passes.length > 0) {
-          setResult(res);
-          setIssuedPasses(res.passes);
-          persistRegisteredPass(res.passes);
-          forceDownloadAllPasses(res.passes);
-          setDownloadTriggered(true);
-        }
-      });
+    if (!fn || !ln || !em || !ph) {
+      void Promise.resolve().then(() =>
+        setErrorMsg(
+          "We could not read your registration details after payment. Please fill in the form again and use the same email you paid with.",
+        ),
+      );
+      return;
     }
-  }, [searchParams, result]);
+
+    void Promise.resolve().then(async () => {
+      setLoading(true);
+      const res = await submitRegistration({
+        firstName: fn,
+        lastName: ln,
+        email: em,
+        phone: ph,
+        day1: searchParams.get("day1") === "1",
+        day2: searchParams.get("day2") === "1",
+        day3: true,
+        day3PaymentRef: paymentRef,
+      });
+
+      setLoading(false);
+      if (res.success && res.passes && res.passes.length > 0) {
+        setResult(res);
+        setIssuedPasses(res.passes);
+        persistRegisteredPass(res.passes);
+        forceDownloadAllPasses(res.passes);
+        setDownloadTriggered(true);
+      } else {
+        setErrorMsg(res.error || "We could not confirm your payment. Please contact the festival office.");
+      }
+    });
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -676,13 +685,14 @@ function RegisterContent() {
                           </Label>
                           <Input
                             id="inviteCode"
-                            placeholder="e.g. ROYAL-VIP, PRESIDENTIAL, VIP2026"
+                            placeholder="Enter the code from your invitation"
+                            autoComplete="off"
                             className="bg-white border-amber-300 uppercase font-mono tracking-wider text-xs"
                             value={invitationCode}
                             onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
                           />
                           <p className="text-[10px] text-amber-800">
-                            Authorized codes: <code>ROYAL-VIP</code>, <code>PRESIDENTIAL</code>, <code>VIP2026</code>, <code>SPECIAL-GUEST</code>, etc.
+                            Your code is printed on your official invitation. One code admits one guest.
                           </p>
                         </div>
                       )}

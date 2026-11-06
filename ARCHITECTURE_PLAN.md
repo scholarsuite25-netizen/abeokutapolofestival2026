@@ -1,6 +1,6 @@
 # ARCHITECTURE_PLAN.md — The Blueprint · 2026 Abeokuta Polo Festival
 
-**Status:** PHASE 0 APPROVED (v1.1) — **no website payments** (client decision 14 Oct 2026); implementation authorised from Phase 1.
+**Status:** PHASE 0 APPROVED (v1.2) — **no website payments except the Day 3 VVIP pass** (D-01 stands for everything else; **D-16**, 6 Nov 2026, adds Paystack for Day 3 VVIP only); implementation authorised from Phase 1.
 **Author role:** Lead Architect / Full-Stack / Supabase / UI-UX / Security
 **Date:** 14 October 2026
 **Authority model:** `MASTER_BUILD_PROMPT.md` + security/data docs = functional & privacy authority · Stitch exports = visual authority · `DESIGN.md` = written design spec · conflicts are logged in §12.
@@ -77,7 +77,7 @@ Full inventory and screen-by-screen anatomy: `STITCH_INTEGRATION_PLAN.md` §1–
 | 6 | Digital invitations & secure QR passes | `/dashboard/pass`, `/admin/invitations`, `/scan` | token-hash credentials + signed validation RPC |
 | 7 | Event programme & content management | `/programme`, `/admin/programme`, `/admin/media` | `programme_versions` + approval workflow |
 | 8 | Sponsorship management | `/sponsorship`, `/admin/sponsorship` | package slot ledger + CRM tables |
-| 9 | Access allocation & hospitality (**no payments**) | `/hospitality`, `/register`, `/admin/allocations`, `/admin/finance` | `pass_types` capacity + approval-based allocations + offline finance ledger |
+| 9 | Access allocation & hospitality (**no payments** — the one exception is the Day 3 VVIP pass, D-16) | `/hospitality`, `/register`, `/admin/allocations`, `/admin/finance` | `pass_types` capacity + approval-based allocations + offline finance ledger |
 | 10 | Access control & check-in | `/scan` (mobile PWA) | atomic check-in RPC + offline queue |
 | 11 | Reports, analytics, notifications | `/admin/reports`, `/admin/notifications` | permission-scoped views + `notification_deliveries` |
 
@@ -107,7 +107,7 @@ Next.js App Router on Vercel
 4. **All mutations go through Server Actions or route handlers** with zod input validation; no direct client `update()` on sensitive tables without RLS proof.
 5. **Public and private data are physically separated**: published content served from `WHERE status = 'published' AND festival_edition_id = active_edition()`; committee/finance/guest tables are never selected in `(public)` route groups.
 6. **Mock data lives only in `lib/fixtures/` and is labelled `SAMPLE`;** fixtures are never imported by a page that also queries production tables.
-7. **No payment subsystem exists.** Attendance is free: no checkout, gateway, order, refund or payment webhook anywhere in the codebase. Commercial interest routes to WhatsApp/phone/e-mail enquiry using the official contact addresses; any money that changes hands is settled **offline** and recorded by hand in the finance-role ledger (`offline_commitments`).
+7. **There is exactly one payment flow: the Day 3 VVIP pass (₦50,000, Paystack — D-16).** Days 1–2 are free; hospitality, chalets, patrons and sponsorship never take money online (enquiry by WhatsApp/phone/e-mail, settled offline and recorded by hand in `offline_commitments`). The Day 3 flow is server-authoritative: price and quantity are fixed in `lib/config/checkout-config.ts`; `submitRegistration` verifies the reference with Paystack (`lib/paystack/verify.ts` — our reference prefix, `success`, NGN, amount ≥ one pass, payer email = registrant email) and claims it once in `day3_payment_claims` (`lib/paystack/claims.ts`) **before** any pass is issued. A URL parameter, form field or "paid" flag is never proof of payment, and simulated payments exist only outside production without a `PAYSTACK_SECRET_KEY`. No other gateway (Stripe, Flutterwave, …), cart, order or refund code may exist — `tests/unit/no-payments-guard.test.ts` enforces this.
 
 ---
 
@@ -286,7 +286,7 @@ Single Postgres project, **logical schemas** to keep privilege boundaries obviou
 - **`committee_memberships` is a true M:N** with `person_id`, `committee_id`, `position_id`, `verified_status`, `starts_on`, `ends_on`, `is_current` — one person, multiple committees, historical rows preserved (`Mr. S.B Omotoso` → Secretariat + Media/ICT).
 - **`festival_edition_id` on every edition-scoped table**; every RLS policy includes the edition predicate to prevent cross-edition leakage.
 - **Credentials store `token_hash` (HMAC-SHA256/argon2), never the raw token**; the raw token exists only in the issued pass/URL.
-- **No payments:** attendance is free. `pass_types` carries capacity + entitlements but **no price field**; `registration_allocations` decrements available capacity inside a transaction-safe RPC with `SELECT … FOR UPDATE` (no overselling of *slots*). Any offline settlement (sponsorship 50%-on-signing/balance, patron or chalet by transfer) is recorded **by hand** in `offline_commitments` with `finance_officer`/`super_admin` RLS only — never written from a public or guest surface.
+- **No payments:** attendance is free. `pass_types` carries capacity + entitlements but **no price field**; `registration_allocations` decrements available capacity inside a transaction-safe RPC with `SELECT … FOR UPDATE` (no overselling of *slots*). Any offline settlement (sponsorship 50%-on-signing/balance, patron or chalet by transfer) is recorded **by hand** in `offline_commitments` with `finance_officer`/`super_admin` RLS only — never written from a public or guest surface. **Exception (D-16):** the Day 3 VVIP pass is paid through Paystack; `day3_payment_claims` (service-role only, RLS on, no policies) records each verified reference exactly once so it cannot be replayed.
 - **Check-in:** single `rpc check_in_credential(credential_id, device_id, scanned_at)` → `SECURITY DEFINER`, `ISOLATION LEVEL` handled inside, unique partial index prevents duplicate active check-ins, all writes to `checkin_records` with `unique(credential_id, event_slot)`.
 - **Sponsor slots:** `sponsorship_package_slots` with `UNIQUE(package_id, slot_no)` + `CHECK (status)`; reservation via `rpc reserve_slot()` to avoid overselling.
 - **Timestamps/audit:** `created_at/updated_at` triggers, `created_by/updated_by` from `auth.uid()`, soft-delete (`deleted_at`) on content tables only; hard-append audit.
@@ -492,8 +492,9 @@ Canonical tokens: **`docs/DESIGN.md` §2 semantics** ← merged with **Stitch `h
 ### 12.1 Decisions (D)
 | ID | Decision | Resolution | Status |
 |---|---|---|---|
-| **D-01** | **Payments in scope?** | **CLOSED — NO.** Attendance is free; entry via registration → approval → QR credential → gate protocol. All commercial enquiries by WhatsApp/phone/e-mail to the official addresses. No checkout, gateway, order or refund code will ever exist. | ✅ **Decided 14 Oct 2026** |
-| **D-03** | **Payment gateway** | **CLOSED — dropped** (Paystack/Flutterwave not required, no keys provisioned). | ✅ **Decided 14 Oct 2026** |
+| **D-01** | **Payments in scope?** | **CLOSED — NO, with one exception (see D-16).** Attendance on Days 1–2 is free; entry via registration → approval → QR credential → gate protocol. All commercial enquiries (hospitality, sponsorship) by WhatsApp/phone/e-mail to the official addresses. No cart, order or refund code will ever exist. | ✅ **Decided 14 Oct 2026**, amended 6 Nov 2026 |
+| **D-03** | **Payment gateway** | **Superseded by D-16.** Flutterwave/Stripe remain out of scope; Paystack is used for the Day 3 VVIP pass only. | ✅ **Amended 6 Nov 2026** |
+| **D-16** | **Day 3 VVIP pass** | Day 3 Grand Finale VVIP is ₦50,000 through Paystack (up to 20 passes per payment), or free by Special Invitation Code (one pass per code, codes only from the server variable `VVIP_INVITATION_CODES`). Payment is verified server-side and single-use; no payment is trusted from the browser. Needs `PAYSTACK_SECRET_KEY` in Vercel before launch. | ✅ **Implemented 6 Nov 2026** |
 | **D-13** | Sponsorship figures public? | **KEEP** the 7 proposed tiers (₦75m → ₦2.5m) and signature-property values on `/sponsorship`, badged *"Proposed — subject to approval"*, alongside WhatsApp/Call CTA. | ✅ **Decided** |
 | **D-14** | Offline finance ledger | **KEEP** — private `offline_commitments` ledger, `finance_officer` + `super_admin` RLS only (budgets + sponsor/patron settlements). | ✅ **Decided** |
 | **D-15** | Hospitality pricing on public pages | **NO prices** on `/hospitality` — invitation/allocated tiers + "Enquire by WhatsApp / Call". Deck values remain internal reference only. | ✅ **Decided** |
@@ -540,7 +541,7 @@ Canonical tokens: **`docs/DESIGN.md` §2 semantics** ← merged with **Stitch `h
    - Consider the service-role key **compromised** until rotated.
 2. `.env.example` will contain **names only**; real values live in Vercel env + local `.env.local` (git-ignored).
 3. Rate limiting on `/register`, `/rsvp/[token]`, `/api/credentials/verify`, auth endpoints (Upstash/via Vercel middleware).
-4. Webhook signature verification + idempotency keys on **inbound e-mail/delivery events**; no secrets in client components (enforced with `server-only` and a lint rule). **No payment webhooks exist — by design.**
+4. Webhook signature verification + idempotency keys on **inbound e-mail/delivery events**; no secrets in client components (enforced with `server-only` and a lint rule). Day 3 payments are verified by a server-side call to Paystack at registration time; a signed Paystack webhook (`charge.success`) for reconciliation is recommended as a follow-up but is not required for correctness.
 5. Audit logging for: permission changes, credential issue/revoke/override, financial reads, bulk exports.
 6. NDPA (Nigeria Data Protection Act) review before launch: consent text on registration, retention policy, export/erasure workflow.
 7. No committee name/roster in public JSON, metadata, sitemap, OG images or error pages (tested in Phase 2 acceptance).
@@ -579,7 +580,8 @@ Mapped 1:1 to `DEVELOPMENT_ROADMAP.md`; each phase has an explicit stop-for-appr
 | Email provider API key | ❌ not provisioned | Phase 4 | You |
 | WhatsApp enquiry channel (`wa.me` links to official numbers +234 818 188 8884 / 0803 681 8916 / abeokutapolo@gmail.com) | ✔ usable immediately | Phase 3 | — |
 | WhatsApp Business API (outbound notifications) | ❌ optional, not provisioned | Phase 7 | You |
-| ~~Payment gateway account~~ | 🚫 **not required — no payments** | — | — |
+| Paystack account + secret key (Day 3 VVIP only) | ❌ not provisioned — **required before launch**; without `PAYSTACK_SECRET_KEY` production refuses Day 3 payments (invitation codes still work) | Phase 6 | You |
+| `VVIP_INVITATION_CODES` (server env, comma-separated, ≥ 6 chars each) | ❌ not set — no invitation code is valid until it is | Phase 6 | You |
 | Approved logo / photography pack | ❌ not supplied | Phase 3 | You (D-06) |
 | Confirmed programme & fixtures | ❌ does not exist | Phase 3 content | Tournament Cmte |
 | Committee 7 roster + chair | ❌ not supplied | Phase 2 | Leadership (D-07) |
@@ -591,7 +593,7 @@ Mapped 1:1 to `DEVELOPMENT_ROADMAP.md`; each phase has an explicit stop-for-appr
 ## 16. Phase 0 exit criteria
 
 1. ✅ Plan approved (`ARCHITECTURE_PLAN.md` + `STITCH_INTEGRATION_PLAN.md`).
-2. ✅ **D-01 / D-03 closed — no website payments**; D-13 sponsorship figures public-as-proposed, D-14 offline finance ledger kept, D-15 no hospitality prices.
+2. ✅ **D-01 closed — no website payments except the Day 3 VVIP pass (D-03 superseded by D-16)**; D-13 sponsorship figures public-as-proposed, D-14 offline finance ledger kept, D-15 no hospitality prices.
 3. ⏳ **Rotate the leaked credentials** in `stitch_abeokuta_polo_festival_platform/the_blueprint.txt` (service-role key, DB password, Gmail app password) — still outstanding and blocking production use.
 4. ⏳ Confirm **Super Admin identity**, GitHub repo and Vercel team (dev work proceeds locally meanwhile).
 

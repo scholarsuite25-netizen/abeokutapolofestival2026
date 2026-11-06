@@ -278,7 +278,7 @@ reports — plus `users`, `audit`, `settings` (19 if counted separately).
 loading · empty · error · **expired invitation** · **revoked pass** · **offline scan** ·
 **duplicate scan** · permission-denied · session-timeout · **capacity-full → waitlist** ·
 **pending approval** · **registration rejected** · form-validation · success-confirmation.
-None of these exist in the exports. *(No payment state of any kind is ever required — D-01.)*
+None of these exist in the exports. *(No payment state is required anywhere except the Day 3 VVIP pass on `/register` — D-01, D-16.)*
 
 ### 7.4 Functionality that a visual prototype cannot provide
 Registration→approval→credential issuance; server-side QR validation; role-scoped queries; RLS;
@@ -365,7 +365,7 @@ replaced by a CMS reference or a `TBC` component before the screen is accepted.
 5. Loading/empty/error/permission states implemented.
 6. If authenticated: `requirePermission()` in the server layer **and** a passing RLS deny test.
 7. Screenshot added to `docs/qa/` and listed in the change summary.
-8. No payment symbol, route, price or checkout affordance appears in the screen (CI grep guard from `ARCHITECTURE_PLAN.md` §14).
+8. No payment symbol, route, price or checkout affordance appears in the screen, except the Day 3 VVIP checkout on `/register` (D-16); `tests/unit/no-payments-guard.test.ts` enforces this in CI.
 
 ---
 

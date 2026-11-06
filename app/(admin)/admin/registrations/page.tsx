@@ -209,7 +209,7 @@ async function RegistrationsContent() {
         day1: false,
         day2: false,
         day3: true,
-        day3_invitation_code: "ROYAL-VIP",
+        day3_invitation_code: "SAMPLE-INVITE",
         credentials: [
           {
             id: "cred-5",
