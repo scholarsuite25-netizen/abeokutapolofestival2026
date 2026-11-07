@@ -113,8 +113,12 @@ async function PassContent({ params, searchParams }: PassPageProps) {
     }
   } else {
     // Demo fallback for offline/preview environments
-    if (normalizedCode.startsWith("ABK-2026-")) {
-      const isVvip = normalizedCode.includes("VVIP");
+    if (
+      normalizedCode.startsWith("ABK-2026-") ||
+      normalizedCode.startsWith("ABK-VVIP-") ||
+      normalizedCode.startsWith("ABK-DAY3-")
+    ) {
+      const isVvip = normalizedCode.includes("VVIP") || normalizedCode.startsWith("ABK-DAY3-");
       const vvipMatch = normalizedCode.match(/VVIP(\d+)/);
       const ticketIdx = vvipMatch ? parseInt(vvipMatch[1], 10) : 1;
       const isSponsored = ticketIdx > 1 || Boolean(sp.holder && String(sp.holder).toLowerCase().startsWith("sponsored invitation"));

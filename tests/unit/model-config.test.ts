@@ -45,3 +45,4 @@ describe("Model Configuration – Zero-Cost Local Model", () => {
     expect(cfg.name).toBe(DEFAULT_MODEL_NAME);
   });
 });
+

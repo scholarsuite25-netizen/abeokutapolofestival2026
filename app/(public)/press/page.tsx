@@ -3,7 +3,6 @@ import { ArrowRight, BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PressHub } from "@/components/design/public/press-hub";
-import { FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export const metadata = {
   title: "Press & Media Accreditation — 2026 Abeokuta Polo Festival",

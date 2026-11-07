@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Camera,
-  Radio,
   FileText,
   Download,
   ShieldCheck,
@@ -18,11 +17,10 @@ import {
   Mail,
   AlertTriangle,
   FolderArchive,
-  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { ReadMoreSection } from "@/components/shared/read-more-section";
 
 interface MediaCategory {
   id: string;
@@ -257,14 +255,42 @@ export function PressHub() {
                     <p className="text-[11px] font-bold uppercase tracking-wider text-forest mb-2">
                       Accreditation Privileges:
                     </p>
-                    <ul className="space-y-1.5">
-                      {cat.privileges.map((priv, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs text-ink">
-                          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-gold-dim" />
-                          <span>{priv}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {cat.privileges.length > 2 ? (
+                      <ReadMoreSection
+                        variant="pill"
+                        moreText={`View all ${cat.privileges.length} privileges`}
+                        lessText="Show fewer privileges"
+                        summary={
+                          <ul className="space-y-1.5">
+                            {cat.privileges.slice(0, 2).map((priv, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-xs text-ink">
+                                <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-gold-dim" />
+                                <span>{priv}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        }
+                        details={
+                          <ul className="space-y-1.5 pt-1.5">
+                            {cat.privileges.slice(2).map((priv, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-xs text-ink">
+                                <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-gold-dim" />
+                                <span>{priv}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        }
+                      />
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {cat.privileges.map((priv, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-xs text-ink">
+                            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-gold-dim" />
+                            <span>{priv}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
 
@@ -365,7 +391,7 @@ export function PressHub() {
           <div className="rounded-xl border border-line bg-sage/20 p-4">
             <Mail className="size-4 text-gold mb-2" />
             <p className="text-xs font-semibold text-forest">Media Accreditation Email</p>
-            <p className="text-[11px] text-muted-brand mt-0.5">press.abeokutapolo@gmail.com</p>
+            <p className="text-[11px] text-muted-brand mt-0.5 break-all">press.abeokutapolo@gmail.com</p>
             <p className="text-[10px] text-forest-interactive mt-2 font-medium">Responses within 24 hours</p>
           </div>
 

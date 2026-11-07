@@ -16,15 +16,13 @@ import {
   Send,
   Mail,
   Phone,
-  ArrowRight,
-  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ReadMoreSection } from "@/components/shared/read-more-section";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
@@ -59,7 +57,6 @@ export function PublicationsHub() {
   const [institution, setInstitution] = useState("");
   const [email, setEmail] = useState("");
   const [scope, setScope] = useState("Foundation & Maiden 2025 Retrospective");
-  const [notes, setNotes] = useState("");
 
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -326,7 +323,7 @@ export function PublicationsHub() {
               No matching publications found
             </h3>
             <p className="mt-1 text-xs text-muted-brand max-w-sm mx-auto">
-              We couldn't find any documents matching &ldquo;{searchQuery}&rdquo;. Try clearing your query
+              We couldn&apos;t find any documents matching &ldquo;{searchQuery}&rdquo;. Try clearing your query
               or resetting category filters.
             </p>
             <Button
@@ -364,9 +361,36 @@ export function PublicationsHub() {
                   </h3>
                   <p className="mt-1 text-xs font-medium text-gold-dim">{item.subtitle}</p>
 
-                  <p className="mt-2.5 text-xs text-muted-brand leading-relaxed line-clamp-3">
-                    {item.summary}
-                  </p>
+                  <ReadMoreSection
+                    variant="link"
+                    moreText="View Table of Contents"
+                    lessText="Hide Table of Contents"
+                    summary={
+                      <p className="mt-2.5 text-xs text-muted-brand leading-relaxed line-clamp-3">
+                        {item.summary}
+                      </p>
+                    }
+                    details={
+                      <div className="mt-2 space-y-1 rounded-lg border border-line bg-sage/20 p-2.5 text-xs">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-forest mb-1">
+                          Key Folio Chapters:
+                        </p>
+                        <ul className="space-y-1">
+                          {item.chapters.slice(0, 4).map((ch, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 text-[11px] text-muted-brand leading-tight">
+                              <span className="size-1 rounded-full bg-gold shrink-0 mt-1.5" />
+                              <span className="line-clamp-1">{ch}</span>
+                            </li>
+                          ))}
+                          {item.chapters.length > 4 && (
+                            <li className="text-[10px] text-forest font-medium pt-0.5">
+                              + {item.chapters.length - 4} additional sovereign chapters in folio
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    }
+                  />
 
                   <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] text-muted-brand">
                     <span className="flex items-center gap-1">
@@ -393,25 +417,30 @@ export function PublicationsHub() {
                     Read Folio
                   </button>
 
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="h-8 border-line bg-ivory text-xs font-semibold text-forest hover:bg-sage"
-                  >
-                    <Link
-                      href={item.downloadUrl && item.downloadUrl !== "#" ? item.downloadUrl : "#"}
-                      onClick={(e) => {
-                        if (!item.downloadUrl || item.downloadUrl === "#") {
-                          e.preventDefault();
-                          setActiveItem(item);
-                        }
-                      }}
+                  {item.downloadUrl && item.downloadUrl !== "#" ? (
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-line bg-ivory text-xs font-semibold text-forest hover:bg-sage"
                     >
-                      <Download className="mr-1.5 size-3 text-gold" />
-                      PDF
-                    </Link>
-                  </Button>
+                      <Link href={item.downloadUrl}>
+                        <Download className="mr-1.5 size-3 text-gold" />
+                        PDF
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setActiveItem(item)}
+                      className="h-8 border-line bg-ivory text-xs font-semibold text-forest hover:bg-sage cursor-pointer"
+                    >
+                      <Eye className="mr-1.5 size-3 text-gold" />
+                      Folio
+                    </Button>
+                  )}
                 </div>
               </article>
             ))}
@@ -446,7 +475,7 @@ export function PublicationsHub() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2 text-xs">
               <a
                 href="mailto:archives.abeokutapolo@gmail.com"
-                className="inline-flex items-center gap-2 rounded-lg border border-line bg-card px-3.5 py-2 font-medium text-forest hover:border-gold"
+                className="inline-flex items-center gap-2 rounded-lg border border-line bg-card px-3.5 py-2 font-medium text-forest hover:border-gold break-all"
               >
                 <Mail className="size-4 text-gold" />
                 archives.abeokutapolo@gmail.com
@@ -639,19 +668,35 @@ export function PublicationsHub() {
                 >
                   Close Folio
                 </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className="bg-forest text-ivory text-xs font-semibold hover:bg-forest-interactive"
-                >
-                  <Link
-                    href={activeItem.downloadUrl && activeItem.downloadUrl !== "#" ? activeItem.downloadUrl : "#"}
-                    target={activeItem.downloadUrl && activeItem.downloadUrl.startsWith("http") ? "_blank" : undefined}
+                {activeItem.downloadUrl && activeItem.downloadUrl !== "#" ? (
+                  <Button
+                    asChild
+                    size="sm"
+                    className="bg-forest text-ivory text-xs font-semibold hover:bg-forest-interactive"
                   >
-                    <Download className="mr-1.5 size-3.5 text-gold" />
-                    Download File
-                  </Link>
-                </Button>
+                    <Link
+                      href={activeItem.downloadUrl}
+                      target={activeItem.downloadUrl.startsWith("http") ? "_blank" : undefined}
+                    >
+                      <Download className="mr-1.5 size-3.5 text-gold" />
+                      Download File
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setActiveItem(null);
+                      const req = document.getElementById("archival-request-heading");
+                      req?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="bg-forest text-ivory text-xs font-semibold hover:bg-forest-interactive cursor-pointer"
+                  >
+                    <Mail className="mr-1.5 size-3.5 text-gold" />
+                    Request Archival Copy
+                  </Button>
+                )}
               </div>
             </div>
           </DialogContent>

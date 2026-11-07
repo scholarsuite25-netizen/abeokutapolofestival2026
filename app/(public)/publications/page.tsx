@@ -3,7 +3,6 @@ import { ArrowRight, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PublicationsHub } from "@/components/design/public/publications-hub";
-import { FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export const metadata = {
   title: "Tournament Gazette & Official Publications — 2026 Abeokuta Polo Festival",

@@ -110,10 +110,17 @@ describe("verifyDay3Payment — no secret key", () => {
     expect(await verifyDay3Payment(REF)).toMatchObject({ ok: false, reason: "invalid_reference" });
   });
 
-  it("NEVER simulates in production — even for simulated-looking references", async () => {
+  it("NEVER simulates in production by default — even for simulated-looking references", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const result = await verifyDay3Payment("ABK-VVIP-SIM-3-1700000000000-ABCD1234");
     expect(result).toMatchObject({ ok: false, reason: "not_configured" });
+  });
+
+  it("simulates cleanly in production when PAYSTACK_DEMO_MODE=true is explicitly set", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PAYSTACK_DEMO_MODE", "true");
+    const result = await verifyDay3Payment("ABK-VVIP-SIM-3-1700000000000-ABCD1234");
+    expect(result).toMatchObject({ ok: true, quantity: 3, amountNgn: 150000, simulated: true });
   });
 });
 
@@ -141,5 +148,12 @@ describe("claimPaymentReference (single use)", () => {
   it("refuses to claim in production when Supabase is not configured", async () => {
     vi.stubEnv("NODE_ENV", "production");
     expect(await claim(REF)).toMatchObject({ ok: false, reason: "unavailable" });
+  });
+
+  it("allows demo claim in production when Supabase is not configured if PAYSTACK_DEMO_MODE=true", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PAYSTACK_DEMO_MODE", "true");
+    expect(await claim(REF)).toEqual({ ok: true });
+    expect(await claim(REF)).toMatchObject({ ok: false, reason: "already_used" });
   });
 });

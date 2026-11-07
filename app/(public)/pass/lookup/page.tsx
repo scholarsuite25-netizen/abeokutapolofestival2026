@@ -47,10 +47,10 @@ export default function PassLookupPage() {
               <span className="text-[10px] text-ivory/70">Saved Locally</span>
             </div>
             <div>
-              <p className="text-xs text-gold font-mono tracking-wider font-bold">
+              <p className="text-xs text-gold font-mono tracking-wider font-bold break-all">
                 {storedPass.passCode}
               </p>
-              <h2 className="font-semibold text-lg text-ivory">{storedPass.holderName}</h2>
+              <h2 className="font-semibold text-lg text-ivory break-words">{storedPass.holderName}</h2>
               <p className="text-xs text-ivory/70">{storedPass.category}</p>
             </div>
             <div className="pt-2 flex flex-col sm:flex-row gap-2">

@@ -78,12 +78,22 @@ describe("Initialize Route (/api/paystack/initialize)", () => {
     });
   });
 
-  it("NEVER simulates in production — returns 503 without a secret key", async () => {
+  it("NEVER simulates in production by default — returns 503 without a secret key", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("PAYSTACK_SECRET_KEY", "");
     const res = await initRoute(post({ email: "a@example.com" }));
     expect(res.status).toBe(503);
     expect((await res.json()).simulated).toBeUndefined();
+  });
+
+  it("simulates in production when PAYSTACK_DEMO_MODE=true is set", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "");
+    vi.stubEnv("PAYSTACK_DEMO_MODE", "true");
+    const res = await initRoute(post({ email: "a@example.com", quantity: 2 }));
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toMatchObject({ status: "success", simulated: true, amount: 100000, quantity: 2 });
   });
 
   it("returns 502 (not a fake success) when Paystack refuses or is unreachable", async () => {
@@ -156,7 +166,7 @@ describe("Verify Route (/api/paystack/verify)", () => {
     expect((await res.json()).verified).toBe(false);
   });
 
-  it("does not verify in production without a secret key", async () => {
+  it("does not verify in production without a secret key by default", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("PAYSTACK_SECRET_KEY", "");
     const res = await verifyRoute(
@@ -164,5 +174,16 @@ describe("Verify Route (/api/paystack/verify)", () => {
     );
     expect(res.status).toBe(503);
     expect((await res.json()).verified).toBe(false);
+  });
+
+  it("verifies simulated references in production when PAYSTACK_DEMO_MODE=true is set", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "");
+    vi.stubEnv("PAYSTACK_DEMO_MODE", "true");
+    const res = await verifyRoute(
+      new Request("http://localhost:3000/api/paystack/verify?reference=ABK-VVIP-SIM-1-1700000000000-ABCD1234"),
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).verified).toBe(true);
   });
 });

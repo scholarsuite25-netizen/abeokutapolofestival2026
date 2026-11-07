@@ -5,18 +5,14 @@ import {
   MapPin,
   Clock,
   Compass,
-  Building,
   Plane,
   HeartPulse,
-  Ticket,
   ArrowRight,
-  ExternalLink,
   Shirt,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FESTIVAL_METADATA } from "@/lib/data/programme";
+import { ReadMoreSection } from "@/components/shared/read-more-section";
 
 export const metadata = {
   title: "Plan Your Visit — 2026 Abeokuta Polo Festival",
@@ -333,9 +329,24 @@ export default function VisitPage() {
                     <Clock className="size-3.5" />
                     <span>{hotel.distance}</span>
                   </div>
-                  <p className="mt-3 text-xs text-muted-brand leading-relaxed">
-                    {hotel.description}
-                  </p>
+                  <ReadMoreSection
+                    variant="link"
+                    moreText="View Guest Amenities & Perks"
+                    lessText="Hide Amenities"
+                    summary={
+                      <p className="mt-3 text-xs text-muted-brand leading-relaxed">
+                        {hotel.description}
+                      </p>
+                    }
+                    details={
+                      <div className="mt-2 rounded-lg bg-sage/30 p-2.5 text-[11px] text-forest space-y-1 border border-line/60">
+                        <div className="font-semibold text-forest">Attendee Hospitality Perks:</div>
+                        <div className="text-muted-brand">• Dedicated tournament shuttle route directly to Kobape Turf</div>
+                        <div className="text-muted-brand">• Early breakfast for morning chukkers &amp; late check-out</div>
+                        <div className="text-muted-brand">• Priority hotel concierge for accreditation pass assistance</div>
+                      </div>
+                    }
+                  />
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-line flex items-center justify-between">

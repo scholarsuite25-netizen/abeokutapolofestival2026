@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnquiryDialog } from "@/components/design/public/enquiry-dialog";
+import { ReadMoreSection } from "@/components/shared/read-more-section";
 import { FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export const metadata = {
@@ -175,9 +176,35 @@ export default function RoyalCupPage() {
               <h2 className="font-display text-3xl font-semibold text-forest sm:text-4xl">
                 The Confluence of Royalty &amp; High-Goal Sportsmanship
               </h2>
-              <p className="text-sm leading-relaxed text-muted-brand sm:text-base">
-                Celebrating the 100 Kings under the banner &ldquo;ONE FIELD, ONE LEGACY&rdquo; honours traditional rulers and their monumental contributions to cultural preservation, unity, and community leadership.
-              </p>
+              <ReadMoreSection
+                variant="pill"
+                moreText="Read Sovereign Protocol Details"
+                lessText="Hide Protocol Details"
+                summary={
+                  <p className="text-sm leading-relaxed text-muted-brand sm:text-base">
+                    Celebrating the 100 Kings under the banner &ldquo;ONE FIELD, ONE LEGACY&rdquo; honours traditional rulers and their monumental contributions to cultural preservation, unity, and community leadership.
+                  </p>
+                }
+                details={
+                  <div className="space-y-2.5 rounded-xl border border-line bg-card p-4 text-xs">
+                    <p className="font-bold text-forest uppercase tracking-wider text-[11px]">
+                      Sovereign Grand Finale Protocol &amp; Ceremony Order:
+                    </p>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-gold shrink-0">1. Royal Procession:</span>
+                      <span className="text-muted-brand">Grand Cavalcade and formal court arrival of HRM The Alake of Egbaland and Southwest Royal Monarchs.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-gold shrink-0">2. Championship Chukkers:</span>
+                      <span className="text-muted-brand">The Queens Cup Final followed by the 6-chukker high-goal showdown for The Royal Cup.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-gold shrink-0">3. Sovereign Decoration:</span>
+                      <span className="text-muted-brand">Personal presentation of trophies, equine awards, and imperial blessings by His Royal Majesty.</span>
+                    </div>
+                  </div>
+                }
+              />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-4">
                 <div className="rounded-xl border border-line bg-card p-5">

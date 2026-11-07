@@ -51,3 +51,4 @@ export function getModelConfig(name: string): ModelConfig {
     AVAILABLE_MODELS[0]
   );
 }
+

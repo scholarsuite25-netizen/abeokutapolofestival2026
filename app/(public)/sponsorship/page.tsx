@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnquiryDialog } from "@/components/design/public/enquiry-dialog";
 import { SponsorshipPdfButton } from "@/components/shared/sponsorship-pdf-button";
+import { ReadMoreSection } from "@/components/shared/read-more-section";
 import {
   CORPORATE_SPONSORSHIP_TIERS,
   SPECIALISED_SPONSORS,
@@ -180,18 +181,117 @@ export default function SponsorshipPage() {
                       Guaranteed Deliverables &amp; Entitlements:
                     </span>
 
-                    <div className="space-y-5">
-                      {tier.deliverables.map((categoryGroup, idx) => (
-                        <div key={idx} className="space-y-2">
-                          <h4
-                            className={`text-xs font-bold uppercase tracking-wider ${
-                              tier.isPrimary ? "text-gold/90" : "text-forest-deep"
-                            }`}
-                          >
-                            {categoryGroup.category}
-                          </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {categoryGroup.items.map((item, itemIdx) => (
+                    {tier.deliverables.length > 1 ? (
+                      <ReadMoreSection
+                        summary={
+                          <div className="space-y-2">
+                            <h4
+                              className={`text-xs font-bold uppercase tracking-wider ${
+                                tier.isPrimary ? "text-gold/90" : "text-forest-deep"
+                              }`}
+                            >
+                              {tier.deliverables[0].category}
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {tier.deliverables[0].items.map((item, itemIdx) => (
+                                <div
+                                  key={itemIdx}
+                                  className="flex items-start gap-2 text-xs leading-relaxed"
+                                >
+                                  <CheckCircle2
+                                    className={`size-4 shrink-0 mt-0.5 ${
+                                      tier.isPrimary ? "text-gold" : "text-forest-interactive"
+                                    }`}
+                                  />
+                                  <span
+                                    className={
+                                      tier.isPrimary ? "text-ivory/90" : "text-muted-brand"
+                                    }
+                                  >
+                                    {item}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        }
+                        details={
+                          <div className="space-y-5 pt-3">
+                            {tier.deliverables.slice(1).map((categoryGroup, idx) => (
+                              <div key={idx} className="space-y-2">
+                                <h4
+                                  className={`text-xs font-bold uppercase tracking-wider ${
+                                    tier.isPrimary ? "text-gold/90" : "text-forest-deep"
+                                  }`}
+                                >
+                                  {categoryGroup.category}
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                  {categoryGroup.items.map((item, itemIdx) => (
+                                    <div
+                                      key={itemIdx}
+                                      className="flex items-start gap-2 text-xs leading-relaxed"
+                                    >
+                                      <CheckCircle2
+                                        className={`size-4 shrink-0 mt-0.5 ${
+                                          tier.isPrimary ? "text-gold" : "text-forest-interactive"
+                                        }`}
+                                      />
+                                      <span
+                                        className={
+                                          tier.isPrimary ? "text-ivory/90" : "text-muted-brand"
+                                        }
+                                      >
+                                        {item}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        }
+                        moreText={`View all ${tier.deliverables.reduce((acc, cat) => acc + cat.items.length, 0)} deliverables (${tier.deliverables.length} categories)`}
+                        lessText="Show fewer deliverables"
+                        variant="pill"
+                      />
+                    ) : tier.deliverables[0].items.length > 4 ? (
+                      <ReadMoreSection
+                        summary={
+                          <div className="space-y-2">
+                            <h4
+                              className={`text-xs font-bold uppercase tracking-wider ${
+                                tier.isPrimary ? "text-gold/90" : "text-forest-deep"
+                              }`}
+                            >
+                              {tier.deliverables[0].category}
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {tier.deliverables[0].items.slice(0, 4).map((item, itemIdx) => (
+                                <div
+                                  key={itemIdx}
+                                  className="flex items-start gap-2 text-xs leading-relaxed"
+                                >
+                                  <CheckCircle2
+                                    className={`size-4 shrink-0 mt-0.5 ${
+                                      tier.isPrimary ? "text-gold" : "text-forest-interactive"
+                                    }`}
+                                  />
+                                  <span
+                                    className={
+                                      tier.isPrimary ? "text-ivory/90" : "text-muted-brand"
+                                    }
+                                  >
+                                    {item}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        }
+                        details={
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+                            {tier.deliverables[0].items.slice(4).map((item, itemIdx) => (
                               <div
                                 key={itemIdx}
                                 className="flex items-start gap-2 text-xs leading-relaxed"
@@ -211,9 +311,47 @@ export default function SponsorshipPage() {
                               </div>
                             ))}
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        }
+                        moreText={`View all ${tier.deliverables[0].items.length} deliverables`}
+                        lessText="Show fewer deliverables"
+                        variant="pill"
+                      />
+                    ) : (
+                      <div className="space-y-5">
+                        {tier.deliverables.map((categoryGroup, idx) => (
+                          <div key={idx} className="space-y-2">
+                            <h4
+                              className={`text-xs font-bold uppercase tracking-wider ${
+                                tier.isPrimary ? "text-gold/90" : "text-forest-deep"
+                              }`}
+                            >
+                              {categoryGroup.category}
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {categoryGroup.items.map((item, itemIdx) => (
+                                <div
+                                  key={itemIdx}
+                                  className="flex items-start gap-2 text-xs leading-relaxed"
+                                >
+                                  <CheckCircle2
+                                    className={`size-4 shrink-0 mt-0.5 ${
+                                      tier.isPrimary ? "text-gold" : "text-forest-interactive"
+                                    }`}
+                                  />
+                                  <span
+                                    className={
+                                      tier.isPrimary ? "text-ivory/90" : "text-muted-brand"
+                                    }
+                                  >
+                                    {item}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -285,12 +423,31 @@ export default function SponsorshipPage() {
                     <span className="text-[11px] font-bold uppercase tracking-wider text-forest block">
                       Guaranteed Rights:
                     </span>
-                    {prop.deliverables.map((item, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-xs text-ink/80">
-                        <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-forest-interactive" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
+                    <ReadMoreSection
+                      summary={
+                        <div className="space-y-2">
+                          {prop.deliverables.slice(0, 2).map((item, idx) => (
+                            <div key={idx} className="flex items-start gap-2 text-xs text-ink/80">
+                              <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-forest-interactive" />
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      }
+                      details={
+                        <div className="space-y-2 pt-2">
+                          {prop.deliverables.slice(2).map((item, idx) => (
+                            <div key={idx} className="flex items-start gap-2 text-xs text-ink/80">
+                              <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-forest-interactive" />
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      }
+                      moreText={`View all ${prop.deliverables.length} rights`}
+                      lessText="Show fewer rights"
+                      variant="pill"
+                    />
                   </div>
                 </div>
 

@@ -27,7 +27,7 @@ export async function claimPaymentReference(input: {
   quantity: number;
 }): Promise<ClaimResult> {
   if (!isSupabaseConfigured()) {
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && process.env.PAYSTACK_DEMO_MODE !== "true") {
       return { ok: false, reason: "unavailable", message: UNAVAILABLE };
     }
     if (memoryClaims.has(input.reference)) {
