@@ -24,6 +24,7 @@ const COLUMNS = [
     title: "Access",
     links: [
       { href: "/register", label: "Register for Pass (Free)" },
+      { href: "/register/poster", label: "Venue QR Standee / Poster" },
       { href: "/pass/lookup", label: "Find My Access Card" },
       { href: "/scan", label: "Gate Scanner PWA" },
       { href: "/dashboard/pass", label: "Digital Member Pass" },
@@ -57,7 +58,7 @@ const LEGAL = [
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-line bg-forest text-ivory overflow-x-clip w-full max-w-full min-w-0">
+    <footer className="border-t border-line bg-forest text-ivory overflow-x-clip w-full max-w-full min-w-0 print:hidden">
       <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-10 sm:py-14 min-w-0">
         {/* Pre-Footer Gate Protocol Notice */}
         <div className="mb-12 rounded-2xl border-2 border-gold/60 bg-forest-deep p-4 sm:p-5 shadow-lg">
@@ -127,18 +128,18 @@ export function PublicFooter() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:gap-8 sm:grid-cols-4 min-w-0">
             {COLUMNS.map((column) => (
-              <div key={column.title}>
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">
+              <div key={column.title} className="min-w-0">
+                <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-gold truncate">
                   {column.title}
                 </h2>
                 <ul className="mt-3 space-y-2">
                   {column.links.map((link) => (
-                    <li key={link.href}>
+                    <li key={link.href} className="min-w-0">
                       <Link
                         href={link.href}
-                        className="text-sm text-ivory/80 underline-offset-4 hover:text-ivory hover:underline"
+                        className="text-xs sm:text-sm text-ivory/80 underline-offset-4 hover:text-ivory hover:underline block truncate"
                       >
                         {link.label}
                       </Link>

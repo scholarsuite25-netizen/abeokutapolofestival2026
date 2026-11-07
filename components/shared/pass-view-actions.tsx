@@ -114,7 +114,7 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
       </div>
 
       {/* Secondary Utilities */}
-      <div className="flex items-center justify-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
         <Button
           onClick={() => downloadProgrammePDF()}
           variant="outline"

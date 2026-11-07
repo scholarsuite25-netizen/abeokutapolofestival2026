@@ -24,6 +24,7 @@ import {
   ArrowRight,
   Sparkle,
   ShieldCheck,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -145,6 +146,12 @@ const NAV_CATEGORIES: NavCategory[] = [
         desc: "Turnstile verification PWA",
         icon: QrCode,
       },
+      {
+        href: "/register/poster",
+        label: "Venue QR Poster",
+        desc: "Printable registration standee",
+        icon: Printer,
+      },
     ],
   },
 ];
@@ -168,7 +175,7 @@ export function PublicHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full overflow-x-clip border-b border-line/80 bg-ivory/95 backdrop-blur-md supports-[backdrop-filter]:bg-ivory/85">
+    <header className="sticky top-0 z-40 w-full overflow-x-clip border-b border-line/80 bg-ivory/95 backdrop-blur-md supports-[backdrop-filter]:bg-ivory/85 print:hidden">
       <div className="mx-auto flex h-16 sm:h-18 lg:h-20 max-w-7xl items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 lg:px-8">
         {/* ── 1. Event Brand Name: Clear & Visible ── */}
         <Link
@@ -350,7 +357,7 @@ export function PublicHeader() {
 
             <SheetContent
               side="right"
-              className="w-full sm:max-w-md max-w-[100vw] overflow-y-auto bg-ivory p-4 sm:p-6 text-ink border-l border-line"
+              className="w-full sm:max-w-md max-w-[100vw] overflow-y-auto overflow-x-hidden bg-ivory p-4 sm:p-6 text-ink border-l border-line min-w-0"
             >
               <div className="flex items-center gap-3 border-b border-line pb-4">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/40">

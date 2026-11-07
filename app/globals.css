@@ -104,7 +104,9 @@
   }
   html,
   body {
-    max-width: 100%;
+    max-width: 100vw;
+    width: 100%;
+    overflow-x: hidden;
     overflow-x: clip;
   }
   body {
@@ -135,6 +137,14 @@
   object {
     max-width: 100%;
   }
+  pre,
+  code,
+  kbd,
+  samp {
+    max-width: 100%;
+    overflow-x: auto;
+    word-break: break-word;
+  }
 }
 
 @utility text-balance {
@@ -144,4 +154,26 @@
 /* Skip-link for keyboard users (WCAG 2.4.1) */
 .skip-link {
   @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground;
+}
+
+/* Print Styles for A4 Signage and Passes */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
+  html, body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  .poster-page {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }

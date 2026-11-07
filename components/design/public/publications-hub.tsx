@@ -583,9 +583,9 @@ export function PublicationsHub() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       <Dialog open={!!activeItem} onOpenChange={(open) => !open && setActiveItem(null)}>
         {activeItem && (
-          <DialogContent className="max-w-3xl overflow-hidden rounded-2xl border-line bg-card p-0 sm:max-w-4xl">
+          <DialogContent className="w-full max-w-[calc(100vw-1.5rem)] sm:max-w-4xl overflow-hidden rounded-2xl border-line bg-card p-0">
             {/* Modal Header */}
-            <div className="border-b border-line bg-forest px-6 py-5 text-ivory">
+            <div className="border-b border-line bg-forest px-4 sm:px-6 py-4 sm:py-5 text-ivory">
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="rounded bg-gold/20 px-2 py-0.5 font-semibold text-gold uppercase text-[10px]">
                   {activeItem.badge}
@@ -604,7 +604,7 @@ export function PublicationsHub() {
             </div>
 
             {/* Modal Body */}
-            <div className="max-h-[70vh] overflow-y-auto p-6 space-y-6">
+            <div className="max-h-[70vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Executive Summary */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-forest">
@@ -616,7 +616,7 @@ export function PublicationsHub() {
               </div>
 
               {/* Table of Contents / Chapters */}
-              <div className="rounded-xl border border-line bg-sage/20 p-5">
+              <div className="rounded-xl border border-line bg-sage/20 p-4 sm:p-5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-forest">
                   Document Index &amp; Table of Contents ({activeItem.chapters.length} Sections)
                 </h4>
@@ -633,7 +633,7 @@ export function PublicationsHub() {
               </div>
 
               {/* Document Metadata Grid */}
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-xs">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-4 text-xs">
                 <div className="rounded-lg border border-line bg-ivory p-3">
                   <span className="text-[10px] text-muted-brand uppercase block">Total Volume</span>
                   <span className="font-semibold text-forest mt-0.5 block">{activeItem.pages} Pages</span>
@@ -654,7 +654,7 @@ export function PublicationsHub() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-line bg-ivory px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="border-t border-line bg-ivory px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <span className="text-xs text-muted-brand">
                 For printed commemorative copies, visit the tournament secretariat pavilion.
               </span>

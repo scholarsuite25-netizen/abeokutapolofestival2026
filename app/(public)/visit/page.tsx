@@ -9,6 +9,7 @@ import {
   HeartPulse,
   ArrowRight,
   Shirt,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -216,8 +217,9 @@ export default function VisitPage() {
                     </span>
                     <p className="text-muted-brand text-xs leading-relaxed">
                       <strong>All attendees must register before arriving at the grounds.</strong> Turnstile
-                      access cards will be scanned digitally at the gates. Day 1 is free entry; Days 2 &amp; 3
-                      require official ticket credentials.
+                      access cards will be scanned digitally at the gates. Days 1 &amp; 2 (18 &amp; 19 Dec) are
+                      100% free complimentary admission; Day 3 (20 Dec) requires a ₦50,000 VVIP Pass or verified
+                      Special Invitation.
                     </p>
                   </div>
                 </div>
@@ -227,6 +229,11 @@ export default function VisitPage() {
                     <Link href="/register">Register For Free Entry Pass →</Link>
                   </Button>
                   <Button asChild variant="outline" className="w-full border-line text-forest">
+                    <Link href="/register/poster">
+                      <QrCode className="mr-1.5 size-4 text-gold" /> View Venue QR Standee / Poster
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="w-full text-forest/80 hover:text-forest text-xs">
                     <Link href="/pass/lookup">Retrieve My Existing Pass</Link>
                   </Button>
                 </div>

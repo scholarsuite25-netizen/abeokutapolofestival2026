@@ -16,6 +16,7 @@ import {
   UserCheck,
   Building,
   CalendarCheck,
+  Printer,
 } from "lucide-react";
 
 export const metadata = {
@@ -130,6 +131,14 @@ async function CommandCentreContent() {
           >
             <QrCode className="h-3.5 w-3.5 text-gold-deep" />
             <span>Gate Scanner PWA</span>
+          </Link>
+
+          <Link
+            href="/register/poster"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-card px-3.5 py-2 text-xs font-semibold text-forest shadow-xs transition-colors hover:bg-sage/40"
+          >
+            <Printer className="h-3.5 w-3.5 text-gold-deep" />
+            <span>Venue QR Poster</span>
           </Link>
 
           <Link
@@ -360,6 +369,19 @@ async function CommandCentreContent() {
                 </div>
                 <p className="text-[11px] text-muted-brand">
                   Launch the camera QR scanner to record attendance for Days 1, 2, or 3.
+                </p>
+              </Link>
+
+              <Link
+                href="/register/poster"
+                className="flex flex-col items-start gap-1 rounded-lg border border-line bg-sage/30 p-3 text-left transition-colors hover:border-forest/40 hover:bg-sage/60"
+              >
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-forest">
+                  <Printer className="h-3.5 w-3.5 text-gold-deep" />
+                  <span>Print Venue Registration QR Poster &amp; Standee</span>
+                </div>
+                <p className="text-[11px] text-muted-brand">
+                  High-res scannable signage for Kobape turnstiles, car parks, and reception stands.
                 </p>
               </Link>
             </div>

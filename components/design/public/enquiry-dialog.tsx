@@ -128,14 +128,14 @@ export function EnquiryDialog({
               )}&body=${encodeURIComponent(defaultMessage)}`}
               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-card px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-forest transition hover:bg-sage min-w-0"
             >
-              <div className="flex items-center gap-3">
-                <Mail className="size-5 text-gold" />
-                <div>
-                  <p className="font-semibold">Secretariat Email</p>
-                  <p className="text-xs text-muted-brand">abeokutapolo@gmail.com</p>
+              <div className="flex items-center gap-3 min-w-0">
+                <Mail className="size-5 text-gold shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">Secretariat Email</p>
+                  <p className="text-xs text-muted-brand truncate break-all">abeokutapolo@gmail.com</p>
                 </div>
               </div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-brand">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-brand shrink-0">
                 Send Email →
               </span>
             </a>

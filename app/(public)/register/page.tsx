@@ -20,6 +20,8 @@ import {
   KeyRound,
   ExternalLink,
   Share2,
+  QrCode,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +48,7 @@ export default function RegisterPage() {
 
 function RegisterContent() {
   const searchParams = useSearchParams();
+  const isVenueScan = searchParams.get("ref") === "venue_poster";
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RegisterResult | null>(null);
   const [issuedPasses, setIssuedPasses] = useState<StoredPass[]>([]);
@@ -337,23 +340,60 @@ function RegisterContent() {
             Select your attendance days below. All official gate ID cards are instantly issued,
             downloaded to your phone, and saved for contactless turnstile access.
           </p>
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <Link
+              href="/register/poster"
+              className="inline-flex items-center gap-1.5 rounded-full border border-forest/20 bg-forest/5 px-3 py-1 text-xs font-semibold text-forest hover:bg-forest/10 transition-colors"
+            >
+              <Printer className="size-3.5 text-gold-deep" />
+              <span>Looking for printable entrance signage? Venue QR Poster &amp; Standee →</span>
+            </Link>
+          </div>
         </div>
 
-        {/* Existing Passes Detected Notification (Device Persistence) */}
-        {savedPasses.length > 0 && !result?.success && !dismissExisting && (
-          <div className="mb-8 rounded-2xl border-2 border-forest/30 bg-forest p-5 text-ivory shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        {/* On-site Venue Scan Welcome Notification */}
+        {isVenueScan && (
+          <div className="mb-6 rounded-2xl border-2 border-emerald-600 bg-emerald-950 p-4 sm:p-5 text-ivory shadow-lg flex items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-gold text-forest shrink-0">
-                <Crown className="size-6" />
+              <div className="flex size-11 items-center justify-center rounded-xl bg-gold text-forest shrink-0 font-bold shadow-md">
+                <QrCode className="size-6" />
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gold block">
+                  Kobape Grounds · Scanned at Venue Gate
+                </span>
+                <p className="font-semibold text-sm sm:text-base text-white">
+                  Welcome to Abeokuta Polo Club! Complete your registration below.
+                </p>
+                <p className="text-xs text-emerald-200/90">
+                  Your official gate pass will be issued and downloaded to your phone immediately.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/register/poster"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-gold hover:underline font-semibold shrink-0"
+            >
+              <Printer className="size-3.5" /> View Poster
+            </Link>
+          </div>
+        )}
+
+        {/* Existing Passes Detected Notification (Device Persistence) */}
+        {savedPasses.length > 0 && !result?.success && !dismissExisting && (
+          <div className="mb-8 rounded-2xl border-2 border-forest/30 bg-forest p-4 sm:p-5 text-ivory shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 min-w-0 max-w-full">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-gold text-forest shrink-0">
+                <Crown className="size-6" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gold block">
                   Active ID Pass Found On This Device
                 </span>
-                <p className="font-semibold text-base text-ivory">
+                <p className="font-semibold text-base text-ivory truncate">
                   Welcome back, {savedPasses[0].holderName}!
                 </p>
-                <p className="text-xs text-ivory/70">
+                <p className="text-xs text-ivory/70 truncate">
                   {savedPasses.length} Active Pass{savedPasses.length > 1 ? "es" : ""}:{" "}
                   {savedPasses.map((p) => p.passCode).join(" · ")}
                 </p>
@@ -363,7 +403,7 @@ function RegisterContent() {
               <Button
                 size="sm"
                 onClick={() => forceDownloadAllPasses(savedPasses)}
-                className="bg-gold text-forest font-bold hover:bg-gold/90 text-xs"
+                className="bg-gold text-forest font-bold hover:bg-gold/90 text-xs w-full sm:w-auto"
               >
                 <Download className="mr-1.5 size-3.5" /> Re-Download Pass{savedPasses.length > 1 ? "es" : ""}
               </Button>
@@ -371,7 +411,7 @@ function RegisterContent() {
                 size="sm"
                 variant="outline"
                 asChild
-                className="border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 text-xs"
+                className="border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 text-xs w-full sm:w-auto"
               >
                 <Link href={`/pass/${savedPasses[0].passCode}`}>
                   <ExternalLink className="mr-1.5 size-3.5" /> View First Pass
@@ -381,7 +421,7 @@ function RegisterContent() {
                 size="sm"
                 variant="ghost"
                 onClick={() => setDismissExisting(true)}
-                className="text-ivory/60 hover:text-ivory text-xs"
+                className="text-ivory/60 hover:text-ivory text-xs w-full sm:w-auto"
               >
                 Register Another Person
               </Button>
@@ -675,20 +715,24 @@ function RegisterContent() {
                           }
                         }}
                         size="sm"
-                        className={`font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-all ${
+                        className={`font-bold text-xs cursor-pointer shadow-xs transition-all w-full sm:w-auto whitespace-normal h-auto py-1.5 px-3 text-center ${
                           day1 && day2
                             ? "bg-emerald-700 hover:bg-emerald-800 text-ivory"
                             : "bg-forest hover:bg-forest-interactive text-ivory"
                         }`}
                       >
                         {day1 && day2 ? (
-                          <>
-                            <Check className="mr-1.5 size-3.5 stroke-[3]" /> Day 1 &amp; Day 2 Dual Pass Selected
-                          </>
+                          <span className="inline-flex items-center justify-center gap-1.5">
+                            <Check className="size-3.5 stroke-[3] shrink-0" />
+                            <span className="sm:hidden">Day 1 &amp; 2 Pass Selected</span>
+                            <span className="hidden sm:inline">Day 1 &amp; Day 2 Dual Pass Selected</span>
+                          </span>
                         ) : (
-                          <>
-                            <Sparkles className="mr-1.5 size-3.5 text-gold" /> Select Day 1 &amp; Day 2 Dual Pass (1-Click)
-                          </>
+                          <span className="inline-flex items-center justify-center gap-1.5">
+                            <Sparkles className="size-3.5 text-gold shrink-0" />
+                            <span className="sm:hidden">Select Day 1 &amp; 2 Dual Pass</span>
+                            <span className="hidden sm:inline">Select Day 1 &amp; Day 2 Dual Pass (1-Click)</span>
+                          </span>
                         )}
                       </Button>
                     </div>
@@ -935,16 +979,18 @@ function RegisterContent() {
                                         key={ticketNum}
                                         className="rounded-lg border border-amber-300/70 bg-amber-50/60 p-2.5 space-y-2 shadow-2xs"
                                       >
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-[11px] font-bold text-amber-950 flex items-center gap-1.5">
-                                            <span className="flex size-4 items-center justify-center rounded-full bg-amber-600 text-[9px] font-extrabold text-white">
+                                        <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                          <span className="text-[11px] font-bold text-amber-950 flex items-center gap-1.5 min-w-0">
+                                            <span className="flex size-4 items-center justify-center rounded-full bg-amber-600 text-[9px] font-extrabold text-white shrink-0">
                                               {ticketNum}
                                             </span>
-                                            {isPrimary
-                                              ? "Ticket 1: Primary Buyer or First Guest *"
-                                              : `Ticket ${ticketNum}: Guest ${ticketNum} *`}
+                                            <span className="truncate">
+                                              {isPrimary
+                                                ? "Ticket 1: Primary Buyer or First Guest *"
+                                                : `Ticket ${ticketNum}: Guest ${ticketNum} *`}
+                                            </span>
                                           </span>
-                                          <div className="flex items-center gap-1.5">
+                                          <div className="flex items-center gap-1.5 shrink-0">
                                             {isPrimary && (
                                               <button
                                                 type="button"
@@ -1059,7 +1105,7 @@ function RegisterContent() {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className={`w-full font-semibold py-6 text-base cursor-pointer shadow-md transition-all ${
+                    className={`w-full font-semibold py-3.5 sm:py-5 px-3 text-sm sm:text-base cursor-pointer shadow-md transition-all whitespace-normal h-auto leading-tight text-center ${
                       day3 && (!hasInviteCode || !invitationCode.trim())
                         ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:opacity-95"
                         : "bg-forest text-ivory hover:bg-forest-interactive"
@@ -1068,8 +1114,12 @@ function RegisterContent() {
                     {loading ? (
                       "Processing Pass Issuance..."
                     ) : day3 && (!hasInviteCode || !invitationCode.trim()) ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <CreditCard className="size-5" /> Proceed to Paystack Payment ({day3TicketCount === 1 ? "₦50,000" : `${day3TicketCount} Tickets · ₦${(day3TicketCount * 50000).toLocaleString()}`}) →
+                      <span className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                        <CreditCard className="size-4 sm:size-5 shrink-0" />
+                        <span>Proceed to Paystack Payment</span>
+                        <span className="text-xs sm:text-sm opacity-95">
+                          ({day3TicketCount === 1 ? "₦50,000" : `${day3TicketCount} Tickets · ₦${(day3TicketCount * 50000).toLocaleString()}`}) →
+                        </span>
                       </span>
                     ) : (
                       "Complete Registration & Get ID Pass →"

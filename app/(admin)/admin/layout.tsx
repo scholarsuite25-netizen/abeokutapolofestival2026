@@ -6,7 +6,8 @@ import {
   Landmark, 
   QrCode, 
   FileSpreadsheet,
-  ExternalLink
+  ExternalLink,
+  Printer
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: "Offline Finance", href: "/admin/finance", icon: Landmark },
     { label: "Reports & Export", href: "/admin/reports", icon: FileSpreadsheet },
     { label: "Turnstile Scanner", href: "/scan", icon: QrCode },
+    { label: "Venue QR Poster", href: "/register/poster", icon: Printer },
   ];
 
   return (

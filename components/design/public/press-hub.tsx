@@ -153,14 +153,14 @@ export function PressHub() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 2. PRESS ASSET PACK & BRAND KIT CALLOUT                             */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-gold/30 bg-forest text-ivory p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-2xl border border-gold/30 bg-forest text-ivory p-4 sm:p-8 min-w-0 max-w-full">
         <div
           aria-hidden
           className="pointer-events-none absolute -bottom-20 -right-20 size-80 rounded-full bg-gold/15 blur-3xl"
         />
 
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2 max-w-2xl">
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between min-w-0">
+          <div className="space-y-2 max-w-2xl min-w-0">
             <div className="flex items-center gap-2">
               <Badge className="bg-gold text-forest-deep text-[10px] font-bold uppercase tracking-wider">
                 Official Press Kit
@@ -176,28 +176,30 @@ export function PressHub() {
             </p>
           </div>
 
-          <div className="shrink-0 flex flex-col sm:flex-row gap-3">
+          <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full sm:w-auto min-w-0">
             <Button
               type="button"
               onClick={handleDownloadPack}
               disabled={downloadingPack}
-              className="h-11 bg-gold font-semibold text-forest-deep hover:bg-gold/90 shadow"
+              className="h-auto py-2.5 px-4 bg-gold font-semibold text-forest-deep hover:bg-gold/90 shadow text-xs sm:text-sm whitespace-normal w-full sm:w-auto text-center"
             >
-              <Download className="mr-2 size-4 text-forest-deep" />
-              {downloadingPack
-                ? "Preparing Press Pack..."
-                : packDownloaded
-                ? "Press Pack Ready ✓"
-                : "Download Press Pack (ZIP, 24MB)"}
+              <Download className="mr-2 size-4 text-forest-deep shrink-0" />
+              <span>
+                {downloadingPack
+                  ? "Preparing Press Pack..."
+                  : packDownloaded
+                  ? "Press Pack Ready ✓"
+                  : "Download Press Pack (ZIP, 24MB)"}
+              </span>
             </Button>
             <Button
               asChild
               variant="outline"
-              className="h-11 border-gold/40 bg-white/10 text-ivory hover:bg-white/20"
+              className="h-auto py-2.5 px-4 border-gold/40 bg-white/10 text-ivory hover:bg-white/20 text-xs sm:text-sm whitespace-normal w-full sm:w-auto text-center"
             >
               <Link href="/publications">
-                <FileText className="mr-2 size-4 text-gold" />
-                Tournament Gazette
+                <FileText className="mr-2 size-4 text-gold shrink-0" />
+                <span>Tournament Gazette</span>
               </Link>
             </Button>
           </div>
