@@ -50,14 +50,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${manrope.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${manrope.variable} h-full antialiased overflow-x-clip`}
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="min-h-full flex flex-col font-sans font-semibold overflow-x-clip w-full max-w-full">
         <a href="#main" className="skip-link">
           Skip to main content
         </a>
         <TooltipProvider delayDuration={200}>
-          <main id="main" className="flex flex-1 flex-col">
+          <main id="main" className="flex flex-1 flex-col overflow-x-clip w-full max-w-full min-w-0">
             {children}
           </main>
         </TooltipProvider>

@@ -18,6 +18,7 @@ import {
   MapPin,
   HelpCircle,
   Phone,
+  MessageCircle,
   Menu,
   ChevronDown,
   ArrowRight,
@@ -168,18 +169,18 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full overflow-x-clip border-b border-line/80 bg-ivory/95 backdrop-blur-md supports-[backdrop-filter]:bg-ivory/85">
-      <div className="mx-auto flex h-16 sm:h-18 lg:h-20 max-w-7xl items-center justify-between gap-3 px-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 sm:h-18 lg:h-20 max-w-7xl items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 lg:px-8">
         {/* ── 1. Event Brand Name: Clear & Visible ── */}
         <Link
           href="/"
-          className="group flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 shrink-0"
+          className="group flex items-center gap-2 sm:gap-3 transition-opacity hover:opacity-90 shrink min-w-0"
           aria-label="Abeokuta Polo Festival 2026 - The Blueprint"
         >
           <div className="flex size-9 sm:size-10 lg:size-11 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/40 shadow-xs transition-transform group-hover:scale-105">
             <Shield className="size-5 sm:size-6 text-gold" />
           </div>
-          <div className="flex flex-col">
-            <span className="font-display text-sm sm:text-base lg:text-lg font-bold tracking-tight text-forest leading-tight">
+          <div className="flex flex-col min-w-0">
+            <span className="font-display text-xs sm:text-base lg:text-lg font-bold tracking-tight text-forest leading-tight truncate">
               Abeokuta Polo Festival 2026
             </span>
             <span className="mt-0.5 font-serif text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep leading-none flex items-center gap-1.5">
@@ -323,11 +324,11 @@ export function PublicHeader() {
         </div>
 
         {/* ── 4. Mobile Quick Actions & Drawer ── */}
-        <div className="flex items-center gap-2 lg:hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden shrink-0">
           <Button
             asChild
             size="sm"
-            className="bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs px-3 shadow-xs border border-gold/40 sm:hidden"
+            className="bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs px-2.5 sm:px-3 shadow-xs border border-gold/40 sm:hidden"
           >
             <Link href={storedPass ? `/pass/${storedPass.passCode}` : "/register"} className="flex items-center gap-1.5">
               <Ticket className="size-3.5 text-gold" />
@@ -349,7 +350,7 @@ export function PublicHeader() {
 
             <SheetContent
               side="right"
-              className="w-full sm:max-w-md overflow-y-auto bg-ivory p-6 text-ink border-l border-line"
+              className="w-full sm:max-w-md max-w-[100vw] overflow-y-auto bg-ivory p-4 sm:p-6 text-ink border-l border-line"
             >
               <div className="flex items-center gap-3 border-b border-line pb-4">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/40">
@@ -476,11 +477,20 @@ export function PublicHeader() {
                   <Phone className="size-3.5 text-gold-deep" /> Festival Secretariat Hotline:
                 </p>
                 <div className="flex flex-col gap-1 pl-5 text-[11px]">
-                  <a href="tel:+2348181888884" className="hover:text-forest">
-                    +234 818 188 8884
+                  <a href="tel:+2348181888884" className="hover:text-forest font-semibold">
+                    +234 818 188 8884 (Helpline 1)
                   </a>
-                  <a href="tel:08036818916" className="hover:text-forest">
-                    0803 681 8916
+                  <a href="tel:08036818916" className="hover:text-forest font-semibold">
+                    0803 681 8916 (Helpline 2)
+                  </a>
+                  <a
+                    href="https://wa.me/2348181888884?text=Hello%20Festival%20Secretariat%2C%20I%20have%20an%20inquiry%20regarding%20Abeokuta%20Polo%20Festival%202026"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-forest text-emerald-700 font-semibold flex items-center gap-1"
+                  >
+                    <MessageCircle className="size-3 text-emerald-600" />
+                    WhatsApp Secretariat Direct
                   </a>
                   <a href="mailto:abeokutapolo@gmail.com" className="hover:text-forest">
                     abeokutapolo@gmail.com

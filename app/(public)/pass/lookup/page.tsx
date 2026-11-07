@@ -29,8 +29,8 @@ export default function PassLookupPage() {
   };
 
   return (
-    <div className="flex min-h-[75vh] w-full flex-col items-center justify-center bg-ivory p-6 text-ink">
-      <div className="w-full max-w-md space-y-6">
+    <div className="flex min-h-[75vh] w-full max-w-full flex-col items-center justify-center bg-ivory px-3 py-8 sm:p-6 text-ink overflow-x-clip min-w-0">
+      <div className="w-full max-w-md space-y-6 min-w-0">
         <Button asChild variant="ghost" size="sm" className="text-muted-brand hover:text-forest">
           <Link href="/register">
             <ArrowLeft className="mr-2 size-4" /> Back to Registration
@@ -71,7 +71,7 @@ export default function PassLookupPage() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-line bg-card p-6 shadow-xl sm:p-8 space-y-5">
+        <div className="rounded-2xl border border-line bg-card p-4 sm:p-8 shadow-xl space-y-5 min-w-0">
           <div className="text-center space-y-2">
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-gold/15 text-gold-deep">
               <QrCode className="size-6" />

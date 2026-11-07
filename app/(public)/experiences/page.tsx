@@ -17,7 +17,7 @@ export const metadata = {
 
 export default function ExperiencesPage() {
   return (
-    <div className="flex w-full flex-col bg-ivory text-ink">
+    <div className="flex w-full max-w-full flex-col bg-ivory text-ink overflow-x-clip min-w-0">
       <section className="relative overflow-hidden bg-forest text-ivory py-16 sm:py-24">
         <div
           aria-hidden

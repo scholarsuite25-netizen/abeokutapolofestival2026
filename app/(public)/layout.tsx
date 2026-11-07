@@ -6,10 +6,10 @@ import { PWAInstallPrompt } from "@/components/shared/pwa-install-prompt";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-clip w-full max-w-full min-w-0">
       <PersistentPassBanner />
       <PublicHeader />
-      <div className="flex-1">{children}</div>
+      <div className="flex-1 w-full max-w-full overflow-x-clip min-w-0">{children}</div>
       <PublicFooter />
       <PermanentPassDock />
       <PWAInstallPrompt />

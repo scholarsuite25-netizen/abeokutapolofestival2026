@@ -112,8 +112,8 @@ export function PressHub() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 1. MEDIA ASSETS & METRICS BAND                                      */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="rounded-xl border border-line bg-card p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex size-10 items-center justify-center rounded-lg bg-forest/10 text-forest">
             <Camera className="size-5" />
           </div>
@@ -122,7 +122,7 @@ export function PressHub() {
           <p className="mt-1 text-[11px] text-muted-brand">Photographic archive &amp; raw match frames</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-line bg-card p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex size-10 items-center justify-center rounded-lg bg-gold/15 text-gold-dim">
             <Video className="size-5" />
           </div>
@@ -131,7 +131,7 @@ export function PressHub() {
           <p className="mt-1 text-[11px] text-muted-brand">Licensed ProRes feeds &amp; highlight reels</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-line bg-card p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex size-10 items-center justify-center rounded-lg bg-forest/10 text-forest">
             <Wifi className="size-5" />
           </div>
@@ -140,7 +140,7 @@ export function PressHub() {
           <p className="mt-1 text-[11px] text-muted-brand">Dedicated pitch-side press media center</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-line bg-card p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex size-10 items-center justify-center rounded-lg bg-gold/15 text-gold-dim">
             <ShieldCheck className="size-5" />
           </div>

@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="flex w-full flex-col bg-ivory text-ink">
+    <div className="flex w-full max-w-full flex-col bg-ivory text-ink overflow-x-clip min-w-0">
       <section className="relative overflow-hidden bg-forest py-14 text-ivory sm:py-20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <Badge variant="outline" className="border-gold/40 bg-gold/10 text-gold uppercase tracking-widest text-[11px]">

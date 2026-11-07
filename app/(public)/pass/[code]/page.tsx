@@ -218,8 +218,8 @@ async function PassContent({ params, searchParams }: PassPageProps) {
   };
 
   return (
-    <div className="flex w-full flex-col bg-ivory text-ink py-6 sm:py-10 print:py-0 print:bg-white">
-      <div className="mx-auto max-w-md px-3 sm:px-4 space-y-4">
+    <div className="flex w-full max-w-full flex-col bg-ivory text-ink py-6 sm:py-10 print:py-0 print:bg-white overflow-x-clip min-w-0">
+      <div className="mx-auto w-full max-w-md px-3 sm:px-4 space-y-4 min-w-0">
         {/* Navigation & Print Actions */}
         <div className="flex items-center justify-between print:hidden">
           <Button asChild variant="ghost" size="sm" className="text-muted-brand hover:text-forest text-xs">
@@ -242,9 +242,9 @@ async function PassContent({ params, searchParams }: PassPageProps) {
         {/* Action Bar (Download Offline Pass / Print / Share) */}
         <PassViewActions passData={passStorageData} />
 
-        {/* Access Card Container (CR80 Standard Physical ID-Card Ratio: max-w-[305px]) */}
+        {/* Access Card Container (CR80 Standard Physical ID-Card Ratio: max-w-[290px] sm:max-w-[305px]) */}
         <div
-          className={`mx-auto w-full max-w-[305px] overflow-hidden rounded-2xl border-2 shadow-xl print:border-2 print:border-black print:shadow-none transition-all ${
+          className={`mx-auto w-full max-w-[290px] sm:max-w-[305px] min-w-0 overflow-hidden rounded-2xl border-2 shadow-xl print:border-2 print:border-black print:shadow-none transition-all ${
             isGold
               ? "border-2 border-[#C9A84C] bg-gradient-to-b from-[#1C1605] via-[#2A2007] to-[#120E03] text-[#FCF9F8] shadow-[0_4px_25px_rgba(201,168,76,0.25)]"
               : "border-2 border-[#002F1A] bg-[#FCF9F8] text-[#1B1C1C] shadow-lg"

@@ -24,7 +24,7 @@ export const metadata = {
 
 export default function ProgrammePage() {
   return (
-    <div className="flex w-full flex-col bg-ivory text-ink">
+    <div className="flex w-full max-w-full flex-col bg-ivory text-ink overflow-x-clip min-w-0">
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 1. HERO SECTION                                                     */}
       {/* ─────────────────────────────────────────────────────────────────── */}
@@ -34,7 +34,7 @@ export default function ProgrammePage() {
           className="pointer-events-none absolute -bottom-32 -left-32 size-96 rounded-full bg-gold/10 blur-3xl"
         />
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 min-w-0">
           <Badge
             variant="outline"
             className="border-gold/40 bg-gold/10 text-gold uppercase tracking-widest text-[11px]"
@@ -95,7 +95,7 @@ export default function ProgrammePage() {
       {/* 2. PROGRAMME STATUS NOTICE & ADMISSION POLICY                       */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="border-b border-line bg-sage/40 py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-4">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 space-y-4 min-w-0">
           {/* Mandatory Gate Protocol Notice */}
           <div className="rounded-2xl border-2 border-gold/60 bg-forest p-4 sm:p-5 text-ivory shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
@@ -159,26 +159,32 @@ export default function ProgrammePage() {
       {/* 3. THREE-DAY PROGRAMME SCHEDULE                                     */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Tabs defaultValue="day-1" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 rounded-2xl border border-line bg-sage/30 p-1.5 sm:max-w-xl mx-auto mb-10">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 min-w-0">
+          <Tabs defaultValue="day-1" className="w-full min-w-0">
+            <TabsList className="grid w-full grid-cols-3 rounded-2xl border border-line bg-sage/30 p-1 sm:p-1.5 max-w-full sm:max-w-xl mx-auto mb-10 min-w-0">
               <TabsTrigger
                 value="day-1"
-                className="rounded-xl font-display text-sm font-semibold py-2.5 data-[state=active]:bg-forest data-[state=active]:text-ivory"
+                className="rounded-xl font-display text-xs sm:text-sm font-semibold py-2 sm:py-2.5 px-1 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-ivory truncate text-center"
               >
-                Day 1 · Fri 18 Dec
+                <span>Day 1</span>
+                <span className="hidden sm:inline"> · Fri 18 Dec</span>
+                <span className="block sm:hidden text-[10px] opacity-80 leading-tight">Fri 18</span>
               </TabsTrigger>
               <TabsTrigger
                 value="day-2"
-                className="rounded-xl font-display text-sm font-semibold py-2.5 data-[state=active]:bg-forest data-[state=active]:text-ivory"
+                className="rounded-xl font-display text-xs sm:text-sm font-semibold py-2 sm:py-2.5 px-1 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-ivory truncate text-center"
               >
-                Day 2 · Sat 19 Dec
+                <span>Day 2</span>
+                <span className="hidden sm:inline"> · Sat 19 Dec</span>
+                <span className="block sm:hidden text-[10px] opacity-80 leading-tight">Sat 19</span>
               </TabsTrigger>
               <TabsTrigger
                 value="day-3"
-                className="rounded-xl font-display text-sm font-semibold py-2.5 data-[state=active]:bg-forest data-[state=active]:text-ivory"
+                className="rounded-xl font-display text-xs sm:text-sm font-semibold py-2 sm:py-2.5 px-1 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-ivory truncate text-center"
               >
-                Day 3 · Sun 20 Dec
+                <span>Day 3</span>
+                <span className="hidden sm:inline"> · Sun 20 Dec</span>
+                <span className="block sm:hidden text-[10px] opacity-80 leading-tight">Sun 20</span>
               </TabsTrigger>
             </TabsList>
 

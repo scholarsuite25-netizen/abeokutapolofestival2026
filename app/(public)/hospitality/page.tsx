@@ -75,7 +75,7 @@ const ENCLOSURES = [
 
 export default function HospitalityPage() {
   return (
-    <div className="flex w-full flex-col bg-ivory text-ink">
+    <div className="flex w-full max-w-full flex-col bg-ivory text-ink overflow-x-clip min-w-0">
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 1. HERO SECTION                                                     */}
       {/* ─────────────────────────────────────────────────────────────────── */}

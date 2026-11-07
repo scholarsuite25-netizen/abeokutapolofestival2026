@@ -258,7 +258,7 @@ export function FestivalVideoModal({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-4xl border-2 border-gold/40 bg-forest-deep p-4 sm:p-6 text-ivory shadow-2xl">
+      <DialogContent className="w-full max-w-[calc(100vw-1.5rem)] sm:max-w-4xl border-2 border-gold/40 bg-forest-deep p-3.5 sm:p-6 text-ivory shadow-2xl overflow-hidden">
         <DialogHeader className="mb-2">
           <div className="flex items-center justify-between">
             <Badge className="bg-gold text-forest font-bold text-[10px]">

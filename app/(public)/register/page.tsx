@@ -320,8 +320,8 @@ function RegisterContent() {
   };
 
   return (
-    <div className="flex w-full flex-col bg-ivory text-ink py-8 sm:py-14">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div className="flex w-full max-w-full flex-col bg-ivory text-ink py-6 sm:py-14 overflow-x-clip min-w-0">
+      <div className="mx-auto w-full max-w-5xl px-3 sm:px-6 lg:px-8 min-w-0">
         {/* Header Breadcrumb */}
         <div className="text-center max-w-2xl mx-auto mb-8">
           <Badge
@@ -534,8 +534,8 @@ function RegisterContent() {
           </div>
         ) : (
           /* ── REGISTRATION FORM (SIMPLIFIED & STREAMLINED) ── */
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start">
-            <div className="rounded-2xl border border-line bg-card p-6 shadow-sm sm:p-8 lg:col-span-7">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start min-w-0 max-w-full">
+            <div className="rounded-2xl border border-line bg-card p-4 sm:p-8 lg:col-span-7 max-w-full min-w-0 overflow-hidden shadow-sm">
               {errorMsg && (
                 <div className="mb-5 rounded-lg border border-red-300 bg-red-50 p-3 text-xs text-red-800">
                   {errorMsg}
@@ -1083,8 +1083,8 @@ function RegisterContent() {
             </div>
 
             {/* Side Live Card Preview */}
-            <div className="space-y-6 lg:col-span-5">
-              <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
+            <div className="space-y-6 lg:col-span-5 max-w-full min-w-0">
+              <div className="rounded-2xl border border-line bg-card p-4 sm:p-6 shadow-sm min-w-0 max-w-full overflow-hidden">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gold block mb-1.5">
                   Live Pass Issuance Rule
                 </span>

@@ -57,8 +57,8 @@ const LEGAL = [
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-line bg-forest text-ivory">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+    <footer className="border-t border-line bg-forest text-ivory overflow-x-clip w-full max-w-full min-w-0">
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-10 sm:py-14 min-w-0">
         {/* Pre-Footer Gate Protocol Notice */}
         <div className="mb-12 rounded-2xl border-2 border-gold/60 bg-forest-deep p-4 sm:p-5 shadow-lg">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -100,11 +100,11 @@ export function PublicFooter() {
               Entry requires an official digital access card for contactless turnstile admission.
             </p>
             <div className="mt-5 space-y-1.5 text-sm text-ivory/80">
-              <p>
+              <p className="flex flex-wrap items-center gap-1">
                 <a className="underline-offset-4 hover:underline" href={CONTACT.phone1Href}>
                   {CONTACT.phone1}
                 </a>
-                <span aria-hidden className="px-2 text-ivory/40">·</span>
+                <span aria-hidden className="px-1 text-ivory/40">·</span>
                 <a className="underline-offset-4 hover:underline" href={CONTACT.phone2Href}>
                   {CONTACT.phone2}
                 </a>

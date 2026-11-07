@@ -84,7 +84,7 @@ export function PermanentPassDock() {
       return (
         <aside
           aria-label="Permanent Access Pass Token"
-          className="fixed bottom-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-50 animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-[calc(100vw-1.5rem)]"
         >
           <button
             onClick={toggleMinimized}
@@ -108,7 +108,7 @@ export function PermanentPassDock() {
     return (
       <aside
         aria-label="Permanent Access Pass Cockpit"
-        className="fixed bottom-4 right-4 z-50 max-w-sm sm:max-w-md w-[calc(100vw-2rem)] rounded-2xl border-2 border-gold/70 bg-forest-deep/95 p-4 text-ivory shadow-2xl backdrop-blur-lg animate-in fade-in slide-in-from-bottom-4 duration-300 ring-4 ring-gold/15"
+        className="fixed bottom-3 right-3 left-3 sm:left-auto sm:right-4 z-50 max-w-sm sm:max-w-md w-auto sm:w-full rounded-2xl border-2 border-gold/70 bg-forest-deep/95 p-3.5 sm:p-4 text-ivory shadow-2xl backdrop-blur-lg animate-in fade-in slide-in-from-bottom-4 duration-300 ring-2 sm:ring-4 ring-gold/15"
       >
         {/* Header Bar */}
         <div className="flex items-center justify-between gap-2 border-b border-gold/20 pb-2.5 mb-3">
@@ -195,7 +195,7 @@ export function PermanentPassDock() {
   return (
     <aside
       aria-label="Retrieve Pass"
-      className="fixed bottom-4 right-4 z-40 hidden sm:block animate-in fade-in duration-500"
+      className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 hidden sm:block animate-in fade-in duration-500"
     >
       <Link
         href="/pass/lookup"

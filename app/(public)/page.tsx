@@ -13,6 +13,7 @@ import {
   Music,
   Film,
   ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +27,7 @@ import { FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export default function HomePage() {
   return (
-    <div className="flex w-full flex-col bg-ivory text-ink">
+    <div className="flex w-full max-w-full flex-col bg-ivory text-ink overflow-x-clip min-w-0">
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP HERO SECTION WITH REGISTRATION PRIORITY & LIVE COUNTDOWN     */}
       {/* ─────────────────────────────────────────────────────────────────── */}
@@ -47,7 +48,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 pt-12 pb-16 sm:px-6 sm:pt-16 sm:pb-20 lg:px-8">
+        <div className="relative mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 pt-10 sm:pt-16 pb-14 sm:pb-20 min-w-0">
           {/* Eyebrow Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-forest-deep/80 px-4 py-1.5 shadow-sm backdrop-blur-md">
             <span className="size-2 rounded-full bg-gold animate-pulse" />
@@ -110,13 +111,13 @@ export default function HomePage() {
             {/* ───────────────────────────────────────────────────────────── */}
             {/* PRIORITY REGISTRATION COCKPIT (PRIMARY APP FOCUS) & COUNTDOWN */}
             {/* ───────────────────────────────────────────────────────────── */}
-            <div className="lg:col-span-5 rounded-3xl border-2 border-gold/50 bg-forest-deep/95 p-6 sm:p-7 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-5">
+            <div className="lg:col-span-5 rounded-3xl border-2 border-gold/50 bg-forest-deep/95 p-4 sm:p-7 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-5 min-w-0">
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div className="absolute -right-12 -top-12 size-40 rounded-full bg-gold/15 blur-2xl" />
               </div>
 
               {/* 1. REGISTRATION MODULE CENTERPIECE */}
-              <div className="relative z-10 rounded-2xl border border-gold/40 bg-forest/85 p-5 space-y-3.5 shadow-inner">
+              <div className="relative z-10 rounded-2xl border border-gold/40 bg-forest/85 p-3.5 sm:p-5 space-y-3.5 shadow-inner min-w-0">
                 <div className="flex items-center justify-between">
                   <Badge className="bg-gold text-forest font-bold text-[10px]">
                     <Ticket className="mr-1 size-3" /> OFFICIAL GATE ACCREDITATION
@@ -192,8 +193,8 @@ export default function HomePage() {
       {/* 2. OFFICIAL ACCREDITATION & GATE PASS MODULE (MOVED UPWARD)         */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="bg-ivory py-14 border-b border-line">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl bg-forest-deep p-8 text-ivory shadow-2xl sm:p-12 lg:p-14">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 min-w-0">
+          <div className="relative overflow-hidden rounded-3xl bg-forest-deep p-4 sm:p-8 lg:p-14 text-ivory shadow-2xl min-w-0">
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="absolute -right-20 -bottom-20 size-96 rounded-full bg-gold/10 blur-3xl" />
             </div>
@@ -223,16 +224,31 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="pt-3 flex flex-wrap items-center gap-6 text-xs text-gold">
-                  <span className="flex items-center gap-1.5">
+                <div className="pt-3 flex flex-wrap items-center gap-3 sm:gap-6 text-xs text-gold">
+                  <a
+                    href="tel:+2348181888884"
+                    className="flex items-center gap-1.5 hover:text-gold-light hover:underline transition-colors font-semibold"
+                  >
                     <Phone className="size-3.5" />
                     Helpline: +234 818 188 8884
-                  </span>
-                  <span className="flex items-center gap-1.5">
+                  </a>
+                  <a
+                    href="tel:08036818916"
+                    className="flex items-center gap-1.5 hover:text-gold-light hover:underline transition-colors font-semibold"
+                  >
                     <Phone className="size-3.5" />
                     0803 681 8916
-                  </span>
-                  <span className="flex items-center gap-1.5">
+                  </a>
+                  <a
+                    href="https://wa.me/2348181888884?text=Hello%20Secretariat%2C%20I%20am%20enquiring%20about%20the%202026%20Abeokuta%20Polo%20Festival"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 hover:text-gold-light hover:underline transition-colors font-semibold text-emerald-400"
+                  >
+                    <MessageCircle className="size-3.5" />
+                    WhatsApp Secretariat
+                  </a>
+                  <span className="flex items-center gap-1.5 font-semibold">
                     <Users className="size-3.5" />
                     @abeokuta_polofestival
                   </span>
@@ -301,7 +317,7 @@ export default function HomePage() {
                 <Button asChild className="bg-gold font-bold text-forest hover:bg-gold/90 text-xs">
                   <Link href="/register">Claim Free Gate Pass</Link>
                 </Button>
-                <Button asChild variant="outline" className="border-ivory/30 text-ivory hover:bg-white/10 text-xs">
+                <Button asChild className="bg-white text-forest font-bold border-2 border-gold/40 hover:bg-gold hover:text-forest text-xs shadow-md transition-all">
                   <Link href="/gallery">Explore Media Gallery</Link>
                 </Button>
               </div>
@@ -708,7 +724,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="mt-8 border-t border-line/20 pt-4">
-                <Button asChild variant="outline" className="w-full border-ivory/30 text-ivory hover:bg-ivory/10">
+                <Button asChild className="w-full bg-forest text-ivory border border-gold/40 hover:bg-gold hover:text-forest font-bold text-xs shadow-sm transition-all">
                   <Link href="/experiences">Learn More</Link>
                 </Button>
               </div>
@@ -783,7 +799,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="mt-8 border-t border-line/20 pt-4">
-                <Button asChild variant="outline" className="w-full border-ivory/30 text-ivory hover:bg-ivory/10">
+                <Button asChild className="w-full bg-forest text-ivory border border-gold/40 hover:bg-gold hover:text-forest font-bold text-xs shadow-sm transition-all">
                   <Link href="/programme">View Musical Schedule</Link>
                 </Button>
               </div>
@@ -841,8 +857,8 @@ export default function HomePage() {
       {/* 7. PRE-FOOTER PROTOCOL ASSISTANCE & SECRETARIAT INQUIRIES           */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="bg-ivory py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl bg-forest-deep p-8 text-ivory shadow-2xl sm:p-12 lg:p-16">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 min-w-0">
+          <div className="relative overflow-hidden rounded-3xl bg-forest-deep p-4 sm:p-8 lg:p-16 text-ivory shadow-2xl min-w-0">
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="absolute -right-20 -bottom-20 size-96 rounded-full bg-gold/10 blur-3xl" />
             </div>
@@ -859,16 +875,31 @@ export default function HomePage() {
                   For VIP enclosure allocations, corporate delegations, media accreditation, or hotel hospitality concierge assistance during the festival.
                 </p>
 
-                <div className="pt-3 flex flex-wrap items-center gap-6 text-xs text-gold">
-                  <span className="flex items-center gap-1.5">
+                <div className="pt-3 flex flex-wrap items-center gap-3 sm:gap-6 text-xs text-gold">
+                  <a
+                    href="tel:+2348181888884"
+                    className="flex items-center gap-1.5 hover:text-gold-light hover:underline transition-colors font-semibold"
+                  >
                     <Phone className="size-3.5" />
                     Helpline: +234 818 188 8884
-                  </span>
-                  <span className="flex items-center gap-1.5">
+                  </a>
+                  <a
+                    href="tel:08036818916"
+                    className="flex items-center gap-1.5 hover:text-gold-light hover:underline transition-colors font-semibold"
+                  >
                     <Phone className="size-3.5" />
                     0803 681 8916
-                  </span>
-                  <span className="flex items-center gap-1.5">
+                  </a>
+                  <a
+                    href="https://wa.me/2348181888884?text=Hello%20Secretariat%2C%20I%20am%20enquiring%20about%20the%202026%20Abeokuta%20Polo%20Festival"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 hover:text-gold-light hover:underline transition-colors font-semibold text-emerald-400"
+                  >
+                    <MessageCircle className="size-3.5" />
+                    WhatsApp Secretariat
+                  </a>
+                  <span className="flex items-center gap-1.5 font-semibold">
                     <Users className="size-3.5" />
                     @abeokuta_polofestival
                   </span>

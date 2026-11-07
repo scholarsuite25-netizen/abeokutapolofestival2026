@@ -51,7 +51,7 @@ export function EnquiryDialog({
           {triggerText}
         </Button>
       </DialogTrigger>
-      <DialogContent className="border-line bg-ivory text-ink sm:max-w-md">
+      <DialogContent className="border-line bg-ivory text-ink w-full max-w-[calc(100vw-1.5rem)] sm:max-w-md p-4 sm:p-6 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="font-display text-xl text-forest">{title}</DialogTitle>
           <DialogDescription className="text-muted-brand text-sm">
@@ -60,7 +60,7 @@ export function EnquiryDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="rounded-lg border border-gold/40 bg-sage/50 p-4 text-xs leading-relaxed text-forest-deep">
+          <div className="rounded-lg border border-gold/40 bg-sage/50 p-3 sm:p-4 text-xs leading-relaxed text-forest-deep">
             <div className="flex items-center gap-1.5 font-semibold text-forest">
               <CheckCircle2 className="size-4 text-forest" />
               <span>Direct Commercial & Protocol Protocols</span>
@@ -76,48 +76,48 @@ export function EnquiryDialog({
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-lg border border-emerald-600/30 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 transition hover:bg-emerald-100"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-600/30 bg-emerald-50 px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-emerald-900 transition hover:bg-emerald-100 min-w-0"
             >
-              <div className="flex items-center gap-3">
-                <MessageSquare className="size-5 text-emerald-700" />
-                <div>
-                  <p className="font-semibold">WhatsApp Secretariat Direct</p>
-                  <p className="text-xs text-emerald-700">+234 818 188 8884</p>
+              <div className="flex items-center gap-3 min-w-0">
+                <MessageSquare className="size-5 text-emerald-700 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">WhatsApp Secretariat Direct</p>
+                  <p className="text-xs text-emerald-700 truncate">+234 818 188 8884</p>
                 </div>
               </div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-800 shrink-0">
                 Instant Chat →
               </span>
             </a>
 
             <a
               href="tel:+2348181888884"
-              className="flex items-center justify-between rounded-lg border border-line bg-card px-4 py-3 text-sm font-medium text-forest transition hover:bg-sage"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-card px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-forest transition hover:bg-sage min-w-0"
             >
-              <div className="flex items-center gap-3">
-                <Phone className="size-5 text-gold" />
-                <div>
-                  <p className="font-semibold">Festival Helpline 1</p>
-                  <p className="text-xs text-muted-brand">+234 818 188 8884</p>
+              <div className="flex items-center gap-3 min-w-0">
+                <Phone className="size-5 text-gold shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">Festival Helpline 1</p>
+                  <p className="text-xs text-muted-brand truncate">+234 818 188 8884</p>
                 </div>
               </div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-brand">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-brand shrink-0">
                 Call Now →
               </span>
             </a>
 
             <a
               href="tel:08036818916"
-              className="flex items-center justify-between rounded-lg border border-line bg-card px-4 py-3 text-sm font-medium text-forest transition hover:bg-sage"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-card px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-forest transition hover:bg-sage min-w-0"
             >
-              <div className="flex items-center gap-3">
-                <Phone className="size-5 text-gold" />
-                <div>
-                  <p className="font-semibold">Festival Helpline 2</p>
-                  <p className="text-xs text-muted-brand">0803 681 8916</p>
+              <div className="flex items-center gap-3 min-w-0">
+                <Phone className="size-5 text-gold shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">Festival Helpline 2</p>
+                  <p className="text-xs text-muted-brand truncate">0803 681 8916</p>
                 </div>
               </div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-brand">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-brand shrink-0">
                 Call Now →
               </span>
             </a>
@@ -126,7 +126,7 @@ export function EnquiryDialog({
               href={`mailto:abeokutapolo@gmail.com?subject=${encodeURIComponent(
                 `Festival Inquiry - ${tierName || category}`
               )}&body=${encodeURIComponent(defaultMessage)}`}
-              className="flex items-center justify-between rounded-lg border border-line bg-card px-4 py-3 text-sm font-medium text-forest transition hover:bg-sage"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-card px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-forest transition hover:bg-sage min-w-0"
             >
               <div className="flex items-center gap-3">
                 <Mail className="size-5 text-gold" />

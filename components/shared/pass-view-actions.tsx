@@ -66,7 +66,7 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
   };
 
   return (
-    <div className="space-y-2.5 print:hidden max-w-[305px] mx-auto w-full">
+    <div className="space-y-2.5 print:hidden w-full max-w-[290px] sm:max-w-[305px] mx-auto min-w-0">
       {/* Anti-Leakage Recipient Device Lock Callout */}
       {isGiftTicket && (
         <div className="rounded-xl border border-amber-600/40 bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-amber-500/15 p-2.5 text-center text-xs text-amber-950 shadow-xs space-y-0.5">

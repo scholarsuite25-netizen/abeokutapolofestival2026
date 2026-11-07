@@ -46,7 +46,7 @@ export function AttendanceMilestoneWidget({
   };
 
   return (
-    <div className={`rounded-3xl border-2 border-gold/40 bg-forest p-6 sm:p-8 text-ivory shadow-2xl relative overflow-hidden ${className}`}>
+    <div className={`rounded-3xl border-2 border-gold/40 bg-forest p-4 sm:p-8 text-ivory shadow-2xl relative overflow-hidden min-w-0 max-w-full ${className}`}>
       {/* Ambient background container securely clipped to prevent scrollWidth blowout */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -right-20 -bottom-20 size-72 rounded-full bg-gold/10 blur-3xl" />

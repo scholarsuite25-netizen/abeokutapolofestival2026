@@ -87,10 +87,10 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
     : "100% FREE ADMISSION";
 
   return (
-    <div className={`flex flex-col items-center ${className}`}>
-      {/* ── REALISTIC COMPACT ID CARD (CR80 ID BADGE RATIO & SIZING: max-w-[305px]) ── */}
+    <div className={`flex flex-col items-center w-full max-w-full min-w-0 ${className}`}>
+      {/* ── REALISTIC COMPACT ID CARD (CR80 ID BADGE RATIO & SIZING: max-w-[290px] sm:max-w-[305px]) ── */}
       <div
-        className={`relative w-full max-w-[305px] rounded-2xl overflow-hidden shadow-xl transition-all duration-300 ${
+        className={`relative w-full max-w-[290px] sm:max-w-[305px] rounded-2xl overflow-hidden shadow-xl transition-all duration-300 min-w-0 ${
           isGold
             ? "border-2 border-[#C9A84C] bg-gradient-to-b from-[#1C1605] via-[#2A2007] to-[#120E03] text-[#FCF9F8] shadow-[0_4px_25px_rgba(201,168,76,0.25)]"
             : "border-2 border-[#002F1A] bg-[#FCF9F8] text-[#1B1C1C] shadow-lg"
@@ -341,7 +341,7 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
 
       {/* Card Action Buttons & 1-Click Guest Forwarding */}
       {showActions && (
-        <div className="mt-3 space-y-1.5 w-full max-w-[305px]">
+        <div className="mt-3 space-y-1.5 w-full max-w-[290px] sm:max-w-[305px] min-w-0">
           {/* Primary Operations (Download & Full View) */}
           <div className="flex items-center gap-1.5">
             <Button

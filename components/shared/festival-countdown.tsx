@@ -112,55 +112,55 @@ export function FestivalCountdown({
 
   // Full luxury cards variant
   return (
-    <div className={`w-full ${className}`}>
-      <div className="flex items-center justify-between mb-3 text-xs">
-        <span className="flex items-center gap-1.5 font-bold uppercase tracking-widest text-gold">
-          <Clock className="size-4 text-gold animate-pulse" />
+    <div className={`w-full max-w-full min-w-0 ${className}`}>
+      <div className="flex flex-wrap items-center justify-between gap-1 mb-3 text-xs">
+        <span className="flex items-center gap-1.5 font-bold uppercase tracking-widest text-gold text-[11px] sm:text-xs">
+          <Clock className="size-3.5 sm:size-4 text-gold animate-pulse shrink-0" />
           Official Festival Countdown
         </span>
-        <span className="text-ivory/70 flex items-center gap-1 text-[11px]">
-          <Calendar className="size-3 text-gold" />
+        <span className="text-ivory/70 flex items-center gap-1 text-[10px] sm:text-[11px]">
+          <Calendar className="size-3 text-gold shrink-0" />
           Opens Fri 18 Dec 2026 · 10:00 AM
         </span>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 sm:gap-3 text-center">
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-3 text-center">
         {/* Days */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 p-3 sm:p-4 shadow-xl backdrop-blur-md">
-          <span className="font-mono text-2xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
+          <span className="font-mono text-xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight truncate">
             {timeLeft.days}
           </span>
-          <span className="mt-1 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-ivory/70">
+          <span className="mt-0.5 sm:mt-1 text-[9px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-widest text-ivory/70 truncate">
             Days
           </span>
         </div>
 
         {/* Hours */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 p-3 sm:p-4 shadow-xl backdrop-blur-md">
-          <span className="font-mono text-2xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
+          <span className="font-mono text-xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight truncate">
             {String(timeLeft.hours).padStart(2, "0")}
           </span>
-          <span className="mt-1 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-ivory/70">
+          <span className="mt-0.5 sm:mt-1 text-[9px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-widest text-ivory/70 truncate">
             Hours
           </span>
         </div>
 
         {/* Minutes */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 p-3 sm:p-4 shadow-xl backdrop-blur-md">
-          <span className="font-mono text-2xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
+          <span className="font-mono text-xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight truncate">
             {String(timeLeft.minutes).padStart(2, "0")}
           </span>
-          <span className="mt-1 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-ivory/70">
+          <span className="mt-0.5 sm:mt-1 text-[9px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-widest text-ivory/70 truncate">
             Minutes
           </span>
         </div>
 
         {/* Seconds */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 p-3 sm:p-4 shadow-xl backdrop-blur-md">
-          <span className="font-mono text-2xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
+          <span className="font-mono text-xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight truncate">
             {String(timeLeft.seconds).padStart(2, "0")}
           </span>
-          <span className="mt-1 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-ivory/70">
+          <span className="mt-0.5 sm:mt-1 text-[9px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-widest text-ivory/70 truncate">
             Seconds
           </span>
         </div>
