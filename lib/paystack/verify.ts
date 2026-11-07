@@ -58,9 +58,10 @@ function fail(reason: PaymentFailureReason): PaymentVerification {
   return { ok: false, reason, message: MESSAGES[reason] };
 }
 
-/** Simulated payments are allowed only outside production and only without a live key. */
+/** Simulated payments are allowed in development or when explicitly enabled via PAYSTACK_DEMO_MODE=true. */
 export function isSimulationAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" && !process.env.PAYSTACK_SECRET_KEY;
+  if (Boolean(process.env.PAYSTACK_SECRET_KEY)) return false;
+  return process.env.NODE_ENV !== "production" || process.env.PAYSTACK_DEMO_MODE === "true";
 }
 
 export function isPaystackConfigured(): boolean {

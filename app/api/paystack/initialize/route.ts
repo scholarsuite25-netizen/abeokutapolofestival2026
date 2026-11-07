@@ -60,8 +60,8 @@ export async function POST(req: Request) {
   callback.searchParams.set("ph", phone ?? "");
 
   if (!secret) {
-    // Local development only: never simulate a payment in production.
-    if (process.env.NODE_ENV === "production") {
+    const isDemo = process.env.NODE_ENV !== "production" || process.env.PAYSTACK_DEMO_MODE === "true";
+    if (!isDemo) {
       return NextResponse.json(
         { error: "Online payment is not available right now. Please contact the festival office." },
         { status: 503 },
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       amount: amountNgn,
       quantity,
       simulated: true,
-      message: "Development mode: payment simulated (no PAYSTACK_SECRET_KEY set).",
+      message: "Demo mode: payment simulated (PAYSTACK_DEMO_MODE active).",
     });
   }
 

@@ -26,6 +26,7 @@ const serverSchema = z.object({
   EMAILBUMP_SMTP_PASSWORD: z.string().optional(),
   EMAIL_FROM: z.string().min(1).optional(),
   PAYSTACK_SECRET_KEY: z.string().min(1).optional(),
+  PAYSTACK_DEMO_MODE: z.string().optional(),
   VVIP_INVITATION_CODES: z.string().optional(),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 });
