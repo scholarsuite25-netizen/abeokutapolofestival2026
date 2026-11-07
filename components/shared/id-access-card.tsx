@@ -87,18 +87,18 @@ export function IdAccessCard({ pass, showActions = true, className = "" }: IdAcc
 
   return (
     <div className={`flex flex-col items-center ${className}`}>
-      {/* ── REALISTIC ID CARD (CR80 RATIO, COMPACT, HIGH SECURITY) ── */}
+      {/* ── REALISTIC COMPACT ID CARD (CR80 ID BADGE RATIO & SIZING) ── */}
       <div
-        className={`relative w-full max-w-[360px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
+        className={`relative w-full max-w-[300px] rounded-2xl overflow-hidden shadow-xl transition-all duration-300 ${
           isGold
             ? "border-2 border-[#C9A84C] bg-gradient-to-b from-[#1C1605] via-[#2A2007] to-[#120E03] text-[#FCF9F8]"
             : "border-2 border-forest/30 bg-card text-ink"
         }`}
       >
         {/* Lanyard punch-hole simulation */}
-        <div className="pt-2.5 pb-1 flex justify-center">
+        <div className="pt-2 pb-0.5 flex justify-center">
           <div
-            className={`h-2 w-12 rounded-full border ${
+            className={`h-1.5 w-10 rounded-full border ${
               isGold
                 ? "bg-[#0B0902] border-[#5E4711]"
                 : "bg-muted border-line"
@@ -108,33 +108,33 @@ export function IdAccessCard({ pass, showActions = true, className = "" }: IdAcc
 
         {/* Card Header */}
         <div
-          className={`px-4 py-3 text-center border-b ${
+          className={`px-3 py-2 text-center border-b ${
             isGold
               ? "bg-gradient-to-r from-[#241A04] via-[#3B2B08] to-[#241A04] border-[#C9A84C]/40 text-[#E5C768]"
               : "bg-forest border-gold/40 text-ivory"
           }`}
         >
-          <div className="flex items-center justify-center gap-1.5 mb-1">
+          <div className="flex items-center justify-center gap-1 mb-0.5">
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-black tracking-widest uppercase ${
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8px] font-black tracking-widest uppercase ${
                 isGold
                   ? "bg-gradient-to-r from-[#B38F34] to-[#C9A84C] text-black shadow-xs"
                   : "bg-gold text-forest font-bold"
               }`}
             >
-              {isGold && <Crown className="size-2.5 inline" />}
+              {isGold && <Crown className="size-2 inline" />}
               {admissionBadge}
             </span>
           </div>
           <h3
-            className={`font-serif text-lg font-bold leading-tight ${
+            className={`font-serif text-sm font-bold leading-tight ${
               isGold ? "text-[#FDF6D8] tracking-wide" : "text-ivory"
             }`}
           >
             {cardTitle}
           </h3>
           <p
-            className={`text-[10px] uppercase tracking-widest font-semibold mt-0.5 ${
+            className={`text-[9px] uppercase tracking-wider font-semibold mt-0.5 ${
               isGold ? "text-[#C9A84C]" : "text-gold"
             }`}
           >
@@ -144,73 +144,73 @@ export function IdAccessCard({ pass, showActions = true, className = "" }: IdAcc
 
         {/* High-Security QR Presentation & Hologram */}
         <div
-          className={`p-4 flex flex-col items-center justify-center text-center relative ${
+          className={`p-3 flex flex-col items-center justify-center text-center relative ${
             isGold ? "bg-[#140F04] border-b border-[#3D2E08]" : "bg-ivory border-b border-line/60"
           }`}
         >
           {/* Subtle Security Guilloche Background Watermark */}
           <div className="absolute inset-0 opacity-5 pointer-events-none flex items-center justify-center">
-            <Sparkles className="size-36 text-gold" />
+            <Sparkles className="size-28 text-gold" />
           </div>
 
           <div
-            className={`relative rounded-xl p-2.5 shadow-md bg-white border-2 ${
+            className={`relative rounded-lg p-2 shadow-sm bg-white border-2 ${
               isGold ? "border-[#C9A84C]" : "border-forest"
             }`}
           >
-            <QrCode className="size-28 text-black" />
-            <div className="absolute -top-2 -right-2 rounded-full bg-emerald-600 text-white p-0.5 shadow">
-              <CheckCircle2 className="size-3.5" />
+            <QrCode className="size-24 text-black" />
+            <div className="absolute -top-1.5 -right-1.5 rounded-full bg-emerald-600 text-white p-0.5 shadow">
+              <CheckCircle2 className="size-3" />
             </div>
           </div>
 
           <div
-            className={`font-mono text-base font-extrabold tracking-widest mt-2 ${
+            className={`font-mono text-sm font-extrabold tracking-widest mt-1.5 ${
               isGold ? "text-[#E5C768]" : "text-forest"
             }`}
           >
             {pass.passCode}
           </div>
 
-          <div className="flex items-center gap-1 mt-1">
+          <div className="flex items-center gap-1 mt-0.5">
             <ShieldCheck className={`size-3 ${isGold ? "text-[#85E0A3]" : "text-emerald-700"}`} />
             <span
-              className={`text-[10px] font-bold tracking-wider uppercase ${
+              className={`text-[9px] font-bold tracking-wider uppercase ${
                 isGold ? "text-[#85E0A3]" : "text-emerald-800"
               }`}
             >
-              Cryptographically Verified ID
+              Verified Digital ID
             </span>
           </div>
         </div>
 
         {/* Card Holder Details */}
-        <div className={`p-4 space-y-2 text-xs ${isGold ? "text-[#E8DFD0]" : "text-ink"}`}>
+        <div className={`px-3 py-2 space-y-1 text-[11px] ${isGold ? "text-[#E8DFD0]" : "text-ink"}`}>
           <div
-            className={`flex justify-between items-center pb-1.5 border-b ${
+            className={`flex justify-between items-center pb-1 border-b ${
               isGold ? "border-[#D4AF37]/20" : "border-line/60"
             }`}
           >
             <span
-              className={`text-[10px] uppercase font-bold tracking-wider ${
+              className={`text-[9px] uppercase font-bold tracking-wider ${
                 isGold ? "text-[#B8A375]" : "text-muted-brand"
               }`}
             >
               Pass Holder
             </span>
-            <span className={`font-bold ${isGold ? "text-[#FFFFFF]" : "text-forest"}`}>
+            <span className={`font-bold truncate max-w-[170px] text-right ${isGold ? "text-[#FFFFFF]" : "text-forest"}`}>
               {pass.holderName}
             </span>
           </div>
 
           {serialText && (
             <div
-              className={`flex justify-between items-center pb-1.5 border-b ${
+              className={`flex justify-between items-center pb-1 border-b ${
                 isGold ? "border-[#D4AF37]/20" : "border-line/60"
               }`}
             >
               <span
-                className={`text-[10px] uppercase font-bold tracking-wider ${
+                className={`text-[9px] uppercase font-bold tracking-wider ${
                   isGold ? "text-[#B8A375]" : "text-muted-brand"
                 }`}
               >
@@ -224,84 +224,84 @@ export function IdAccessCard({ pass, showActions = true, className = "" }: IdAcc
 
           {(pass.sponsorName || (isSponsored && pass.hostName)) && (
             <div
-              className={`flex justify-between items-center pb-1.5 border-b ${
+              className={`flex justify-between items-center pb-1 border-b ${
                 isGold ? "border-[#D4AF37]/20" : "border-line/60"
               }`}
             >
               <span
-                className={`text-[10px] uppercase font-bold tracking-wider ${
+                className={`text-[9px] uppercase font-bold tracking-wider ${
                   isGold ? "text-[#B8A375]" : "text-muted-brand"
                 }`}
               >
                 Sponsored By
               </span>
-              <span className={`font-bold ${isGold ? "text-[#FFFFFF]" : "text-forest"}`}>
+              <span className={`font-bold truncate max-w-[170px] text-right ${isGold ? "text-[#FFFFFF]" : "text-forest"}`}>
                 {pass.sponsorName || pass.hostName}
               </span>
             </div>
           )}
 
           <div
-            className={`flex justify-between items-center pb-1.5 border-b ${
+            className={`flex justify-between items-center pb-1 border-b ${
               isGold ? "border-[#D4AF37]/20" : "border-line/60"
             }`}
           >
             <span
-              className={`text-[10px] uppercase font-bold tracking-wider ${
+              className={`text-[9px] uppercase font-bold tracking-wider ${
                 isGold ? "text-[#B8A375]" : "text-muted-brand"
               }`}
             >
-              Admission Days
+              Days
             </span>
             <span className={`font-semibold flex items-center gap-1 ${isGold ? "text-[#E5C768]" : "text-forest"}`}>
-              <Calendar className="size-3 text-gold-deep" />
+              <Calendar className="size-2.5 text-gold-deep" />
               {daysLabel}
             </span>
           </div>
 
           <div
-            className={`flex justify-between items-center pb-1.5 border-b ${
+            className={`flex justify-between items-center pb-1 border-b ${
               isGold ? "border-[#C9A84C]/20" : "border-line/60"
             }`}
           >
             <span
-              className={`text-[10px] uppercase font-bold tracking-wider ${
+              className={`text-[9px] uppercase font-bold tracking-wider ${
                 isGold ? "text-[#C9A84C]" : "text-muted-brand"
               }`}
             >
-              Access Entitlement
+              Access
             </span>
-            <span className={`font-bold ${isGold ? "text-[#E5C768]" : "text-forest-interactive"}`}>
+            <span className={`font-bold truncate max-w-[170px] text-right ${isGold ? "text-[#E5C768]" : "text-forest-interactive"}`}>
               {isGold ? "Royal Pavilion & Grandstand" : "Festival Grounds & Grandstand"}
             </span>
           </div>
 
           <div className="flex justify-between items-center pt-0.5">
             <span
-              className={`text-[10px] uppercase font-bold tracking-wider ${
+              className={`text-[9px] uppercase font-bold tracking-wider ${
                 isGold ? "text-[#C9A84C]" : "text-muted-brand"
               }`}
             >
               Venue
             </span>
-            <span className="font-medium flex items-center gap-1 text-[11px]">
-              <MapPin className="size-3 text-gold-deep" /> Abeokuta Polo Club Grounds
+            <span className="font-medium flex items-center gap-1 text-[10px]">
+              <MapPin className="size-2.5 text-gold-deep" /> Abeokuta Polo Club Grounds
             </span>
           </div>
 
           {/* Security Foil Strip */}
           <div
-            className={`mt-2 rounded-lg px-2.5 py-1.5 text-[9px] flex items-center justify-between border ${
+            className={`mt-1.5 rounded-md px-2 py-1 text-[8px] flex items-center justify-between border ${
               isGold
                 ? "bg-gradient-to-r from-[#2C2106] to-[#1A1404] border-[#B38F34]/60 text-[#E5C768]"
                 : "bg-sage/40 border-line text-forest font-medium"
             }`}
           >
             <span className="flex items-center gap-1">
-              <ShieldCheck className="size-3 text-gold" />
+              <ShieldCheck className="size-2.5 text-gold" />
               <strong>HMAC-256</strong> SEALED
             </span>
-            <span className="font-mono text-[8px] opacity-80">
+            <span className="font-mono text-[7px] opacity-80">
               {isSponsored ? "SPONSORED GUEST TICKET" : "EST. 2025 · ID-CARD FORMAT"}
             </span>
           </div>
@@ -309,42 +309,42 @@ export function IdAccessCard({ pass, showActions = true, className = "" }: IdAcc
 
         {/* Card Footer & Security Footnote */}
         <div
-          className={`px-3 py-2 text-center text-[9px] leading-tight border-t ${
+          className={`px-2.5 py-1.5 text-center text-[8px] leading-tight border-t ${
             isGold
               ? "bg-[#0E0A02] border-[#3D2E08] text-[#E5C768]"
               : "bg-forest/5 border-line text-forest font-medium"
           }`}
         >
-          <span className="font-semibold text-gold">Turnstile accreditation required.</span> All attendees must be duly registered for valid entry.
+          <span className="font-semibold text-gold">Turnstile accreditation required.</span> All attendees must register.
         </div>
       </div>
 
       {/* Card Action Buttons & 1-Click Guest Forwarding */}
       {showActions && (
-        <div className="mt-3.5 space-y-2 w-full max-w-[360px]">
+        <div className="mt-3 space-y-1.5 w-full max-w-[300px]">
           {/* Primary Operations (Download & Full View) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Button
               size="sm"
               onClick={handleDownload}
-              className={`flex-1 text-xs font-bold cursor-pointer shadow-sm ${
+              className={`flex-1 text-xs font-bold cursor-pointer shadow-xs h-8 ${
                 isGold
                   ? "bg-gradient-to-r from-[#C9A84C] to-[#B38F34] text-black hover:opacity-95"
                   : "bg-forest text-ivory hover:bg-forest-interactive"
               }`}
             >
-              <Download className="mr-1.5 size-3.5" />
-              {downloaded ? "Saved to Phone!" : "Download ID Card"}
+              <Download className="mr-1 size-3.5" />
+              {downloaded ? "Saved!" : "Save ID Card"}
             </Button>
 
             <Button
               asChild
               size="sm"
               variant="outline"
-              className="border-line text-forest text-xs cursor-pointer hover:bg-sage/40"
+              className="border-line text-forest text-xs cursor-pointer hover:bg-sage/40 h-8 px-2.5"
             >
               <Link href={`/pass/${pass.passCode}`} target="_blank">
-                <ExternalLink className="mr-1 size-3 text-gold-deep" /> Open Pass
+                <ExternalLink className="mr-1 size-3 text-gold-deep" /> Open
               </Link>
             </Button>
 
@@ -352,7 +352,7 @@ export function IdAccessCard({ pass, showActions = true, className = "" }: IdAcc
               size="sm"
               variant="ghost"
               onClick={() => window.print()}
-              className="text-muted-brand hover:text-forest text-xs p-2 h-8"
+              className="text-muted-brand hover:text-forest text-xs p-1.5 h-8"
               title="Print ID Card"
             >
               <Printer className="size-3.5" />
@@ -360,15 +360,15 @@ export function IdAccessCard({ pass, showActions = true, className = "" }: IdAcc
           </div>
 
           {/* 1-Click Guest Forwarding Capabilities */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
             <Button
               size="sm"
               asChild
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] h-8 px-2 shadow-xs cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[10px] h-7 px-2 shadow-xs cursor-pointer"
             >
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="mr-1.5 size-3.5" />
-                {isSponsored ? "Share on WhatsApp" : "Share Ticket"}
+                <MessageCircle className="mr-1 size-3" />
+                {isSponsored ? "WhatsApp Pass" : "Share WhatsApp"}
               </a>
             </Button>
 
@@ -376,16 +376,16 @@ export function IdAccessCard({ pass, showActions = true, className = "" }: IdAcc
               size="sm"
               variant="outline"
               onClick={handleCopyGuestLink}
-              className="border-forest/20 text-forest hover:bg-sage/40 text-[11px] h-8 px-2 font-medium cursor-pointer"
+              className="border-forest/20 text-forest hover:bg-sage/40 text-[10px] h-7 px-2 font-medium cursor-pointer"
             >
               {copiedLink ? (
                 <>
-                  <Check className="mr-1.5 size-3.5 text-emerald-600" />
+                  <Check className="mr-1 size-3 text-emerald-600" />
                   <span className="text-emerald-700 font-semibold">Link Copied!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="mr-1.5 size-3.5 text-gold-deep" />
+                  <Copy className="mr-1 size-3 text-gold-deep" />
                   <span>Copy Ticket Link</span>
                 </>
               )}

@@ -277,13 +277,13 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       padding: 16px;
     }
 
-    /* ID-CARD DIMENSIONS & PROPORTIONS (CR80 Standard Ratio) */
+    /* ID-CARD DIMENSIONS & PROPORTIONS (CR80 Standard Physical ID-Badge Ratio) */
     .id-card {
       width: 100%;
-      max-width: 360px;
-      border-radius: 20px;
+      max-width: 300px;
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.65);
       background: ${isGold ? "linear-gradient(145deg, #1A1404 0%, #2A1F06 45%, #181203 100%)" : "#FFFFFF"};
       border: 2px solid ${isGold ? "#C9A84C" : "#002F1A"};
       position: relative;
@@ -291,17 +291,17 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
 
     /* Lanyard punch hole aesthetic */
     .lanyard-slot {
-      width: 48px;
-      height: 8px;
+      width: 36px;
+      height: 6px;
       background: ${isGold ? "#0A0802" : "#E2DDD3"};
       border-radius: 9999px;
-      margin: 12px auto 6px auto;
+      margin: 8px auto 4px auto;
       border: 1px solid ${isGold ? "#B38F34" : "#C1C9BF"};
     }
 
     /* Top Card Header */
     .card-header {
-      padding: 12px 16px;
+      padding: 8px 12px;
       text-align: center;
       background: ${isGold ? "linear-gradient(180deg, #332608 0%, #1A1303 100%)" : "#002F1A"};
       color: ${isGold ? "#FBF5B7" : "#FCF9F8"};
@@ -309,79 +309,80 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
     }
     .badge-pill {
       display: inline-block;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 9999px;
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 800;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       background: ${isGold ? "linear-gradient(90deg, #B38F34, #C9A84C)" : "#C9A84C"};
       color: ${isGold ? "#FFFFFF" : "#002F1A"};
     }
     .card-title {
       font-family: Georgia, serif;
-      font-size: 16px;
+      font-size: 13px;
       font-weight: 700;
-      margin-top: 6px;
+      margin-top: 4px;
       color: ${isGold ? "#E5C768" : "#FFFFFF"};
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
     }
     .festival-sub {
-      font-size: 10px;
+      font-size: 8px;
       color: ${isGold ? "#C9A84C" : "#E5C768"};
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       margin-top: 2px;
     }
 
     /* QR Code & Security Core */
     .qr-core {
-      padding: 16px;
+      padding: 10px;
       text-align: center;
       background: ${isGold ? "#151004" : "#FAF9F5"};
       border-bottom: 1px dashed ${isGold ? "#5E4711" : "#C1C9BF"};
     }
     .qr-frame {
       display: inline-block;
-      padding: 10px;
+      padding: 6px;
       background: #FFFFFF;
-      border-radius: 14px;
+      border-radius: 10px;
       border: 2px solid ${isGold ? "#C9A84C" : "#002F1A"};
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
     }
     .pass-code {
       font-family: monospace;
-      font-size: 18px;
+      font-size: 14px;
       font-weight: 800;
-      letter-spacing: 0.14em;
-      margin-top: 10px;
+      letter-spacing: 0.12em;
+      margin-top: 6px;
       color: ${isGold ? "#E5C768" : "#002F1A"};
     }
     .security-status {
-      font-size: 10px;
+      font-size: 8px;
       font-weight: 700;
       text-transform: uppercase;
-      margin-top: 4px;
-      letter-spacing: 0.08em;
+      margin-top: 3px;
+      letter-spacing: 0.06em;
       color: ${isGold ? "#85E0A3" : "#065F46"};
     }
 
     /* ID Card Body Info */
     .card-body {
-      padding: 14px 18px;
-      font-size: 12px;
+      padding: 10px 14px;
+      font-size: 11px;
       color: ${isGold ? "#E8DFD0" : "#1B1C1C"};
     }
     .info-row {
       display: flex;
       justify-content: space-between;
-      padding: 5px 0;
+      padding: 3px 0;
       border-bottom: 1px solid ${isGold ? "rgba(201,168,76,0.2)" : "#F0ECE1"};
     }
     .info-label {
-      font-size: 10px;
+      font-size: 9px;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       color: ${isGold ? "#C9A84C" : "#6B7280"};
       font-weight: 600;
     }
@@ -389,14 +390,18 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       font-weight: 700;
       text-align: right;
       color: ${isGold ? "#FFFFFF" : "#002F1A"};
+      max-width: 170px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* Security Foil Watermark */
     .security-foil {
-      margin: 10px 0 6px 0;
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-size: 10px;
+      margin: 8px 0 4px 0;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -407,9 +412,9 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
 
     /* Footer */
     .card-footer {
-      padding: 10px 14px;
+      padding: 6px 8px;
       text-align: center;
-      font-size: 9px;
+      font-size: 8px;
       background: ${isGold ? "#0F0B02" : "#F4F2EC"};
       color: ${isGold ? "#C9A84C" : "#727973"};
       border-top: 1px solid ${isGold ? "#3D2D07" : "#E2DDD3"};
@@ -428,11 +433,11 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
     <div class="qr-core">
       <div class="qr-frame">
         <img
-          src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(pass.passCode)}"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(pass.passCode)}"
           alt="ID Pass QR Code"
-          width="160"
-          height="160"
-          style="display: block; border-radius: 6px;"
+          width="110"
+          height="110"
+          style="display: block; border-radius: 4px;"
         />
       </div>
       <div class="pass-code">${pass.passCode}</div>

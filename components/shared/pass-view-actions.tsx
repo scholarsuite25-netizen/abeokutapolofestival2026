@@ -59,12 +59,13 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
   };
 
   return (
-    <div className="space-y-3 print:hidden">
+    <div className="space-y-2.5 print:hidden max-w-[320px] mx-auto w-full">
       {/* Primary Pass Actions */}
-      <div className="flex flex-wrap items-center justify-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
         <Button
           onClick={handleDownload}
-          className="bg-gold text-forest font-bold hover:bg-gold/90 shadow cursor-pointer text-xs py-2 px-3.5"
+          size="sm"
+          className="bg-gold text-forest font-bold hover:bg-gold/90 shadow-xs cursor-pointer text-xs h-8 px-3 flex-1"
         >
           {downloaded ? (
             <>
@@ -72,54 +73,63 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
             </>
           ) : (
             <>
-              <Download className="mr-1.5 size-3.5" /> Save Offline Pass Card
+              <Download className="mr-1.5 size-3.5" /> Save Offline Card
             </>
           )}
         </Button>
 
         <Button
+          asChild
+          size="sm"
+          className="bg-emerald-600 hover:bg-emerald-500 text-ivory font-bold shadow-xs cursor-pointer text-xs h-8 px-3"
+        >
+          <a href={whatsappShareUrl} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="mr-1.5 size-3.5" />
+            Invite Friends
+          </a>
+        </Button>
+      </div>
+
+      {/* Secondary Utilities */}
+      <div className="flex items-center justify-center gap-1.5">
+        <Button
           onClick={() => downloadProgrammePDF()}
           variant="outline"
-          className="border-gold/60 text-forest hover:bg-gold/15 cursor-pointer text-xs py-2 px-3.5 font-semibold"
+          size="sm"
+          className="border-gold/60 text-forest hover:bg-gold/15 cursor-pointer text-[11px] h-7 px-2 font-medium flex-1 truncate"
         >
-          <FileDown className="mr-1.5 size-3.5 text-gold-deep" />
-          Download 3-Day Schedule (PDF)
+          <FileDown className="mr-1 size-3 text-gold-deep" />
+          Schedule PDF
         </Button>
 
         <Button
           onClick={() => downloadFestivalCalendar()}
           variant="outline"
-          className="border-forest/20 text-forest hover:bg-sage/40 cursor-pointer text-xs py-2 px-3.5 font-semibold"
+          size="sm"
+          className="border-forest/20 text-forest hover:bg-sage/40 cursor-pointer text-[11px] h-7 px-2 font-medium flex-1 truncate"
         >
-          <Calendar className="mr-1.5 size-3.5 text-gold-deep" />
-          Add to Phone Calendar
-        </Button>
-
-        <Button
-          asChild
-          className="bg-emerald-600 hover:bg-emerald-500 text-ivory font-bold shadow-sm cursor-pointer text-xs py-2 px-3.5"
-        >
-          <a href={whatsappShareUrl} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="mr-1.5 size-3.5" />
-            Invite on WhatsApp
-          </a>
+          <Calendar className="mr-1 size-3 text-gold-deep" />
+          Add Calendar
         </Button>
 
         <Button
           onClick={() => window.print()}
           variant="outline"
-          className="border-forest/30 text-forest hover:bg-forest/10 cursor-pointer text-xs py-2 px-3.5"
+          size="sm"
+          className="border-forest/20 text-forest hover:bg-forest/10 cursor-pointer text-[11px] h-7 px-2"
+          title="Print ID Card"
         >
-          <Printer className="mr-1.5 size-3.5" /> Print / PDF
+          <Printer className="size-3" />
         </Button>
 
         <Button
           onClick={handleShare}
           variant="ghost"
-          className="text-forest hover:bg-sage/40 cursor-pointer text-xs py-2 px-3.5"
+          size="sm"
+          className="text-forest hover:bg-sage/40 cursor-pointer text-[11px] h-7 px-2"
+          title="Share Pass"
         >
-          <Share2 className="mr-1.5 size-3.5" />
-          {shared ? "Link Copied!" : "Share"}
+          <Share2 className="size-3" />
         </Button>
       </div>
     </div>

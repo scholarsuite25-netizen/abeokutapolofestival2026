@@ -6,7 +6,6 @@ import {
   Shield,
   Ticket,
   QrCode,
-  Search,
   Trophy,
   Calendar,
   Sparkles,
@@ -21,7 +20,6 @@ import {
   Phone,
   Menu,
   ChevronDown,
-  UserCheck,
   ArrowRight,
   Sparkle,
   ShieldCheck,
@@ -40,7 +38,7 @@ import { useStoredPass } from "@/lib/storage/pass-storage";
 interface SubmenuItem {
   href: string;
   label: string;
-  desc: string;
+  desc?: string;
   icon: React.ComponentType<{ className?: string }>;
   isPriority?: boolean;
 }
@@ -54,122 +52,97 @@ interface NavCategory {
 const NAV_CATEGORIES: NavCategory[] = [
   {
     title: "Tournament",
-    desc: "Chukkas, fixtures & royal cup championship",
+    desc: "Chukkas, fixtures & championship",
     items: [
       {
         href: "/programme",
         label: "Programme",
-        desc: "3-day chukka schedules & timetable",
+        desc: "3-day chukka schedules",
         icon: Calendar,
       },
       {
         href: "/royal-cup",
         label: "Royal Cup",
-        desc: "Historic trophy & royal patronage feature",
+        desc: "Historic trophy & royal feature",
         icon: Trophy,
       },
       {
         href: "/experiences",
         label: "Experiences",
-        desc: "Cultural celebrations & twilight gala",
+        desc: "Cultural celebrations & gala",
         icon: Sparkles,
       },
     ],
   },
   {
     title: "Hospitality",
-    desc: "VIP suites, chalets & corporate hosting",
+    desc: "VIP suites & corporate hosting",
     items: [
       {
         href: "/hospitality",
         label: "Enclosures",
-        desc: "Royal Dais, chalets & terrace suites",
+        desc: "Royal Dais, chalets & suites",
         icon: Crown,
       },
       {
         href: "/sponsorship",
         label: "Partnerships",
-        desc: "Brand sponsorship & executive hosting",
+        desc: "Brand sponsorship tiers",
         icon: Building2,
       },
     ],
   },
   {
     title: "Media",
-    desc: "Tournament dispatches, gazette & photography",
+    desc: "Dispatches, gazette & gallery",
     items: [
       {
         href: "/news",
         label: "News",
-        desc: "Latest festival dispatches & notices",
+        desc: "Secretariat dispatches & notices",
         icon: Newspaper,
       },
       {
         href: "/gallery",
         label: "Gallery",
-        desc: "Match action & equestrian society photos",
+        desc: "Match action & society photos",
         icon: ImageIcon,
       },
       {
         href: "/publications",
         label: "Gazette",
-        desc: "Commemorative brochures & magazines",
+        desc: "Official brochures & publications",
         icon: BookOpen,
       },
       {
         href: "/press",
         label: "Press",
-        desc: "Media protocols & accreditation",
+        desc: "Media accreditation protocols",
         icon: Camera,
       },
     ],
   },
   {
     title: "Guide",
-    desc: "Directions, venue maps & visitor protocols",
+    desc: "Directions, venue maps & FAQs",
     items: [
       {
         href: "/visit",
         label: "Visit",
-        desc: "Club location, directions & parking",
+        desc: "Club location & travel routes",
         icon: MapPin,
       },
       {
         href: "/faq",
         label: "FAQs",
-        desc: "Day 1 Free entry, Day 2/3 ticket rules & dress code",
+        desc: "Free entry & ticket rules",
         icon: HelpCircle,
-      },
-    ],
-  },
-  {
-    title: "Access",
-    desc: "Day 1 Free Entry · Day 2 & 3 Through Ticket",
-    items: [
-      {
-        href: "/register",
-        label: "Register for Pass",
-        desc: "Day 1 Free Pass + Day 2/3 Ticket QR card",
-        icon: Ticket,
-        isPriority: true,
-      },
-      {
-        href: "/pass/lookup",
-        label: "Find My Pass",
-        desc: "Retrieve saved pass on this phone or look up code",
-        icon: Search,
       },
       {
         href: "/scan",
         label: "Gate Scanner",
-        desc: "Turnstile attendance verification PWA",
+        desc: "Turnstile verification PWA",
         icon: QrCode,
-      },
-      {
-        href: "/dashboard/pass",
-        label: "My Credentials",
-        desc: "Member wallet & digital gate pass",
-        icon: UserCheck,
       },
     ],
   },
@@ -194,22 +167,22 @@ export function PublicHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-ivory/95 backdrop-blur-md supports-[backdrop-filter]:bg-ivory/85">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full overflow-x-clip border-b border-line/80 bg-ivory/95 backdrop-blur-md supports-[backdrop-filter]:bg-ivory/85">
+      <div className="mx-auto flex h-16 sm:h-18 lg:h-20 max-w-7xl items-center justify-between gap-3 px-3 sm:px-6 lg:px-8">
         {/* ── 1. Event Brand Name: Clear & Visible ── */}
         <Link
           href="/"
-          className="group flex items-center gap-3 transition-opacity hover:opacity-90 shrink-0"
+          className="group flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 shrink-0"
           aria-label="Abeokuta Polo Festival 2026 - The Blueprint"
         >
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/40 shadow-xs transition-transform group-hover:scale-105">
-            <Shield className="size-6 text-gold" />
+          <div className="flex size-9 sm:size-10 lg:size-11 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/40 shadow-xs transition-transform group-hover:scale-105">
+            <Shield className="size-5 sm:size-6 text-gold" />
           </div>
           <div className="flex flex-col">
-            <span className="font-display text-base sm:text-lg lg:text-xl font-bold tracking-tight text-forest leading-tight">
+            <span className="font-display text-sm sm:text-base lg:text-lg font-bold tracking-tight text-forest leading-tight">
               Abeokuta Polo Festival 2026
             </span>
-            <span className="mt-0.5 font-serif text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep leading-none flex items-center gap-1.5">
+            <span className="mt-0.5 font-serif text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep leading-none flex items-center gap-1.5">
               <span>The Blueprint</span>
               <span className="hidden sm:inline-block size-1 rounded-full bg-gold" />
               <span className="hidden sm:inline-block text-[10px] text-muted-brand font-sans tracking-normal font-normal">
@@ -219,8 +192,8 @@ export function PublicHeader() {
           </div>
         </Link>
 
-        {/* ── 2. Unified Single-Word Main Menu with Stable Non-Shaking Submenus ── */}
-        <nav aria-label="Main Navigation" className="hidden lg:flex items-center gap-1">
+        {/* ── 2. Unified Compact Main Menu with Stable Non-Shaking Submenus ── */}
+        <nav aria-label="Main Navigation" className="hidden lg:flex items-center gap-0.5 xl:gap-1">
           {NAV_CATEGORIES.map((category) => {
             const isOpen = activeCategory === category.title;
             return (
@@ -232,16 +205,14 @@ export function PublicHeader() {
               >
                 <button
                   onClick={() => setActiveCategory(isOpen ? null : category.title)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors outline-none cursor-pointer ${
-                    category.title === "Access"
-                      ? "text-forest hover:bg-gold/15 hover:text-forest-deep"
-                      : "text-ink/80 hover:bg-sage/50 hover:text-forest"
-                  } ${isOpen ? "bg-sage/60 text-forest" : ""}`}
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors outline-none cursor-pointer text-ink/80 hover:bg-sage/50 hover:text-forest ${
+                    isOpen ? "bg-sage/60 text-forest" : ""
+                  }`}
                   aria-expanded={isOpen}
                 >
                   <span>{category.title}</span>
                   <ChevronDown
-                    className={`size-3.5 transition-transform duration-200 opacity-60 ${
+                    className={`size-3 transition-transform duration-200 opacity-60 ${
                       isOpen ? "rotate-180 opacity-100" : ""
                     }`}
                   />
@@ -250,10 +221,8 @@ export function PublicHeader() {
                 {/* Inline non-portalled dropdown with invisible hover bridge (Zero Shake!) */}
                 <div
                   className={`absolute ${
-                    category.title === "Access" || category.title === "Guide"
-                      ? "right-0"
-                      : "left-0"
-                  } top-full pt-2 w-80 transition-all duration-150 origin-top z-50 ${
+                    category.title === "Guide" ? "right-0" : "left-0"
+                  } top-full pt-1.5 w-72 transition-all duration-150 origin-top z-50 ${
                     isOpen
                       ? "opacity-100 visible translate-y-0 pointer-events-auto"
                       : "opacity-0 invisible -translate-y-2 pointer-events-none"
@@ -262,15 +231,15 @@ export function PublicHeader() {
                   {/* Invisible Hitbox Bridge preventing mouseLeave gap */}
                   <div className="absolute -top-2 left-0 right-0 h-4 bg-transparent" />
 
-                  <div className="rounded-2xl border border-line bg-card p-3 shadow-xl">
-                    <div className="px-3 pt-1 pb-2 border-b border-line/60">
-                      <p className="font-display text-xs font-bold uppercase tracking-wider text-forest">
+                  <div className="rounded-xl border border-line bg-card p-2.5 shadow-xl">
+                    <div className="px-2.5 pt-1 pb-1.5 border-b border-line/60">
+                      <p className="font-display text-[11px] font-bold uppercase tracking-wider text-forest">
                         {category.title}
                       </p>
-                      <p className="text-[11px] text-muted-brand">{category.desc}</p>
+                      <p className="text-[10px] text-muted-brand">{category.desc}</p>
                     </div>
 
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-1.5 space-y-0.5">
                       {category.items.map((item) => {
                         const Icon = item.icon;
                         return (
@@ -278,33 +247,35 @@ export function PublicHeader() {
                             key={item.href}
                             href={item.href}
                             onClick={() => setActiveCategory(null)}
-                            className={`flex items-start gap-3 rounded-xl p-2.5 transition-colors cursor-pointer ${
+                            className={`flex items-start gap-2.5 rounded-lg p-2 transition-colors cursor-pointer ${
                               item.isPriority
                                 ? "bg-gold/15 border border-gold/50 text-forest hover:bg-gold/25"
                                 : "hover:bg-sage/40 text-ink"
                             }`}
                           >
                             <div
-                              className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${
+                              className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md ${
                                 item.isPriority ? "bg-forest text-gold" : "bg-sage/60 text-forest"
                               }`}
                             >
-                              <Icon className="size-4" />
+                              <Icon className="size-3.5" />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold text-forest">
                                   {item.label}
                                 </span>
                                 {item.isPriority && (
-                                  <Badge className="bg-forest text-gold text-[9px] px-1.5 py-0 font-bold uppercase tracking-widest border border-gold/40">
+                                  <Badge className="bg-forest text-gold text-[8px] px-1.5 py-0 font-bold uppercase tracking-widest border border-gold/40">
                                     Priority
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-[11px] text-muted-brand leading-tight mt-0.5">
-                                {item.desc}
-                              </p>
+                              {item.desc && (
+                                <p className="text-[10px] text-muted-brand leading-tight mt-0.5 truncate">
+                                  {item.desc}
+                                </p>
+                              )}
                             </div>
                           </Link>
                         );
@@ -317,41 +288,34 @@ export function PublicHeader() {
           })}
         </nav>
 
-        {/* ── 3. High-Priority Registration CTA & Persistent Pass Indicator ── */}
-        <div className="hidden sm:flex items-center gap-3">
-          {storedPass ? (
+        {/* ── 3. High-Priority Registration CTA (Find My Pass removed to keep navbar clean) ── */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
+          {storedPass && (
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20"
+              className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 px-2.5"
             >
               <Link href={`/pass/${storedPass.passCode}`} className="flex items-center gap-1.5">
                 <ShieldCheck className="size-3.5 text-gold-deep" />
-                <span>My Pass ({storedPass.passCode})</span>
+                <span>My Pass</span>
               </Link>
             </Button>
-          ) : (
-            <Link
-              href="/pass/lookup"
-              className="text-xs font-semibold text-muted-brand hover:text-forest transition-colors px-2 py-1.5"
-            >
-              Find My Pass
-            </Link>
           )}
 
           <Button
             asChild
-            className="relative group overflow-hidden bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 shadow-md border border-gold/50 transition-all hover:shadow-lg hover:border-gold hover:scale-[1.02] cursor-pointer"
+            className="relative group overflow-hidden bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs px-3 sm:px-4 py-2 h-8 sm:h-9 shadow-xs border border-gold/50 transition-all hover:shadow-md hover:border-gold hover:scale-[1.01] cursor-pointer"
           >
-            <Link href="/register" className="flex items-center gap-2">
+            <Link href="/register" className="flex items-center gap-1.5">
               <span className="relative flex size-2">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-gold opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-gold" />
               </span>
-              <Ticket className="size-4 text-gold shrink-0 transition-transform group-hover:rotate-12" />
+              <Ticket className="size-3.5 text-gold shrink-0 transition-transform group-hover:rotate-12" />
               <span className="font-semibold tracking-wide">Register for Pass</span>
-              <span className="rounded bg-gold/25 px-1.5 py-0.5 text-[9px] font-bold text-gold uppercase tracking-wider border border-gold/40">
+              <span className="rounded bg-gold/25 px-1.5 py-0.5 text-[8px] font-bold text-gold uppercase tracking-wider border border-gold/40">
                 Day 1 Free
               </span>
             </Link>

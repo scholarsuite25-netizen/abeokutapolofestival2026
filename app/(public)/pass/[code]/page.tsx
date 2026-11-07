@@ -208,23 +208,23 @@ async function PassContent({ params, searchParams }: PassPageProps) {
   };
 
   return (
-    <div className="flex w-full flex-col bg-ivory text-ink py-10 sm:py-16 print:py-0 print:bg-white">
-      <div className="mx-auto max-w-xl px-4 sm:px-6 space-y-6">
+    <div className="flex w-full flex-col bg-ivory text-ink py-6 sm:py-10 print:py-0 print:bg-white">
+      <div className="mx-auto max-w-md px-3 sm:px-4 space-y-4">
         {/* Navigation & Print Actions */}
         <div className="flex items-center justify-between print:hidden">
-          <Button asChild variant="ghost" size="sm" className="text-muted-brand hover:text-forest">
+          <Button asChild variant="ghost" size="sm" className="text-muted-brand hover:text-forest text-xs">
             <Link href="/register">
-              <ArrowLeft className="mr-2 size-4" /> Back to Registration
+              <ArrowLeft className="mr-1.5 size-3.5" /> Back to Registration
             </Link>
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Badge
               variant="outline"
-              className={`text-[10px] uppercase tracking-wider ${
+              className={`text-[9px] uppercase tracking-wider ${
                 isGold ? "border-amber-500 bg-amber-500/10 text-amber-900" : "border-gold/50 bg-gold/10 text-forest"
               }`}
             >
-              {isGold ? (isSponsored ? "VVIP Sponsored Guest Card" : "VVIP Gate Access ID Card") : "Official Gate Access Card"}
+              {isGold ? (isSponsored ? "VVIP Guest Pass" : "VVIP Gate ID Card") : "Official Gate Pass"}
             </Badge>
           </div>
         </div>
@@ -232,142 +232,151 @@ async function PassContent({ params, searchParams }: PassPageProps) {
         {/* Action Bar (Download Offline Pass / Print / Share) */}
         <PassViewActions passData={passStorageData} />
 
-        {/* Access Card Container */}
+        {/* Access Card Container (Compact ID-Card Sizing) */}
         <div
-          className={`overflow-hidden rounded-3xl border-2 shadow-2xl print:border-2 print:border-black print:shadow-none ${
+          className={`mx-auto w-full max-w-[320px] overflow-hidden rounded-2xl border-2 shadow-xl print:border-2 print:border-black print:shadow-none transition-all ${
             isGold ? "border-[#C9A84C] bg-[#161104] text-[#FAF9F5]" : "border-forest/20 bg-card"
           }`}
         >
+          {/* Lanyard punch-hole simulation */}
+          <div className="pt-2 pb-0.5 flex justify-center bg-transparent">
+            <div
+              className={`h-1.5 w-10 rounded-full border ${
+                isGold ? "bg-[#0B0902] border-[#5E4711]" : "bg-muted border-line"
+              }`}
+            />
+          </div>
+
           {/* Header */}
           <div
-            className={`p-6 text-center relative overflow-hidden print:bg-black print:text-white ${
-              isGold ? "bg-gradient-to-b from-[#2D2108] to-[#161104] text-[#FBF5B7]" : "bg-forest text-ivory"
+            className={`p-3 text-center relative overflow-hidden print:bg-black print:text-white border-b ${
+              isGold ? "bg-gradient-to-b from-[#2D2108] to-[#161104] text-[#FBF5B7] border-[#C9A84C]/40" : "bg-forest text-ivory border-gold/40"
             }`}
           >
-            <div className="flex justify-center mb-2">
+            <div className="flex justify-center mb-1">
               <Badge
                 variant="outline"
-                className={`text-[10px] uppercase tracking-widest ${
+                className={`text-[8px] uppercase tracking-widest ${
                   isGold ? "border-[#C9A84C] bg-[#C9A84C]/20 text-[#E5C768]" : "border-gold bg-gold/20 text-gold"
                 }`}
               >
                 Abeokuta Polo Festival 2026
               </Badge>
             </div>
-            <h1 className="font-serif text-2xl font-semibold sm:text-3xl">
+            <h1 className="font-serif text-base sm:text-lg font-bold leading-tight">
               {isGold ? (isSponsored ? "Day 3 VVIP Guest Pass" : "Day 3 VVIP Grand Finale Pass") : "Official Gate Access Card"}
             </h1>
-            <p className={`mt-1 text-xs ${isGold ? "text-[#C9A84C]" : "text-ivory/80"}`}>
-              {isGold ? "Royal Cup Grand Finale & 100 Kings Celebration · 20 Dec 2026" : "The Blueprint — Where Heritage Meets Excellence · 18–20 Dec 2026"}
+            <p className={`mt-0.5 text-[9px] uppercase tracking-wider ${isGold ? "text-[#C9A84C]" : "text-ivory/80"}`}>
+              {isGold ? "Royal Cup Grand Finale · 20 Dec 2026" : "The Blueprint · 18–20 Dec 2026"}
             </p>
             {isSponsored && cred.host_name && (
-              <p className="mt-1 text-xs font-semibold text-[#E5C768]">
-                👑 Sponsored Guest Invitation by {cred.host_name}
+              <p className="mt-0.5 text-[10px] font-semibold text-[#E5C768]">
+                👑 Sponsored Guest of {cred.host_name}
               </p>
             )}
-            <div className="mt-3 flex justify-center">
+            <div className="mt-1.5 flex justify-center">
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
                   isActive ? (isGold ? "bg-amber-600 text-white" : "bg-emerald-800 text-ivory") : "bg-red-800 text-ivory"
                 }`}
               >
-                <CheckCircle2 className="size-3.5" />
+                <CheckCircle2 className="size-3" />
                 {isActive ? (isGold ? "VVIP Active Credential" : "Active Credential") : cred.status.toUpperCase()}
               </span>
             </div>
           </div>
 
           {/* QR Code Presentation */}
-          <div className="p-8 flex flex-col items-center justify-center bg-ivory border-y border-line/60 print:bg-white">
-            <div className="flex size-48 items-center justify-center rounded-2xl border-4 border-dashed border-forest/30 bg-card p-4 shadow-inner print:border-black">
-              <QrCode className="size-40 text-forest print:text-black" />
+          <div className="p-3.5 flex flex-col items-center justify-center bg-ivory border-b border-line/60 print:bg-white">
+            <div className="flex size-28 items-center justify-center rounded-xl border-2 border-forest/30 bg-card p-2 shadow-xs print:border-black">
+              <QrCode className="size-24 text-forest print:text-black" />
             </div>
-            <p className="mt-4 font-mono text-2xl font-bold tracking-widest text-forest print:text-black">
+            <p className="mt-2 font-mono text-base font-bold tracking-widest text-forest print:text-black">
               {cred.pass_code}
             </p>
-            <span className="mt-1 text-xs font-semibold text-emerald-800 flex items-center gap-1">
-              <ShieldCheck className="size-3.5" /> Cryptographically Signed Gate Pass
+            <span className="mt-0.5 text-[9px] font-semibold text-emerald-800 flex items-center gap-1">
+              <ShieldCheck className="size-3" /> Cryptographically Signed Pass
             </span>
             {qrVerified ? (
-              <span className="mt-2 max-w-full break-all rounded bg-sage/60 px-2 py-1 font-mono text-[9px] text-muted-brand print:hidden">
+              <span className="mt-1.5 max-w-full break-all rounded bg-sage/60 px-1.5 py-0.5 font-mono text-[8px] text-muted-brand print:hidden">
                 Token: {qrToken}
               </span>
             ) : null}
           </div>
 
           {/* Attendee Details & Affiliation */}
-          <div className="p-6 bg-card space-y-3.5 text-xs">
-            <div className="flex justify-between border-b border-line pb-2">
-              <span className="text-muted-brand font-medium">Registered Attendee:</span>
-              <span className="font-semibold text-forest text-sm">{cred.holder_name}</span>
+          <div className="p-3 bg-card space-y-2 text-[11px]">
+            <div className="flex justify-between border-b border-line pb-1">
+              <span className="text-muted-brand font-medium">Attendee:</span>
+              <span className="font-semibold text-forest truncate max-w-[170px] text-right">{cred.holder_name}</span>
             </div>
-            <div className="flex justify-between border-b border-line pb-2">
-              <span className="text-muted-brand font-medium">Guest Affiliation:</span>
-              <span className="font-semibold text-gold-deep text-sm flex items-center gap-1">
+            <div className="flex justify-between border-b border-line pb-1">
+              <span className="text-muted-brand font-medium">Affiliation:</span>
+              <span className="font-semibold text-gold-deep flex items-center gap-1 truncate max-w-[170px] text-right">
                 {cred.affiliation_type === "guest_of" ? (
-                  <UserCheck className="size-3.5 text-gold-deep inline" />
+                  <UserCheck className="size-3 text-gold-deep inline" />
                 ) : cred.affiliation_type === "corporate" ? (
-                  <Building className="size-3.5 text-gold-deep inline" />
+                  <Building className="size-3 text-gold-deep inline" />
                 ) : null}
                 {affiliationLabel}
               </span>
             </div>
-            <div className="flex justify-between border-b border-line pb-2">
+            <div className="flex justify-between border-b border-line pb-1">
               <span className="text-muted-brand font-medium">Category:</span>
-              <span className="font-semibold text-forest text-sm">{cred.pass_type}</span>
+              <span className="font-semibold text-forest">{cred.pass_type}</span>
             </div>
-            <div className="flex justify-between border-b border-line pb-2">
+            <div className="flex justify-between border-b border-line pb-1">
               <span className="text-muted-brand font-medium">Venue:</span>
-              <span className="font-semibold text-forest flex items-center gap-1">
-                <MapPin className="size-3.5 text-gold-deep" /> Abeokuta Polo Club, Kobape
+              <span className="font-semibold text-forest flex items-center gap-1 text-[10px]">
+                <MapPin className="size-2.5 text-gold-deep" /> Abeokuta Polo Club Grounds
               </span>
             </div>
-            <div className="flex justify-between border-b border-line pb-2">
-              <span className="text-muted-brand font-medium">Access Entitlement:</span>
-              <span className="font-semibold text-forest-interactive">
+            <div className="flex justify-between border-b border-line pb-1">
+              <span className="text-muted-brand font-medium">Entitlement:</span>
+              <span className="font-semibold text-forest-interactive truncate max-w-[170px] text-right">
                 {cred.zone_access?.join(", ") || "Festival Grounds & Grandstand"}
               </span>
             </div>
 
             {/* 3-Day Daily Admission & Gate Attendance Tracking */}
-            <div className="pt-2">
-              <span className="text-[11px] font-semibold text-forest block mb-2 flex items-center gap-1">
-                <CalendarCheck className="size-3.5 text-gold-deep" /> Daily Gate Admission &amp; Attendance:
+            <div className="pt-1">
+              <span className="text-[10px] font-semibold text-forest block mb-1.5 flex items-center gap-1">
+                <CalendarCheck className="size-3 text-gold-deep" /> Daily Gate Admission:
               </span>
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
                 {/* Day 1: Free */}
                 <div
-                  className={`rounded-lg p-2.5 border ${
+                  className={`rounded-lg p-1.5 border ${
                     cred.day1_checked_in_at
                       ? "bg-emerald-50 border-emerald-400 text-emerald-900"
                       : "bg-emerald-50/50 border-emerald-300 text-emerald-900"
                   }`}
                 >
-                  <span className="block font-bold">Day 1 (Fri 18)</span>
-                  <Badge className="bg-emerald-700 text-ivory text-[9px] my-1">FREE ENTRY</Badge>
-                  <span className="text-[10px] font-semibold block text-emerald-800">
-                    {cred.day1_checked_in_at ? "✓ Checked In" : "Ready for Gate"}
+                  <span className="block font-bold">Day 1</span>
+                  <Badge className="bg-emerald-700 text-ivory text-[8px] my-0.5 px-1 py-0">FREE</Badge>
+                  <span className="text-[8px] font-semibold block text-emerald-800">
+                    {cred.day1_checked_in_at ? "Checked" : "Ready"}
                   </span>
                 </div>
 
                 {/* Day 2: Free */}
                 <div
-                  className={`rounded-lg p-2.5 border ${
+                  className={`rounded-lg p-1.5 border ${
                     cred.day2_checked_in_at
                       ? "bg-emerald-50 border-emerald-400 text-emerald-900"
                       : "bg-emerald-50/50 border-emerald-300 text-emerald-900"
                   }`}
                 >
-                  <span className="block font-bold">Day 2 (Sat 19)</span>
-                  <Badge className="bg-emerald-700 text-ivory text-[9px] my-1">FREE ENTRY</Badge>
-                  <span className="text-[10px] font-semibold block text-emerald-800">
-                    {cred.day2_checked_in_at ? "✓ Checked In" : "Ready for Gate"}
+                  <span className="block font-bold">Day 2</span>
+                  <Badge className="bg-emerald-700 text-ivory text-[8px] my-0.5 px-1 py-0">FREE</Badge>
+                  <span className="text-[8px] font-semibold block text-emerald-800">
+                    {cred.day2_checked_in_at ? "Checked" : "Ready"}
                   </span>
                 </div>
 
                 {/* Day 3: Paid VVIP */}
                 <div
-                  className={`rounded-lg p-2.5 border ${
+                  className={`rounded-lg p-1.5 border ${
                     cred.day3_checked_in_at
                       ? "bg-emerald-50 border-emerald-400 text-emerald-900"
                       : isGold
@@ -375,10 +384,10 @@ async function PassContent({ params, searchParams }: PassPageProps) {
                       : "bg-sage/40 border-line text-muted-brand"
                   }`}
                 >
-                  <span className="block font-bold">Day 3 (Sun 20)</span>
-                  <Badge className="bg-amber-600 text-ivory text-[9px] my-1">PAID VVIP</Badge>
-                  <span className="text-[10px] font-semibold block text-amber-900">
-                    {cred.day3_checked_in_at ? "✓ Checked In" : isGold ? "VVIP Access Confirmed" : "Ticket Required"}
+                  <span className="block font-bold">Day 3</span>
+                  <Badge className="bg-amber-600 text-ivory text-[8px] my-0.5 px-1 py-0">VVIP</Badge>
+                  <span className="text-[8px] font-semibold block text-amber-900 truncate">
+                    {cred.day3_checked_in_at ? "Checked" : isGold ? "Confirmed" : "Ticket Req."}
                   </span>
                 </div>
               </div>
@@ -386,12 +395,12 @@ async function PassContent({ params, searchParams }: PassPageProps) {
           </div>
 
           {/* Gate Scanning Instructions & Mandatory Protocol */}
-          <div className="bg-forest-deep text-ivory p-4 text-center border-t-2 border-gold/40 text-[11px] space-y-1">
-            <p className="font-bold text-gold uppercase tracking-wider text-[10px] flex items-center justify-center gap-1.5">
-              <ShieldCheck className="size-3.5 text-gold inline" /> Mandatory Gate Protocol
+          <div className="bg-forest-deep text-ivory p-2.5 text-center border-t border-gold/40 text-[9px] space-y-0.5">
+            <p className="font-bold text-gold uppercase tracking-wider text-[8px] flex items-center justify-center gap-1">
+              <ShieldCheck className="size-3 text-gold inline" /> Mandatory Gate Protocol
             </p>
-            <p className="text-ivory/90 leading-relaxed">
-              <strong>All attendees must be duly registered to attend any of the three festival days.</strong> Turnstile accreditation required. Show this screen or your downloaded offline pass at turnstiles for fast contactless scanning.
+            <p className="text-ivory/90 leading-relaxed text-[8px]">
+              Turnstile accreditation required. Show this ID card on phone or printed for entry.
             </p>
           </div>
         </div>
