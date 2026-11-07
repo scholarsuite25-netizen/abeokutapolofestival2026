@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Printer, Share2, Check, FileDown, Calendar, MessageCircle } from "lucide-react";
+import { Download, Printer, Share2, Check, FileDown, Calendar, MessageCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   forceDownloadOfflinePassCard,
@@ -18,6 +18,13 @@ interface PassViewActionsProps {
 export function PassViewActions({ passData }: PassViewActionsProps) {
   const [downloaded, setDownloaded] = useState(false);
   const [shared, setShared] = useState(false);
+
+  const isGiftTicket = Boolean(
+    passData.isSponsored ||
+    (passData.ticketIndex && passData.ticketIndex > 1) ||
+    passData.holderName?.toLowerCase().startsWith("sponsored invitation") ||
+    passData.affiliationType === "guest_of"
+  );
 
   // Automatically save this pass to device storage (localStorage/sessionStorage/cookie) when viewed
   useEffect(() => {
@@ -59,7 +66,20 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
   };
 
   return (
-    <div className="space-y-2.5 print:hidden max-w-[320px] mx-auto w-full">
+    <div className="space-y-2.5 print:hidden max-w-[305px] mx-auto w-full">
+      {/* Anti-Leakage Recipient Device Lock Callout */}
+      {isGiftTicket && (
+        <div className="rounded-xl border border-amber-600/40 bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-amber-500/15 p-2.5 text-center text-xs text-amber-950 shadow-xs space-y-0.5">
+          <div className="flex items-center justify-center gap-1.5 font-bold text-amber-900 text-[10px] sm:text-[11px]">
+            <ShieldCheck className="size-3.5 text-amber-700 shrink-0" />
+            <span>Gifted / Sponsored Ticket — Locked to this device · Non-transferable</span>
+          </div>
+          <p className="text-[9px] text-amber-800 leading-tight">
+            Bound to this device for turnstile gate admission. Pass forwarding and link sharing are disabled.
+          </p>
+        </div>
+      )}
+
       {/* Primary Pass Actions */}
       <div className="flex flex-wrap items-center justify-center gap-1.5">
         <Button
@@ -78,16 +98,19 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
           )}
         </Button>
 
-        <Button
-          asChild
-          size="sm"
-          className="bg-emerald-600 hover:bg-emerald-500 text-ivory font-bold shadow-xs cursor-pointer text-xs h-8 px-3"
-        >
-          <a href={whatsappShareUrl} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="mr-1.5 size-3.5" />
-            Invite Friends
-          </a>
-        </Button>
+        {/* Anti-Leakage Guard: Only render WhatsApp Invite if NOT a gifted/sponsored ticket */}
+        {!isGiftTicket && (
+          <Button
+            asChild
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-500 text-ivory font-bold shadow-xs cursor-pointer text-xs h-8 px-3"
+          >
+            <a href={whatsappShareUrl} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="mr-1.5 size-3.5" />
+              Invite Friends
+            </a>
+          </Button>
+        )}
       </div>
 
       {/* Secondary Utilities */}
@@ -122,15 +145,18 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
           <Printer className="size-3" />
         </Button>
 
-        <Button
-          onClick={handleShare}
-          variant="ghost"
-          size="sm"
-          className="text-forest hover:bg-sage/40 cursor-pointer text-[11px] h-7 px-2"
-          title="Share Pass"
-        >
-          <Share2 className="size-3" />
-        </Button>
+        {/* Anti-Leakage Guard: Share pass button is disabled/hidden for gifted tickets */}
+        {!isGiftTicket && (
+          <Button
+            onClick={handleShare}
+            variant="ghost"
+            size="sm"
+            className="text-forest hover:bg-sage/40 cursor-pointer text-[11px] h-7 px-2"
+            title="Share Pass"
+          >
+            <Share2 className="size-3" />
+          </Button>
+        )}
       </div>
     </div>
   );

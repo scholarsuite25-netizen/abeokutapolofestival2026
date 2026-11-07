@@ -35,6 +35,14 @@ const registrationSchema = z.object({
   sendEmailReminders: z.boolean().default(true),
   sendWhatsappReminders: z.boolean().default(true),
   reminderCadence: z.enum(["weekly_and_daily", "weekly_only", "event_week_only"]).default("weekly_and_daily"),
+  attendees: z
+    .array(
+      z.object({
+        firstName: z.string().trim().max(80),
+        lastName: z.string().trim().max(80),
+      }),
+    )
+    .optional(),
 });
 
 export interface RegisterResult {
@@ -202,6 +210,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       day1Status: "free_admitted",
       day2Status: "free_admitted",
       day3Status: "not_selected",
+      isBuyer: true,
+      isSponsored: false,
+      isLockedToDevice: false,
     });
   } else if (day1) {
     // 1 pass for Day 1 alone
@@ -234,6 +245,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       day1Status: "free_admitted",
       day2Status: "not_selected",
       day3Status: "not_selected",
+      isBuyer: true,
+      isSponsored: false,
+      isLockedToDevice: false,
     });
   } else if (day2) {
     // 1 pass for Day 2 alone
@@ -266,6 +280,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       day1Status: "not_selected",
       day2Status: "free_admitted",
       day3Status: "not_selected",
+      isBuyer: true,
+      isSponsored: false,
+      isLockedToDevice: false,
     });
   }
 
@@ -281,9 +298,12 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       
       const isSponsored = ticketCount > 1 && i > 1;
       const serialLabel = ticketCount > 1 ? `Pass ${i} of ${ticketCount}` : undefined;
-      const passHolderName = ticketCount > 1
-        ? `${holderName} (Pass ${i} of ${ticketCount})`
-        : holderName;
+      const attendee = parsed.data.attendees?.[i - 1];
+      const hasAttendeeName = Boolean(attendee && (attendee.firstName?.trim() || attendee.lastName?.trim()));
+      const attendeeFullName = hasAttendeeName
+        ? `${attendee!.firstName.trim()} ${attendee!.lastName.trim()}`.trim()
+        : (ticketCount > 1 ? `${holderName} (Pass ${i} of ${ticketCount})` : holderName);
+      const passHolderName = attendeeFullName || holderName;
 
       const credentialId = crypto.randomUUID();
       const qrToken = generateSignedPassToken({
@@ -321,6 +341,8 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         serialLabel,
         isSponsored,
         sponsorName: isSponsored ? holderName : null,
+        isBuyer: i === 1,
+        isLockedToDevice: isSponsored,
       });
     }
   }

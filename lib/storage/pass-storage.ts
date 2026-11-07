@@ -30,6 +30,10 @@ export interface StoredPass {
   serialLabel?: string;
   isSponsored?: boolean;
   sponsorName?: string | null;
+  isBuyer?: boolean;
+  isLockedToDevice?: boolean;
+  claimedByRecipient?: boolean;
+  claimedRecipientName?: string | null;
 }
 
 const PASS_STORAGE_KEY = "abk_polo_registered_pass";
@@ -213,6 +217,41 @@ export function clearStoredPass(): void {
 }
 
 /**
+ * Claims and personalizes a gifted pass on this recipient's device.
+ * Binds the pass to the recipient's phone and marks it permanently non-transferable.
+ */
+export function claimGiftedPassOnDevice(passCode: string, recipientName: string): StoredPass | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const passes = loadFromStorage();
+    let updated: StoredPass | null = null;
+    const modified = passes.map((p) => {
+      if (p.passCode.toUpperCase() === passCode.toUpperCase()) {
+        updated = {
+          ...p,
+          holderName: recipientName.trim() || p.holderName,
+          claimedByRecipient: true,
+          claimedRecipientName: recipientName.trim(),
+          isLockedToDevice: true,
+          isSponsored: true,
+          isBuyer: false,
+        };
+        return updated;
+      }
+      return p;
+    });
+
+    if (updated) {
+      persistRegisteredPass(modified);
+      return updated;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Generates and triggers an automatic download of a self-contained offline Digital Access ID Card.
  * Day 3 VVIP passes render a distinct, classic deep gold design.
  * Days 1 & 2 passes render the classic Forest Green & Warm Ivory royal design.
@@ -245,15 +284,15 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
 
   const badgeTheme = isGold
     ? isSponsored
-      ? `VVIP GUEST INVITATION${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
-      : `OFFICIAL VVIP ACCREDITATION${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
-    : "COMPLIMENTARY ACCESS PASS";
+      ? `👑 VVIP GUEST INVITATION${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
+      : `👑 VVIP ROYAL ADMISSION${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
+    : `🛡️ CLASSIC HERITAGE BADGE${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`;
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Abeokuta Polo Festival 2026 ID Pass - ${pass.passCode}</title>
   <style>
     :root {
@@ -263,28 +302,29 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       --gold-deep: #B38F34;
       --gold-bright: #E5C768;
       --ivory: #FCF9F8;
+      --obsidian: #1C1605;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 'Manrope', sans-serif;
-      background: ${isGold ? "#0E0A03" : "#00210E"};
+      background: ${isGold ? "#0A0702" : "#00210E"};
       color: #1B1C1C;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 12px;
     }
 
-    /* ID-CARD DIMENSIONS & PROPORTIONS (CR80 Standard Physical ID-Badge Ratio) */
+    /* ID-CARD DIMENSIONS & PROPORTIONS (CR80 Standard Physical ID-Badge Ratio: max-w-[305px]) */
     .id-card {
       width: 100%;
-      max-width: 300px;
+      max-width: 305px;
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.65);
-      background: ${isGold ? "linear-gradient(145deg, #1A1404 0%, #2A1F06 45%, #181203 100%)" : "#FFFFFF"};
+      box-shadow: ${isGold ? "0 10px 30px rgba(201,168,76,0.3)" : "0 10px 25px rgba(0,0,0,0.4)"};
+      background: ${isGold ? "linear-gradient(180deg, #1C1605 0%, #2A2007 50%, #120E03 100%)" : "#FCF9F8"};
       border: 2px solid ${isGold ? "#C9A84C" : "#002F1A"};
       position: relative;
     }
@@ -292,38 +332,39 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
     /* Lanyard punch hole aesthetic */
     .lanyard-slot {
       width: 36px;
-      height: 6px;
-      background: ${isGold ? "#0A0802" : "#E2DDD3"};
+      height: 5px;
+      background: ${isGold ? "#0B0902" : "#E5DFD5"};
       border-radius: 9999px;
-      margin: 8px auto 4px auto;
-      border: 1px solid ${isGold ? "#B38F34" : "#C1C9BF"};
+      margin: 6px auto 3px auto;
+      border: 1px solid ${isGold ? "#5E4711" : "rgba(0,47,26,0.2)"};
     }
 
     /* Top Card Header */
     .card-header {
-      padding: 8px 12px;
+      padding: 6px 10px;
       text-align: center;
-      background: ${isGold ? "linear-gradient(180deg, #332608 0%, #1A1303 100%)" : "#002F1A"};
-      color: ${isGold ? "#FBF5B7" : "#FCF9F8"};
-      border-bottom: 2px solid ${isGold ? "#C9A84C" : "#B38F34"};
+      background: ${isGold ? "linear-gradient(90deg, #241A04, #3B2B08, #241A04)" : "#002F1A"};
+      color: ${isGold ? "#E5C768" : "#FCF9F8"};
+      border-bottom: 2px solid ${isGold ? "#C9A84C" : "rgba(201,168,76,0.5)"};
     }
     .badge-pill {
       display: inline-block;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 9999px;
       font-size: 8px;
       font-weight: 800;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      background: ${isGold ? "linear-gradient(90deg, #B38F34, #C9A84C)" : "#C9A84C"};
-      color: ${isGold ? "#FFFFFF" : "#002F1A"};
+      background: ${isGold ? "linear-gradient(90deg, #B38F34, #F5D77F, #C9A84C)" : "#FCF9F8"};
+      color: ${isGold ? "#000000" : "#002F1A"};
+      border: 1px solid ${isGold ? "#C9A84C" : "#002F1A"};
     }
     .card-title {
       font-family: Georgia, serif;
       font-size: 13px;
       font-weight: 700;
-      margin-top: 4px;
-      color: ${isGold ? "#E5C768" : "#FFFFFF"};
+      margin-top: 3px;
+      color: ${isGold ? "#FDF6D8" : "#FCF9F8"};
       letter-spacing: 0.02em;
       line-height: 1.2;
     }
@@ -333,58 +374,64 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       letter-spacing: 0.1em;
       text-transform: uppercase;
       margin-top: 2px;
+      font-weight: 600;
     }
 
     /* QR Code & Security Core */
     .qr-core {
-      padding: 10px;
+      padding: 8px;
       text-align: center;
-      background: ${isGold ? "#151004" : "#FAF9F5"};
-      border-bottom: 1px dashed ${isGold ? "#5E4711" : "#C1C9BF"};
+      background: ${isGold ? "#140F04" : "#FAF7F2"};
+      border-bottom: 1px solid ${isGold ? "#3D2E08" : "rgba(0,47,26,0.15)"};
     }
     .qr-frame {
       display: inline-block;
-      padding: 6px;
+      padding: 5px;
       background: #FFFFFF;
-      border-radius: 10px;
+      border-radius: 8px;
       border: 2px solid ${isGold ? "#C9A84C" : "#002F1A"};
-      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      box-shadow: ${isGold ? "0 0 12px rgba(201,168,76,0.35)" : "0 2px 6px rgba(0,0,0,0.1)"};
     }
     .pass-code {
       font-family: monospace;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
       letter-spacing: 0.12em;
-      margin-top: 6px;
+      margin-top: 4px;
       color: ${isGold ? "#E5C768" : "#002F1A"};
     }
     .security-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
       font-size: 8px;
       font-weight: 700;
       text-transform: uppercase;
       margin-top: 3px;
       letter-spacing: 0.06em;
-      color: ${isGold ? "#85E0A3" : "#065F46"};
+      background: ${isGold ? "#2C2106" : "#ECFDF5"};
+      border: 1px solid ${isGold ? "rgba(201,168,76,0.5)" : "#A7F3D0"};
+      color: ${isGold ? "#F3E5AB" : "#065F46"};
     }
 
     /* ID Card Body Info */
     .card-body {
-      padding: 10px 14px;
-      font-size: 11px;
+      padding: 8px 12px;
+      font-size: 10.5px;
       color: ${isGold ? "#E8DFD0" : "#1B1C1C"};
     }
     .info-row {
       display: flex;
       justify-content: space-between;
-      padding: 3px 0;
-      border-bottom: 1px solid ${isGold ? "rgba(201,168,76,0.2)" : "#F0ECE1"};
+      padding: 2.5px 0;
+      border-bottom: 1px solid ${isGold ? "rgba(201,168,76,0.2)" : "rgba(0,47,26,0.1)"};
     }
     .info-label {
-      font-size: 9px;
+      font-size: 8.5px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: ${isGold ? "#C9A84C" : "#6B7280"};
-      font-weight: 600;
+      color: ${isGold ? "#C9A84C" : "rgba(0,47,26,0.7)"};
+      font-weight: 700;
     }
     .info-val {
       font-weight: 700;
@@ -398,26 +445,27 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
 
     /* Security Foil Watermark */
     .security-foil {
-      margin: 8px 0 4px 0;
-      padding: 5px 8px;
+      margin: 6px 0 2px 0;
+      padding: 4px 8px;
       border-radius: 6px;
-      font-size: 8px;
+      font-size: 7.5px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: ${isGold ? "linear-gradient(90deg, #3D2D07, #211904)" : "#EDF5F0"};
-      border: 1px solid ${isGold ? "#B38F34" : "#A7D7B5"};
-      color: ${isGold ? "#FBF5B7" : "#065F46"};
+      background: ${isGold ? "linear-gradient(90deg, #2C2106, #4A3910, #1A1404)" : "#EFECE6"};
+      border: 1px solid ${isGold ? "#C9A84C" : "rgba(0,47,26,0.2)"};
+      color: ${isGold ? "#F3E5AB" : "#002F1A"};
+      font-weight: 600;
     }
 
     /* Footer */
     .card-footer {
-      padding: 6px 8px;
+      padding: 5px 8px;
       text-align: center;
-      font-size: 8px;
-      background: ${isGold ? "#0F0B02" : "#F4F2EC"};
-      color: ${isGold ? "#C9A84C" : "#727973"};
-      border-top: 1px solid ${isGold ? "#3D2D07" : "#E2DDD3"};
+      font-size: 7.5px;
+      background: ${isGold ? "#0E0A02" : "rgba(0,47,26,0.05)"};
+      color: ${isGold ? "#C9A84C" : "#002F1A"};
+      border-top: 1px solid ${isGold ? "#3D2E08" : "rgba(0,47,26,0.15)"};
     }
   </style>
 </head>
@@ -433,15 +481,15 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
     <div class="qr-core">
       <div class="qr-frame">
         <img
-          src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(pass.passCode)}"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(pass.passCode)}"
           alt="ID Pass QR Code"
-          width="110"
-          height="110"
+          width="100"
+          height="100"
           style="display: block; border-radius: 4px;"
         />
       </div>
       <div class="pass-code">${pass.passCode}</div>
-      <div class="security-status">✓ Cryptographic Security Verified</div>
+      <div class="security-status">${isGold ? "👑 VVIP ACTIVE STATUS · ROYAL ADMISSION" : "✓ EMERALD ACTIVE STATUS · HERITAGE ADMISSION"}</div>
     </div>
 
     <div class="card-body">
@@ -452,7 +500,7 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       ${serialLabel ? `
       <div class="info-row">
         <span class="info-label">Ticket Serial</span>
-        <span class="info-val">${serialLabel}</span>
+        <span class="info-val" style="color: ${isGold ? "#E5C768" : "#002F1A"}; font-family: monospace;">${serialLabel}</span>
       </div>` : ""}
       ${pass.sponsorName || pass.hostName ? `
       <div class="info-row">
@@ -461,25 +509,25 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       </div>` : ""}
       <div class="info-row">
         <span class="info-label">Admission Days</span>
-        <span class="info-val">${daysLabel}</span>
+        <span class="info-val" style="color: ${isGold ? "#E5C768" : "#002F1A"};">${daysLabel}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Tier / Access</span>
-        <span class="info-val">${isGold ? "VVIP Royal Pavilion & Grandstand" : "Festival Grounds & Grandstand"}</span>
+        <span class="info-val" style="color: ${isGold ? "#E5C768" : "#002F1A"};">${isGold ? "Royal Pavilion & Grandstand" : "Festival Grounds & Grandstand"}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Venue</span>
-        <span class="info-val">Abeokuta Polo Club, Kobape</span>
+        <span class="info-val">Abeokuta Polo Club Grounds</span>
       </div>
 
       <div class="security-foil">
-        <span>🛡️ <strong>HMAC Security:</strong> ACTIVE</span>
-        <span>${isSponsored ? "SPONSORED GUEST" : "ID Card Format"}</span>
+        <span>🛡️ <strong>HMAC-256:</strong> SEALED</span>
+        <span>${isGold ? "GOLD FOIL SECURITY HOLOGRAM" : "CLASSIC HERITAGE BADGE"}</span>
       </div>
     </div>
 
     <div class="card-footer">
-      Official Turnstile Access Credential · Turnstile accreditation required. All attendees must be duly registered for valid entry.
+      ${isGold ? "Turnstile accreditation required. Royal Gate Marshals on duty." : "Turnstile accreditation required. Complimentary Heritage Entry."}
     </div>
   </div>
 </body>

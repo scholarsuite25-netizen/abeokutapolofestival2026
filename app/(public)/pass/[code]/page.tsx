@@ -10,6 +10,7 @@ import {
   UserCheck,
   CalendarCheck,
   Ticket,
+  Crown,
 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -174,7 +175,13 @@ async function PassContent({ params, searchParams }: PassPageProps) {
   }
 
   const isActive = cred.status === "active";
-  const isSponsored = cred.holder_name.toLowerCase().startsWith("sponsored invitation") || cred.affiliation_type === "guest_of";
+  const vvipMatch = cred.pass_code.match(/VVIP(\d+)/);
+  const ticketIdx = vvipMatch ? parseInt(vvipMatch[1], 10) : 1;
+  const isSponsored =
+    ticketIdx > 1 ||
+    cred.holder_name.toLowerCase().startsWith("sponsored invitation") ||
+    cred.holder_name.toLowerCase().includes("pass ") ||
+    cred.affiliation_type === "guest_of";
   const affiliationLabel =
     cred.affiliation_type === "guest_of" && cred.host_name
       ? `Guest of: ${cred.host_name}`
@@ -203,8 +210,11 @@ async function PassContent({ params, searchParams }: PassPageProps) {
     day3Status: isGold ? "vvip_admitted" : "not_selected",
     ticketRefDay2: cred.day2_ticket_ref,
     ticketRefDay3: cred.day3_ticket_ref,
+    ticketIndex: ticketIdx,
     isSponsored,
     sponsorName: cred.host_name,
+    isLockedToDevice: isSponsored,
+    isBuyer: false,
   };
 
   return (
@@ -232,151 +242,185 @@ async function PassContent({ params, searchParams }: PassPageProps) {
         {/* Action Bar (Download Offline Pass / Print / Share) */}
         <PassViewActions passData={passStorageData} />
 
-        {/* Access Card Container (Compact ID-Card Sizing) */}
+        {/* Access Card Container (CR80 Standard Physical ID-Card Ratio: max-w-[305px]) */}
         <div
-          className={`mx-auto w-full max-w-[320px] overflow-hidden rounded-2xl border-2 shadow-xl print:border-2 print:border-black print:shadow-none transition-all ${
-            isGold ? "border-[#C9A84C] bg-[#161104] text-[#FAF9F5]" : "border-forest/20 bg-card"
+          className={`mx-auto w-full max-w-[305px] overflow-hidden rounded-2xl border-2 shadow-xl print:border-2 print:border-black print:shadow-none transition-all ${
+            isGold
+              ? "border-2 border-[#C9A84C] bg-gradient-to-b from-[#1C1605] via-[#2A2007] to-[#120E03] text-[#FCF9F8] shadow-[0_4px_25px_rgba(201,168,76,0.25)]"
+              : "border-2 border-[#002F1A] bg-[#FCF9F8] text-[#1B1C1C] shadow-lg"
           }`}
         >
           {/* Lanyard punch-hole simulation */}
-          <div className="pt-2 pb-0.5 flex justify-center bg-transparent">
+          <div className="pt-1.5 pb-0.5 flex justify-center bg-transparent">
             <div
               className={`h-1.5 w-10 rounded-full border ${
-                isGold ? "bg-[#0B0902] border-[#5E4711]" : "bg-muted border-line"
+                isGold ? "bg-[#0B0902] border-[#5E4711]" : "bg-[#E5DFD5] border-[#002F1A]/20"
               }`}
             />
           </div>
 
           {/* Header */}
           <div
-            className={`p-3 text-center relative overflow-hidden print:bg-black print:text-white border-b ${
-              isGold ? "bg-gradient-to-b from-[#2D2108] to-[#161104] text-[#FBF5B7] border-[#C9A84C]/40" : "bg-forest text-ivory border-gold/40"
+            className={`p-2.5 text-center relative overflow-hidden print:bg-black print:text-white border-b-2 ${
+              isGold
+                ? "bg-gradient-to-r from-[#241A04] via-[#3B2B08] to-[#241A04] text-[#E5C768] border-[#C9A84C]"
+                : "bg-[#002F1A] text-[#FCF9F8] border-[#C9A84C]/50"
             }`}
           >
-            <div className="flex justify-center mb-1">
-              <Badge
-                variant="outline"
-                className={`text-[8px] uppercase tracking-widest ${
-                  isGold ? "border-[#C9A84C] bg-[#C9A84C]/20 text-[#E5C768]" : "border-gold bg-gold/20 text-gold"
+            <div className="flex justify-center mb-0.5">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[8px] font-black tracking-widest uppercase ${
+                  isGold
+                    ? "bg-gradient-to-r from-[#B38F34] via-[#F5D77F] to-[#C9A84C] text-black shadow-xs"
+                    : "bg-[#FCF9F8] text-[#002F1A] border border-[#002F1A] shadow-xs"
                 }`}
               >
-                Abeokuta Polo Festival 2026
-              </Badge>
+                {isGold ? (
+                  <Crown className="size-2.5 inline text-black" />
+                ) : (
+                  <ShieldCheck className="size-2.5 inline text-[#002F1A]" />
+                )}
+                {isGold
+                  ? isSponsored
+                    ? `VVIP GUEST PASS · TICKET ${ticketIdx}`
+                    : "VVIP ROYAL ADMISSION"
+                  : "CLASSIC HERITAGE BADGE"}
+              </span>
             </div>
-            <h1 className="font-serif text-base sm:text-lg font-bold leading-tight">
+            <h1 className="font-serif text-sm font-bold leading-tight">
               {isGold ? (isSponsored ? "Day 3 VVIP Guest Pass" : "Day 3 VVIP Grand Finale Pass") : "Official Gate Access Card"}
             </h1>
-            <p className={`mt-0.5 text-[9px] uppercase tracking-wider ${isGold ? "text-[#C9A84C]" : "text-ivory/80"}`}>
+            <p className={`mt-0.5 text-[8px] uppercase tracking-wider font-semibold ${isGold ? "text-[#C9A84C]" : "text-[#E5C768]"}`}>
               {isGold ? "Royal Cup Grand Finale · 20 Dec 2026" : "The Blueprint · 18–20 Dec 2026"}
             </p>
             {isSponsored && cred.host_name && (
-              <p className="mt-0.5 text-[10px] font-semibold text-[#E5C768]">
+              <p className="mt-0.5 text-[9px] font-semibold text-[#E5C768]">
                 👑 Sponsored Guest of {cred.host_name}
               </p>
             )}
-            <div className="mt-1.5 flex justify-center">
+            <div className="mt-1 flex justify-center">
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
-                  isActive ? (isGold ? "bg-amber-600 text-white" : "bg-emerald-800 text-ivory") : "bg-red-800 text-ivory"
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                  isActive
+                    ? isGold
+                      ? "bg-[#2C2106] border border-[#C9A84C]/50 text-[#F3E5AB]"
+                      : "bg-emerald-50 border border-emerald-300 text-emerald-800"
+                    : "bg-red-800 text-ivory"
                 }`}
               >
-                <CheckCircle2 className="size-3" />
-                {isActive ? (isGold ? "VVIP Active Credential" : "Active Credential") : cred.status.toUpperCase()}
+                <CheckCircle2 className={`size-2.5 ${isGold ? "text-[#E5C768]" : "text-emerald-700"}`} />
+                {isActive ? (isGold ? "VVIP Active Status" : "Emerald Active Status") : cred.status.toUpperCase()}
               </span>
             </div>
           </div>
 
           {/* QR Code Presentation */}
-          <div className="p-3.5 flex flex-col items-center justify-center bg-ivory border-b border-line/60 print:bg-white">
-            <div className="flex size-28 items-center justify-center rounded-xl border-2 border-forest/30 bg-card p-2 shadow-xs print:border-black">
-              <QrCode className="size-24 text-forest print:text-black" />
+          <div
+            className={`p-2.5 flex flex-col items-center justify-center border-b ${
+              isGold ? "bg-[#140F04] border-[#3D2E08]" : "bg-[#FAF7F2] border-[#002F1A]/15"
+            } print:bg-white`}
+          >
+            <div
+              className={`flex size-24 items-center justify-center rounded-xl border-2 bg-white p-2 shadow-xs ${
+                isGold ? "border-[#C9A84C] shadow-[0_0_12px_rgba(201,168,76,0.35)]" : "border-[#002F1A]"
+              } print:border-black`}
+            >
+              <QrCode className={`size-20 ${isGold ? "text-black" : "text-[#002F1A]"} print:text-black`} />
             </div>
-            <p className="mt-2 font-mono text-base font-bold tracking-widest text-forest print:text-black">
+            <p
+              className={`mt-1 font-mono text-sm font-extrabold tracking-widest ${
+                isGold ? "text-[#E5C768]" : "text-[#002F1A]"
+              } print:text-black`}
+            >
               {cred.pass_code}
             </p>
-            <span className="mt-0.5 text-[9px] font-semibold text-emerald-800 flex items-center gap-1">
-              <ShieldCheck className="size-3" /> Cryptographically Signed Pass
+            <span
+              className={`mt-0.5 text-[8.5px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                isGold ? "text-[#85E0A3]" : "text-emerald-800"
+              }`}
+            >
+              <ShieldCheck className="size-2.5" /> Cryptographically Signed Pass
             </span>
             {qrVerified ? (
-              <span className="mt-1.5 max-w-full break-all rounded bg-sage/60 px-1.5 py-0.5 font-mono text-[8px] text-muted-brand print:hidden">
+              <span className="mt-1 max-w-full break-all rounded bg-sage/60 px-1.5 py-0.5 font-mono text-[7.5px] text-muted-brand print:hidden">
                 Token: {qrToken}
               </span>
             ) : null}
           </div>
 
           {/* Attendee Details & Affiliation */}
-          <div className="p-3 bg-card space-y-2 text-[11px]">
-            <div className="flex justify-between border-b border-line pb-1">
-              <span className="text-muted-brand font-medium">Attendee:</span>
-              <span className="font-semibold text-forest truncate max-w-[170px] text-right">{cred.holder_name}</span>
+          <div className={`p-2.5 space-y-1 text-[11px] ${isGold ? "bg-transparent text-[#E8DFD0]" : "bg-[#FCF9F8] text-[#1B1C1C]"}`}>
+            <div className={`flex justify-between border-b pb-0.5 ${isGold ? "border-[#C9A84C]/20" : "border-[#002F1A]/10"}`}>
+              <span className={`text-[8.5px] uppercase font-bold tracking-wider ${isGold ? "text-[#C9A84C]" : "text-[#002F1A]/70"}`}>Attendee:</span>
+              <span className={`font-bold truncate max-w-[170px] text-right ${isGold ? "text-[#FFFFFF]" : "text-[#002F1A]"}`}>{cred.holder_name}</span>
             </div>
-            <div className="flex justify-between border-b border-line pb-1">
-              <span className="text-muted-brand font-medium">Affiliation:</span>
-              <span className="font-semibold text-gold-deep flex items-center gap-1 truncate max-w-[170px] text-right">
+            <div className={`flex justify-between border-b pb-0.5 ${isGold ? "border-[#C9A84C]/20" : "border-[#002F1A]/10"}`}>
+              <span className={`text-[8.5px] uppercase font-bold tracking-wider ${isGold ? "text-[#C9A84C]" : "text-[#002F1A]/70"}`}>Affiliation:</span>
+              <span className={`font-semibold flex items-center gap-1 truncate max-w-[170px] text-right ${isGold ? "text-[#E5C768]" : "text-[#002F1A]"}`}>
                 {cred.affiliation_type === "guest_of" ? (
-                  <UserCheck className="size-3 text-gold-deep inline" />
+                  <UserCheck className="size-2.5 inline" />
                 ) : cred.affiliation_type === "corporate" ? (
-                  <Building className="size-3 text-gold-deep inline" />
+                  <Building className="size-2.5 inline" />
                 ) : null}
                 {affiliationLabel}
               </span>
             </div>
-            <div className="flex justify-between border-b border-line pb-1">
-              <span className="text-muted-brand font-medium">Category:</span>
-              <span className="font-semibold text-forest">{cred.pass_type}</span>
+            <div className={`flex justify-between border-b pb-0.5 ${isGold ? "border-[#C9A84C]/20" : "border-[#002F1A]/10"}`}>
+              <span className={`text-[8.5px] uppercase font-bold tracking-wider ${isGold ? "text-[#C9A84C]" : "text-[#002F1A]/70"}`}>Category:</span>
+              <span className={`font-semibold ${isGold ? "text-[#E5C768]" : "text-[#002F1A]"}`}>{cred.pass_type}</span>
             </div>
-            <div className="flex justify-between border-b border-line pb-1">
-              <span className="text-muted-brand font-medium">Venue:</span>
-              <span className="font-semibold text-forest flex items-center gap-1 text-[10px]">
+            <div className={`flex justify-between border-b pb-0.5 ${isGold ? "border-[#C9A84C]/20" : "border-[#002F1A]/10"}`}>
+              <span className={`text-[8.5px] uppercase font-bold tracking-wider ${isGold ? "text-[#C9A84C]" : "text-[#002F1A]/70"}`}>Venue:</span>
+              <span className={`font-semibold flex items-center gap-1 text-[9.5px] ${isGold ? "text-[#E8DFD0]" : "text-[#002F1A]"}`}>
                 <MapPin className="size-2.5 text-gold-deep" /> Abeokuta Polo Club Grounds
               </span>
             </div>
-            <div className="flex justify-between border-b border-line pb-1">
-              <span className="text-muted-brand font-medium">Entitlement:</span>
-              <span className="font-semibold text-forest-interactive truncate max-w-[170px] text-right">
+            <div className={`flex justify-between border-b pb-0.5 ${isGold ? "border-[#C9A84C]/20" : "border-[#002F1A]/10"}`}>
+              <span className={`text-[8.5px] uppercase font-bold tracking-wider ${isGold ? "text-[#C9A84C]" : "text-[#002F1A]/70"}`}>Entitlement:</span>
+              <span className={`font-semibold truncate max-w-[170px] text-right ${isGold ? "text-[#E5C768]" : "text-[#002F1A]"}`}>
                 {cred.zone_access?.join(", ") || "Festival Grounds & Grandstand"}
               </span>
             </div>
 
             {/* 3-Day Daily Admission & Gate Attendance Tracking */}
-            <div className="pt-1">
-              <span className="text-[10px] font-semibold text-forest block mb-1.5 flex items-center gap-1">
-                <CalendarCheck className="size-3 text-gold-deep" /> Daily Gate Admission:
+            <div className="pt-0.5">
+              <span className={`text-[9px] font-bold uppercase tracking-wider block mb-1 flex items-center gap-1 ${isGold ? "text-[#C9A84C]" : "text-[#002F1A]"}`}>
+                <CalendarCheck className="size-2.5 text-gold-deep" /> Daily Gate Admission:
               </span>
-              <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+              <div className="grid grid-cols-3 gap-1 text-center text-[9px]">
                 {/* Day 1: Free */}
                 <div
-                  className={`rounded-lg p-1.5 border ${
+                  className={`rounded-lg p-1 border ${
                     cred.day1_checked_in_at
                       ? "bg-emerald-50 border-emerald-400 text-emerald-900"
                       : "bg-emerald-50/50 border-emerald-300 text-emerald-900"
                   }`}
                 >
                   <span className="block font-bold">Day 1</span>
-                  <Badge className="bg-emerald-700 text-ivory text-[8px] my-0.5 px-1 py-0">FREE</Badge>
-                  <span className="text-[8px] font-semibold block text-emerald-800">
+                  <Badge className="bg-emerald-700 text-ivory text-[7px] my-0.5 px-1 py-0">FREE</Badge>
+                  <span className="text-[7.5px] font-semibold block text-emerald-800">
                     {cred.day1_checked_in_at ? "Checked" : "Ready"}
                   </span>
                 </div>
 
                 {/* Day 2: Free */}
                 <div
-                  className={`rounded-lg p-1.5 border ${
+                  className={`rounded-lg p-1 border ${
                     cred.day2_checked_in_at
                       ? "bg-emerald-50 border-emerald-400 text-emerald-900"
                       : "bg-emerald-50/50 border-emerald-300 text-emerald-900"
                   }`}
                 >
                   <span className="block font-bold">Day 2</span>
-                  <Badge className="bg-emerald-700 text-ivory text-[8px] my-0.5 px-1 py-0">FREE</Badge>
-                  <span className="text-[8px] font-semibold block text-emerald-800">
+                  <Badge className="bg-emerald-700 text-ivory text-[7px] my-0.5 px-1 py-0">FREE</Badge>
+                  <span className="text-[7.5px] font-semibold block text-emerald-800">
                     {cred.day2_checked_in_at ? "Checked" : "Ready"}
                   </span>
                 </div>
 
                 {/* Day 3: Paid VVIP */}
                 <div
-                  className={`rounded-lg p-1.5 border ${
+                  className={`rounded-lg p-1 border ${
                     cred.day3_checked_in_at
                       ? "bg-emerald-50 border-emerald-400 text-emerald-900"
                       : isGold
@@ -385,35 +429,77 @@ async function PassContent({ params, searchParams }: PassPageProps) {
                   }`}
                 >
                   <span className="block font-bold">Day 3</span>
-                  <Badge className="bg-amber-600 text-ivory text-[8px] my-0.5 px-1 py-0">VVIP</Badge>
-                  <span className="text-[8px] font-semibold block text-amber-900 truncate">
+                  <Badge className="bg-amber-600 text-ivory text-[7px] my-0.5 px-1 py-0">VVIP</Badge>
+                  <span className="text-[7.5px] font-semibold block text-amber-900 truncate">
                     {cred.day3_checked_in_at ? "Checked" : isGold ? "Confirmed" : "Ticket Req."}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* Security Foil Strip */}
+            <div
+              className={`mt-1 rounded-md px-2 py-0.5 text-[7.5px] flex items-center justify-between border ${
+                isGold
+                  ? "bg-gradient-to-r from-[#2C2106] via-[#4A3910] to-[#1A1404] border-[#C9A84C] text-[#F3E5AB]"
+                  : "bg-[#EFECE6] border-[#002F1A]/20 text-[#002F1A] font-medium"
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                <ShieldCheck className={`size-2.5 ${isGold ? "text-[#E5C768]" : "text-[#002F1A]"}`} />
+                <strong>HMAC-256</strong> SEALED
+              </span>
+              <span className="font-mono text-[7px] font-bold tracking-wider">
+                {isGold ? "GOLD FOIL SECURITY HOLOGRAM" : "CLASSIC HERITAGE BADGE"}
+              </span>
+            </div>
           </div>
 
           {/* Gate Scanning Instructions & Mandatory Protocol */}
-          <div className="bg-forest-deep text-ivory p-2.5 text-center border-t border-gold/40 text-[9px] space-y-0.5">
-            <p className="font-bold text-gold uppercase tracking-wider text-[8px] flex items-center justify-center gap-1">
-              <ShieldCheck className="size-3 text-gold inline" /> Mandatory Gate Protocol
+          <div
+            className={`p-2 text-center border-t text-[8px] space-y-0.5 ${
+              isGold ? "bg-[#0E0A02] border-[#3D2E08] text-[#C9A84C]" : "bg-[#002F1A]/5 border-[#002F1A]/15 text-[#002F1A]"
+            }`}
+          >
+            <p className="font-bold uppercase tracking-wider text-[7.5px] flex items-center justify-center gap-1">
+              <ShieldCheck className="size-2.5 inline" /> Turnstile accreditation required.
             </p>
-            <p className="text-ivory/90 leading-relaxed text-[8px]">
-              Turnstile accreditation required. Show this ID card on phone or printed for entry.
+            <p className="opacity-90 leading-relaxed text-[7.5px]">
+              {isGold ? "Royal Gate Marshals on duty · Royal Pavilion access." : "Complimentary Heritage Entry · ID Card Format."}
             </p>
           </div>
         </div>
 
-        {/* 2,500 Attendance Accelerator & WhatsApp Share Widget */}
-        <div className="print:hidden">
-          <AttendanceMilestoneWidget
-            passCode={cred.pass_code}
-            holderName={cred.holder_name}
-            currentCount={1840}
-            targetCount={2500}
-          />
-        </div>
+        {/* Anti-Leakage Guard: If gifted pass, show recipient device lock notification instead of viral share widget */}
+        {isSponsored ? (
+          <div className="rounded-2xl border-2 border-amber-500/70 bg-gradient-to-br from-amber-50 to-amber-100/50 p-4 text-amber-950 shadow-sm space-y-2 print:hidden">
+            <div className="flex items-center gap-2">
+              <div className="flex size-8 items-center justify-center rounded-xl bg-amber-600 text-white shrink-0 shadow-xs">
+                <ShieldCheck className="size-4" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">
+                  Device-Locked Credential
+                </span>
+                <h3 className="font-serif text-sm font-bold text-amber-950">
+                  Gifted / Sponsored Ticket — Locked to this device · Non-transferable
+                </h3>
+              </div>
+            </div>
+            <p className="text-xs text-amber-900 leading-relaxed">
+              This official gate credential has been securely issued and bound to this device. Turnstiles enforce single-use check-in per day per pass code. Forwarding, re-selling, or transferring this gift pass to third parties is strictly prohibited.
+            </p>
+          </div>
+        ) : (
+          <div className="print:hidden">
+            <AttendanceMilestoneWidget
+              passCode={cred.pass_code}
+              holderName={cred.holder_name}
+              currentCount={1840}
+              targetCount={2500}
+            />
+          </div>
+        )}
 
         {/* Return Controls */}
         <div className="flex justify-center gap-3 print:hidden">

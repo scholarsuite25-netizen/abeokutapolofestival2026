@@ -343,5 +343,121 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       expect(res.passes).toHaveLength(1);
       expect(res.passes![0].holderName).toBe("Alake Guest");
     });
+
+    it("personalizes each Day 3 VVIP pass with the individual First and Last Name entered by the buyer", async () => {
+      const res = await submitRegistration({
+        firstName: "Adebayo",
+        lastName: "Balogun",
+        email: "buyer.balogun@example.com",
+        phone: "+234 803 999 8888",
+        day1: true,
+        day2: true,
+        day3: true,
+        day3TicketCount: 3,
+        day3PaymentRef: "ABK-VVIP-SIM-3-NAMEDGUESTS",
+        attendees: [
+          { firstName: "Adebayo", lastName: "Balogun" },
+          { firstName: "Folashade", lastName: "Alake" },
+          { firstName: "Oluwaseun", lastName: "Adeleke" },
+        ],
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.passes).toHaveLength(4);
+
+      // Pass 1: Day 1 & Day 2 Complimentary Dual Pass (Forest Green / Standard)
+      const day12Pass = res.passes![0];
+      expect(day12Pass.daysCovered).toEqual([1, 2]);
+      expect(day12Pass.isVvip).toBe(false);
+      expect(day12Pass.designTheme).toBe("standard");
+      expect(day12Pass.holderName).toBe("Adebayo Balogun");
+
+      // Passes 2, 3, 4: Distinct Day 3 VVIP Passes personalized with individual names
+      const vvip1 = res.passes![1];
+      const vvip2 = res.passes![2];
+      const vvip3 = res.passes![3];
+
+      expect(vvip1.holderName).toBe("Adebayo Balogun");
+      expect(vvip1.isVvip).toBe(true);
+      expect(vvip1.designTheme).toBe("gold");
+      expect(vvip1.ticketIndex).toBe(1);
+
+      expect(vvip2.holderName).toBe("Folashade Alake");
+      expect(vvip2.isVvip).toBe(true);
+      expect(vvip2.designTheme).toBe("gold");
+      expect(vvip2.ticketIndex).toBe(2);
+      expect(vvip2.isSponsored).toBe(true);
+      expect(vvip2.sponsorName).toBe("Adebayo Balogun");
+
+      expect(vvip3.holderName).toBe("Oluwaseun Adeleke");
+      expect(vvip3.isVvip).toBe(true);
+      expect(vvip3.designTheme).toBe("gold");
+      expect(vvip3.ticketIndex).toBe(3);
+      expect(vvip3.isSponsored).toBe(true);
+      expect(vvip3.sponsorName).toBe("Adebayo Balogun");
+    });
+
+    it("allows buyer to purchase Day 3 VVIP passes for attendees where Ticket 1 is a different person from buyer", async () => {
+      const res = await submitRegistration({
+        firstName: "Adebayo",
+        lastName: "Balogun",
+        email: "buyer.balogun@example.com",
+        phone: "+234 803 999 8888",
+        day3: true,
+        day3TicketCount: 2,
+        day3PaymentRef: "ABK-VVIP-SIM-2-CUSTOMTICKET1",
+        attendees: [
+          { firstName: "Chief", lastName: "Obasanjo" },
+          { firstName: "Otunba", lastName: "Alake" },
+        ],
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.passes).toHaveLength(2);
+
+      const pass1 = res.passes![0];
+      const pass2 = res.passes![1];
+
+      expect(pass1.holderName).toBe("Chief Obasanjo");
+      expect(pass1.isVvip).toBe(true);
+      expect(pass1.designTheme).toBe("gold");
+      expect(pass1.ticketIndex).toBe(1);
+
+      expect(pass2.holderName).toBe("Otunba Alake");
+      expect(pass2.isVvip).toBe(true);
+      expect(pass2.designTheme).toBe("gold");
+      expect(pass2.ticketIndex).toBe(2);
+      expect(pass2.isSponsored).toBe(true);
+      expect(pass2.sponsorName).toBe("Adebayo Balogun");
+    });
+
+    it("gracefully falls back to buyer name when individual attendee names are partially missing or whitespace", async () => {
+      const res = await submitRegistration({
+        firstName: "Adebayo",
+        lastName: "Balogun",
+        email: "buyer.balogun@example.com",
+        phone: "+234 803 999 8888",
+        day3: true,
+        day3TicketCount: 2,
+        day3PaymentRef: "ABK-VVIP-SIM-2-PARTIALNAMES",
+        attendees: [
+          { firstName: "   ", lastName: "   " },
+          { firstName: "Funke", lastName: "Akpabio" },
+        ],
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.passes).toHaveLength(2);
+
+      // Ticket 1 had only whitespace, falls back gracefully to serial name
+      expect(res.passes![0].holderName).toBe("Adebayo Balogun (Pass 1 of 2)");
+      expect(res.passes![0].isVvip).toBe(true);
+      expect(res.passes![0].designTheme).toBe("gold");
+
+      // Ticket 2 had valid name
+      expect(res.passes![1].holderName).toBe("Funke Akpabio");
+      expect(res.passes![1].isVvip).toBe(true);
+      expect(res.passes![1].designTheme).toBe("gold");
+    });
   });
 });

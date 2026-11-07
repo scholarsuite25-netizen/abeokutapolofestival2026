@@ -6,6 +6,11 @@ import {
   DAY3_VVIP_PRICE_NGN,
 } from "@/lib/config/checkout-config";
 
+const attendeeSchema = z.object({
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
+});
+
 const bodySchema = z.object({
   email: z.string().trim().email("A valid email is required."),
   firstName: z.string().trim().max(80).optional(),
@@ -14,6 +19,7 @@ const bodySchema = z.object({
   day1: z.boolean().optional(),
   day2: z.boolean().optional(),
   quantity: z.coerce.number().int().min(1).max(DAY3_VVIP_MAX_TICKETS).default(1),
+  attendees: z.array(attendeeSchema).optional(),
 });
 
 function newReference(simulatedQuantity?: number): string {
@@ -44,7 +50,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email, firstName, lastName, phone, day1, day2, quantity } = parsed.data;
+  const { email, firstName, lastName, phone, day1, day2, quantity, attendees } = parsed.data;
   const amountNgn = quantity * DAY3_VVIP_PRICE_NGN;
   const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
   const secret = process.env.PAYSTACK_SECRET_KEY;
@@ -58,6 +64,10 @@ export async function POST(req: Request) {
   callback.searchParams.set("ln", lastName ?? "");
   callback.searchParams.set("em", email);
   callback.searchParams.set("ph", phone ?? "");
+  callback.searchParams.set("qty", String(quantity));
+  if (attendees && attendees.length > 0) {
+    callback.searchParams.set("attendees", JSON.stringify(attendees));
+  }
 
   if (!secret) {
     const isDemo = process.env.NODE_ENV !== "production" || process.env.PAYSTACK_DEMO_MODE === "true";
@@ -99,6 +109,9 @@ export async function POST(req: Request) {
             { display_name: "Event", variable_name: "event", value: "Abeokuta Polo Festival 2026" },
             { display_name: "Pass Type", variable_name: "pass_type", value: "Day 3 VVIP Grand Finale" },
             { display_name: "Ticket Quantity", variable_name: "ticket_quantity", value: String(quantity) },
+            ...(attendees && attendees.length > 0
+              ? [{ display_name: "Attendees", variable_name: "attendees", value: JSON.stringify(attendees) }]
+              : []),
           ],
         },
       }),

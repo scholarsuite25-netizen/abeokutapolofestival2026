@@ -60,10 +60,7 @@ function RegisterContent() {
   const [day1, setDay1] = useState(true);
   const [day2, setDay2] = useState(true);
   const [day3, setDay3] = useState(false);
-
-  // Day 3 VVIP Options: Special Invite or Paystack Payment
-  const [hasInviteCode, setHasInviteCode] = useState(false);
-  const [invitationCode, setInvitationCode] = useState("");
+  const [day3TicketCount, setDay3TicketCount] = useState(1);
 
   // Simple Form Data (Single registration only)
   const [formData, setFormData] = useState({
@@ -75,6 +72,61 @@ function RegisterContent() {
     hostName: "",
     organization: "",
   });
+
+  // Day 3 VVIP Options: Special Invite or Paystack Payment
+  const [hasInviteCode, setHasInviteCode] = useState(false);
+  const [invitationCode, setInvitationCode] = useState("");
+
+  // Individual VVIP Ticket Holder Names (Ticket 1: Buyer/First Guest, Ticket 2+: Guests)
+  const [ticketAttendees, setTicketAttendees] = useState<Array<{ firstName: string; lastName: string }>>([
+    { firstName: "", lastName: "" },
+  ]);
+
+  const handlePrimaryNameChange = (field: "firstName" | "lastName", val: string) => {
+    setFormData((prev) => {
+      const prevVal = prev[field];
+      const updated = { ...prev, [field]: val };
+      setTicketAttendees((att) => {
+        const next = [...att];
+        if (!next[0]) next[0] = { firstName: "", lastName: "" };
+        // Sync Ticket 1 if it is empty or was in sync with the previous value
+        if (!next[0][field] || next[0][field] === prevVal) {
+          next[0] = { ...next[0], [field]: val };
+        }
+        return next;
+      });
+      return updated;
+    });
+  };
+
+  const handleTicketCountChange = (count: number) => {
+    const clamped = Math.max(1, Math.min(20, count));
+    setDay3TicketCount(clamped);
+    setTicketAttendees((prev) => {
+      const next = [...prev];
+      if (!next[0] || (!next[0].firstName && !next[0].lastName)) {
+        next[0] = {
+          firstName: formData.firstName || "",
+          lastName: formData.lastName || "",
+        };
+      }
+      while (next.length < clamped) {
+        next.push({ firstName: "", lastName: "" });
+      }
+      return next.slice(0, clamped);
+    });
+  };
+
+  const updateAttendee = (index: number, field: "firstName" | "lastName", val: string) => {
+    setTicketAttendees((prev) => {
+      const next = [...prev];
+      while (next.length <= index) {
+        next.push({ firstName: "", lastName: "" });
+      }
+      next[index] = { ...next[index], [field]: val };
+      return next;
+    });
+  };
 
   // Handle return from Paystack. The URL is NOT proof of payment: the reference is
   // sent to the server, which verifies it with Paystack and issues passes only if
@@ -99,8 +151,33 @@ function RegisterContent() {
       return;
     }
 
+    let parsedAttendees: Array<{ firstName: string; lastName: string }> | undefined;
+    const attendeesParam = searchParams.get("attendees");
+    if (attendeesParam) {
+      try {
+        parsedAttendees = JSON.parse(attendeesParam);
+      } catch {
+        // ignore parse error
+      }
+    }
+    if (!parsedAttendees || parsedAttendees.length === 0) {
+      try {
+        const stored =
+          sessionStorage.getItem("abk_pending_attendees") ||
+          localStorage.getItem("abk_pending_attendees");
+        if (stored) {
+          parsedAttendees = JSON.parse(stored);
+        }
+      } catch {
+        // ignore storage error
+      }
+    }
+
     void Promise.resolve().then(async () => {
       setLoading(true);
+      const qtyParam = searchParams.get("qty");
+      const day3TicketCountParsed = qtyParam ? parseInt(qtyParam, 10) : (parsedAttendees ? parsedAttendees.length : 1);
+
       const res = await submitRegistration({
         firstName: fn,
         lastName: ln,
@@ -109,7 +186,9 @@ function RegisterContent() {
         day1: searchParams.get("day1") === "1",
         day2: searchParams.get("day2") === "1",
         day3: true,
+        day3TicketCount: day3TicketCountParsed,
         day3PaymentRef: paymentRef,
+        attendees: parsedAttendees,
       });
 
       setLoading(false);
@@ -135,10 +214,44 @@ function RegisterContent() {
       return;
     }
 
+    // Build personalized attendees for Day 3 VVIP passes
+    const attendeesToSubmit = day3
+      ? Array.from({ length: day3TicketCount }, (_, i) => ({
+          firstName:
+            ticketAttendees[i]?.firstName?.trim() ||
+            (i === 0 ? formData.firstName.trim() : ""),
+          lastName:
+            ticketAttendees[i]?.lastName?.trim() ||
+            (i === 0 ? formData.lastName.trim() : ""),
+        }))
+      : undefined;
+
+    // Validate individual first & last names for each VVIP ticket holder when buying multiple passes
+    if (day3 && (!hasInviteCode || !invitationCode.trim()) && day3TicketCount > 1) {
+      for (let i = 0; i < day3TicketCount; i++) {
+        const att = attendeesToSubmit?.[i];
+        if (!att?.firstName || !att?.lastName) {
+          setErrorMsg(
+            `Please enter both the First Name and Last Name for Ticket ${i + 1}.`,
+          );
+          return;
+        }
+      }
+    }
+
     // If Day 3 is ticked without an invitation code, redirect directly to Paystack payment gateway
     if (day3 && (!hasInviteCode || !invitationCode.trim())) {
       setLoading(true);
       try {
+        if (attendeesToSubmit && attendeesToSubmit.length > 0) {
+          try {
+            sessionStorage.setItem("abk_pending_attendees", JSON.stringify(attendeesToSubmit));
+            localStorage.setItem("abk_pending_attendees", JSON.stringify(attendeesToSubmit));
+          } catch {
+            // Non-blocking
+          }
+        }
+
         const response = await fetch("/api/paystack/initialize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -150,6 +263,8 @@ function RegisterContent() {
             day1,
             day2,
             day3: true,
+            quantity: day3TicketCount,
+            attendees: attendeesToSubmit,
           }),
         });
 
@@ -180,10 +295,12 @@ function RegisterContent() {
       day1,
       day2,
       day3,
+      day3TicketCount: hasInviteCode ? 1 : day3TicketCount,
       day3InvitationCode: hasInviteCode ? invitationCode.trim() : undefined,
       affiliationType: formData.affiliationType,
       hostName: formData.hostName,
       organization: formData.organization,
+      attendees: attendeesToSubmit,
     });
 
     setLoading(false);
@@ -359,17 +476,21 @@ function RegisterContent() {
                     </div>
                     <div>
                       <h3 className="font-serif text-base font-bold text-amber-950">
-                        Guest Forwarding &amp; Serialized Passes
+                        Guest Forwarding &amp; Anti-Leakage Guard
                       </h3>
                       <p className="text-xs text-amber-900 mt-0.5 leading-relaxed">
                         Ticket 1 is in your name (<strong>{result.holderName}</strong>).
-                        Subsequent tickets are serialized as <strong>&ldquo;Sponsored Invitation by {result.holderName}&rdquo;</strong>.
-                        Use the 1-click <strong>WhatsApp</strong> or <strong>Copy Ticket Link</strong> buttons below each pass to forward them directly to your invited guests. Each pass link directs to <code>/pass/[code]</code> so your guest can open and save their own card.
+                        Subsequent passes are distinct, HMAC-256 sealed guest tickets.
+                        You can forward each guest pass to your invitees using the <strong>WhatsApp to Guest</strong> or <strong>Copy Guest Link</strong> buttons below.
+                      </p>
+                      <p className="text-[11px] text-amber-800 font-semibold mt-1 flex items-center gap-1">
+                        <ShieldCheck className="size-3.5 text-amber-700 shrink-0" />
+                        <strong>Device-Locking Security:</strong> When your guest opens their ticket, it binds permanently to their phone. Recipient forwarding is disabled so it cannot be transferred to a third party.
                       </p>
                     </div>
                   </div>
                   <Badge variant="outline" className="border-amber-600 bg-white/80 text-amber-900 text-[10px] font-bold shrink-0 uppercase">
-                    1-Click Forwarding Ready
+                    {issuedPasses.length} Total Passes
                   </Badge>
                 </div>
               </div>
@@ -385,7 +506,7 @@ function RegisterContent() {
             >
               {issuedPasses.map((pass) => (
                 <div key={pass.passCode} className="flex justify-center">
-                  <IdAccessCard pass={pass} />
+                  <IdAccessCard pass={pass} isBuyer={true} />
                 </div>
               ))}
             </div>
@@ -444,7 +565,7 @@ function RegisterContent() {
                           placeholder="e.g. Adebayo"
                           className="pl-9 bg-ivory"
                           value={formData.firstName}
-                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                          onChange={(e) => handlePrimaryNameChange("firstName", e.target.value)}
                         />
                       </div>
                     </div>
@@ -461,7 +582,7 @@ function RegisterContent() {
                           placeholder="e.g. Adeleke"
                           className="pl-9 bg-ivory"
                           value={formData.lastName}
-                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                          onChange={(e) => handlePrimaryNameChange("lastName", e.target.value)}
                         />
                       </div>
                     </div>
@@ -517,88 +638,160 @@ function RegisterContent() {
                     </span>
                   </div>
 
-                  <div className="mt-2 mb-3.5 rounded-xl border border-gold/50 bg-forest/5 p-3 flex items-start gap-2.5">
+                  <div className="mt-2 mb-4 rounded-xl border border-gold/50 bg-forest/5 p-3 flex items-start gap-2.5">
                     <ShieldCheck className="size-4 text-forest shrink-0 mt-0.5" />
                     <p className="text-[11px] text-forest leading-snug">
-                      <strong className="text-forest font-bold uppercase tracking-wider">Gate Protocol:</strong> All attendees must be duly registered to attend any of the three festival days. No turnstile admission is permitted without an official digital access card.
+                      <strong className="text-forest font-bold uppercase tracking-wider">Gate Protocol:</strong> All attendees must be duly registered to attend any of the three festival days. Turnstiles enforce cryptographic authentication.
                     </p>
                   </div>
 
-                  <p className="text-xs text-muted-brand mt-1.5 mb-3.5">
-                    <strong>Rule:</strong> Days 1 and 2 are 100% Free Entry. Ticking both gives you a single
-                    combined 2-day pass. Day 3 is paid VVIP admission (₦50,000) or by Special Invitation, issued as a separate distinct deep-gold ID pass.
-                  </p>
+                  {/* ── PART A: COMPLIMENTARY ADMISSION (DAYS 1 & 2 — 100% FREE) ── */}
+                  <div className="rounded-2xl border-2 border-emerald-600/30 bg-emerald-50/40 p-4 sm:p-5 space-y-3.5 mb-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/80 pb-2.5">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge className="bg-emerald-700 text-ivory text-[10px] font-bold uppercase tracking-wider">
+                            100% Free Entry
+                          </Badge>
+                          <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider">
+                            Part 1: Complimentary Days
+                          </span>
+                        </div>
+                        <h3 className="font-serif text-base font-bold text-forest mt-0.5">
+                          Friday 18 &amp; Saturday 19 December 2026
+                        </h3>
+                      </div>
 
-                  <div className="space-y-3">
-                    {/* Day 1 Button */}
-                    <div
-                      onClick={() => setDay1(!day1)}
-                      className={`cursor-pointer rounded-xl border-2 p-4 transition-all duration-200 flex items-start gap-3.5 ${
-                        day1
-                          ? "border-forest bg-forest/5 shadow-xs"
-                          : "border-line bg-card hover:border-forest/40"
-                      }`}
-                    >
-                      <div
-                        className={`size-6 rounded-md flex items-center justify-center shrink-0 border mt-0.5 transition-colors ${
-                          day1 ? "bg-forest border-forest text-ivory" : "border-line bg-ivory"
+                      {/* 1-Click Dual Pass Button */}
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          if (day1 && day2) {
+                            setDay1(false);
+                            setDay2(false);
+                          } else {
+                            setDay1(true);
+                            setDay2(true);
+                          }
+                        }}
+                        size="sm"
+                        className={`font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-all ${
+                          day1 && day2
+                            ? "bg-emerald-700 hover:bg-emerald-800 text-ivory"
+                            : "bg-forest hover:bg-forest-interactive text-ivory"
                         }`}
                       >
-                        {day1 && <Check className="size-4 stroke-[3]" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-forest">
-                            Day 1: Friday 18 Dec 2026
-                          </span>
-                          <Badge className="bg-emerald-700 text-ivory text-[10px] font-bold">
-                            100% FREE ENTRY
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-brand mt-0.5">
-                          Media Tour, Festival Light-Up Ceremony &amp; Welcome Dinner.
-                        </p>
-                      </div>
+                        {day1 && day2 ? (
+                          <>
+                            <Check className="mr-1.5 size-3.5 stroke-[3]" /> Day 1 &amp; Day 2 Dual Pass Selected
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="mr-1.5 size-3.5 text-gold" /> Select Day 1 &amp; Day 2 Dual Pass (1-Click)
+                          </>
+                        )}
+                      </Button>
                     </div>
 
-                    {/* Day 2 Button */}
-                    <div
-                      onClick={() => setDay2(!day2)}
-                      className={`cursor-pointer rounded-xl border-2 p-4 transition-all duration-200 flex items-start gap-3.5 ${
-                        day2
-                          ? "border-forest bg-forest/5 shadow-xs"
-                          : "border-line bg-card hover:border-forest/40"
-                      }`}
-                    >
+                    <p className="text-xs text-muted-brand">
+                      Ticking both days issues a single combined dual-day pass. You can also select or deselect days individually below:
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Day 1 Button */}
                       <div
-                        className={`size-6 rounded-md flex items-center justify-center shrink-0 border mt-0.5 transition-colors ${
-                          day2 ? "bg-forest border-forest text-ivory" : "border-line bg-ivory"
+                        onClick={() => setDay1(!day1)}
+                        className={`cursor-pointer rounded-xl border-2 p-3.5 transition-all duration-200 flex items-start gap-3 ${
+                          day1
+                            ? "border-forest bg-card shadow-xs"
+                            : "border-line bg-card/60 hover:border-forest/40 opacity-80"
                         }`}
                       >
-                        {day2 && <Check className="size-4 stroke-[3]" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-forest">
-                            Day 2: Saturday 19 Dec 2026
-                          </span>
-                          <Badge className="bg-emerald-700 text-ivory text-[10px] font-bold">
-                            100% FREE ENTRY
-                          </Badge>
+                        <div
+                          className={`size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5 transition-colors ${
+                            day1 ? "bg-forest border-forest text-ivory" : "border-line bg-ivory"
+                          }`}
+                        >
+                          {day1 && <Check className="size-3.5 stroke-[3]" />}
                         </div>
-                        <p className="text-xs text-muted-brand mt-0.5">
-                          Royal Opening by HRM Oba Dr. Gbadebo CFR, Foundation Layings, Queens Polo, Sip &amp; Paint.
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-bold text-xs sm:text-sm text-forest truncate">
+                              Day 1: Fri 18 Dec
+                            </span>
+                            <Badge className="bg-emerald-700 text-ivory text-[9px] font-bold px-1.5 py-0">
+                              FREE
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] text-muted-brand mt-0.5 line-clamp-2">
+                            Media Tour, Light-Up Ceremony &amp; Welcome Dinner.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Day 2 Button */}
+                      <div
+                        onClick={() => setDay2(!day2)}
+                        className={`cursor-pointer rounded-xl border-2 p-3.5 transition-all duration-200 flex items-start gap-3 ${
+                          day2
+                            ? "border-forest bg-card shadow-xs"
+                            : "border-line bg-card/60 hover:border-forest/40 opacity-80"
+                        }`}
+                      >
+                        <div
+                          className={`size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5 transition-colors ${
+                            day2 ? "bg-forest border-forest text-ivory" : "border-line bg-ivory"
+                          }`}
+                        >
+                          {day2 && <Check className="size-3.5 stroke-[3]" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-bold text-xs sm:text-sm text-forest truncate">
+                              Day 2: Sat 19 Dec
+                            </span>
+                            <Badge className="bg-emerald-700 text-ivory text-[9px] font-bold px-1.5 py-0">
+                              FREE
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] text-muted-brand mt-0.5 line-clamp-2">
+                            HRM Royal Opening, Queens Polo, Sip &amp; Paint.
+                          </p>
+                        </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Day 3 Button (Paid VVIP / Special Invitation) */}
+                  {/* ── PART B: SEPARATE REGISTRATION — DAY 3 VVIP GRAND FINALE (PAID ₦50,000 OR SPECIAL INVITE) ── */}
+                  <div className="rounded-2xl border-2 border-amber-500/70 bg-gradient-to-br from-amber-500/10 via-amber-400/10 to-amber-500/5 p-4 sm:p-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-300/70 pb-2.5">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge className="bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[10px] font-bold uppercase tracking-wider">
+                            Separate Registration
+                          </Badge>
+                          <span className="text-[11px] font-bold text-amber-950 uppercase tracking-wider">
+                            Part 2: Grand Finale
+                          </span>
+                        </div>
+                        <h3 className="font-serif text-base font-bold text-amber-950 mt-0.5 flex items-center gap-1.5">
+                          <Crown className="size-4 text-amber-600" />
+                          Day 3: Sunday 20 Dec 2026 (Royal Cup Grand Finale)
+                        </h3>
+                      </div>
+
+                      <Badge variant="outline" className="border-amber-600 bg-white/90 text-amber-900 text-[10px] font-bold self-start sm:self-auto">
+                        ₦50,000 / Ticket or VIP Invite
+                      </Badge>
+                    </div>
+
+                    {/* Day 3 Toggle Button */}
                     <div
                       onClick={() => setDay3(!day3)}
                       className={`cursor-pointer rounded-xl border-2 p-4 transition-all duration-200 flex items-start gap-3.5 ${
                         day3
-                          ? "border-amber-600 bg-amber-500/10 shadow-sm"
-                          : "border-line bg-card hover:border-amber-500/50"
+                          ? "border-amber-600 bg-white shadow-sm"
+                          : "border-line bg-white/60 hover:border-amber-500/50"
                       }`}
                     >
                       <div
@@ -610,94 +803,255 @@ function RegisterContent() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-amber-950 flex items-center gap-1.5">
-                            <Crown className="size-4 text-amber-600 inline" />
-                            Day 3: Sunday 20 Dec 2026 (Grand Finale)
+                          <span className="font-bold text-sm text-amber-950">
+                            Register for Day 3 Grand Finale
                           </span>
-                          <Badge className="bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[10px] font-bold">
-                            PAID VVIP (₦50,000) OR INVITE
-                          </Badge>
+                          <span className="text-xs font-bold text-amber-700">
+                            {day3 ? "✓ Selected" : "Click to Add"}
+                          </span>
                         </div>
                         <p className="text-xs text-amber-900 mt-0.5">
-                          Royal Cup Grand Final, Queens Cup, 100 Kings Celebration, Aristos Band &amp; Berryola Concert.
+                          Royal Cup Grand Final, 100 Kings Celebration, Aristos Band &amp; Berryola Concert. Distinct Deep Gold ID Card.
                         </p>
                       </div>
                     </div>
+
+                    {/* Dynamic Day 3 Payment / Special Invitation Options */}
+                    {day3 && (
+                      <div className="rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-50/90 to-amber-100/60 p-4 space-y-4 text-xs text-amber-950 animate-in fade-in duration-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                            <Crown className="size-4 text-amber-600" />
+                            <span>VVIP Access Verification Tier</span>
+                          </div>
+                          <Badge variant="outline" className="border-amber-500 text-amber-800 text-[10px] bg-white">
+                            Distinct Deep Gold Pass
+                          </Badge>
+                        </div>
+
+                        <p className="text-[11px] leading-relaxed text-amber-900">
+                          Select whether you are purchasing Day 3 VVIP admission (₦50,000 per pass) or redeeming an official single-use Special VIP Invitation Code:
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setHasInviteCode(false)}
+                            className={`flex-1 rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
+                              !hasInviteCode
+                                ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
+                                : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 font-semibold text-xs">
+                              <CreditCard className="size-3.5" /> Paystack Gateway (₦50,000)
+                            </div>
+                            <span className="text-[10px] opacity-90 block mt-0.5">
+                              Buy 1 or multiple tickets with instant issuance
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setHasInviteCode(true)}
+                            className={`flex-1 rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
+                              hasInviteCode
+                                ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
+                                : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 font-semibold text-xs">
+                              <KeyRound className="size-3.5" /> Special Invitation Code
+                            </div>
+                            <span className="text-[10px] opacity-90 block mt-0.5">
+                              Claim complimentary VIP guest accreditation
+                            </span>
+                          </button>
+                        </div>
+
+                        {/* Multi-Ticket Quantity Selector (for Paid Tickets) */}
+                        {!hasInviteCode && (
+                          <div className="rounded-xl border border-amber-300/80 bg-white/95 p-3.5 space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div>
+                                <Label htmlFor="ticketQty" className="text-xs font-bold text-amber-950 block">
+                                  Number of Day 3 VVIP Tickets (₦50,000 each)
+                                </Label>
+                                <span className="text-[11px] text-amber-800">
+                                  Purchase for yourself, invitees, or delegation
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleTicketCountChange(day3TicketCount - 1)}
+                                  disabled={day3TicketCount <= 1}
+                                  className="size-8 rounded-lg border border-amber-400 bg-amber-100 font-bold text-amber-950 disabled:opacity-40 hover:bg-amber-200 cursor-pointer text-base"
+                                  title="Decrease quantity"
+                                >
+                                  -
+                                </button>
+                                <span className="font-mono text-base font-extrabold text-amber-950 w-8 text-center">
+                                  {day3TicketCount}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleTicketCountChange(day3TicketCount + 1)}
+                                  disabled={day3TicketCount >= 20}
+                                  className="size-8 rounded-lg border border-amber-400 bg-amber-100 font-bold text-amber-950 disabled:opacity-40 hover:bg-amber-200 cursor-pointer text-base"
+                                  title="Increase quantity"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-amber-200/80 flex items-center justify-between text-xs">
+                              <span className="font-bold text-amber-900">Total Amount Payable:</span>
+                              <span className="font-mono font-extrabold text-lg text-amber-950">
+                                ₦{(day3TicketCount * 50000).toLocaleString()}
+                              </span>
+                            </div>
+
+                            {/* Individual Ticket Holder Information for each pass */}
+                            {day3TicketCount > 1 && (
+                              <div className="pt-3 border-t border-amber-200/80 space-y-3">
+                                <div>
+                                  <h4 className="font-serif text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                                    <Crown className="size-3.5 text-amber-600" />
+                                    <span>Ticket Holder Names (Personalized Gate Passes)</span>
+                                  </h4>
+                                  <p className="text-[10px] text-amber-800 leading-tight mt-0.5">
+                                    Please enter the First and Last Name for each person you are purchasing a Day 3 VVIP pass for. Each pass is individually personalized and cryptographic credentials issued in their name.
+                                  </p>
+                                </div>
+
+                                <div className="space-y-2.5">
+                                  {Array.from({ length: day3TicketCount }, (_, idx) => {
+                                    const ticketNum = idx + 1;
+                                    const isPrimary = ticketNum === 1;
+                                    return (
+                                      <div
+                                        key={ticketNum}
+                                        className="rounded-lg border border-amber-300/70 bg-amber-50/60 p-2.5 space-y-2 shadow-2xs"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[11px] font-bold text-amber-950 flex items-center gap-1.5">
+                                            <span className="flex size-4 items-center justify-center rounded-full bg-amber-600 text-[9px] font-extrabold text-white">
+                                              {ticketNum}
+                                            </span>
+                                            {isPrimary
+                                              ? "Ticket 1: Primary Buyer or First Guest *"
+                                              : `Ticket ${ticketNum}: Guest ${ticketNum} *`}
+                                          </span>
+                                          <div className="flex items-center gap-1.5">
+                                            {isPrimary && (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  updateAttendee(0, "firstName", formData.firstName);
+                                                  updateAttendee(0, "lastName", formData.lastName);
+                                                }}
+                                                className="text-[9px] font-semibold text-amber-800 underline hover:text-amber-950 cursor-pointer"
+                                              >
+                                                Use Buyer Details
+                                              </button>
+                                            )}
+                                            <Badge
+                                              variant="outline"
+                                              className="text-[9px] border-amber-400 text-amber-900 bg-white/90 py-0"
+                                            >
+                                              {isPrimary ? `Pass 1 of ${day3TicketCount}` : `Pass ${ticketNum} of ${day3TicketCount}`}
+                                            </Badge>
+                                          </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                          <div className="space-y-1">
+                                            <Label
+                                              htmlFor={`attendee-${idx}-first`}
+                                              className="text-[10px] font-semibold text-amber-900"
+                                            >
+                                              First Name *
+                                            </Label>
+                                            <Input
+                                              id={`attendee-${idx}-first`}
+                                              placeholder={
+                                                isPrimary
+                                                  ? formData.firstName || "e.g. Adebayo"
+                                                  : `Guest ${ticketNum} First Name`
+                                              }
+                                              className="bg-white border-amber-300 text-xs h-8"
+                                              value={ticketAttendees[idx]?.firstName || ""}
+                                              onChange={(e) => updateAttendee(idx, "firstName", e.target.value)}
+                                            />
+                                          </div>
+
+                                          <div className="space-y-1">
+                                            <Label
+                                              htmlFor={`attendee-${idx}-last`}
+                                              className="text-[10px] font-semibold text-amber-900"
+                                            >
+                                              Last Name *
+                                            </Label>
+                                            <Input
+                                              id={`attendee-${idx}-last`}
+                                              placeholder={
+                                                isPrimary
+                                                  ? formData.lastName || "e.g. Adeleke"
+                                                  : `Guest ${ticketNum} Last Name`
+                                              }
+                                              className="bg-white border-amber-300 text-xs h-8"
+                                              value={ticketAttendees[idx]?.lastName || ""}
+                                              onChange={(e) => updateAttendee(idx, "lastName", e.target.value)}
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {day3TicketCount > 1 && (
+                              <div className="rounded-lg bg-amber-500/10 border border-amber-400/40 p-2.5 text-[11px] text-amber-950 space-y-1">
+                                <p className="font-bold flex items-center gap-1.5 text-amber-950">
+                                  <ShieldCheck className="size-3.5 text-amber-700" />
+                                  Anti-Leakage &amp; Ticket Forwarding Guard:
+                                </p>
+                                <p className="leading-snug text-amber-900">
+                                  You will receive <strong>{day3TicketCount} unique HMAC-256 sealed digital passes</strong>. Pass 1 is issued in your name. You can forward passes 2 to {day3TicketCount} to your designated invitees via 1-click WhatsApp or guest link.
+                                </p>
+                                <p className="leading-snug text-amber-800 font-semibold">
+                                  🛡️ Recipient Device Lock: When a guest claims their ticket, it binds to their phone and cannot be forwarded, preventing fund leakage and unauthorized resale.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {hasInviteCode && (
+                          <div className="space-y-1.5 pt-2 border-t border-amber-300/60">
+                            <Label htmlFor="inviteCode" className="text-xs font-bold text-amber-950">
+                              Enter Special VIP Invitation Code *
+                            </Label>
+                            <Input
+                              id="inviteCode"
+                              placeholder="Enter the code from your invitation"
+                              autoComplete="off"
+                              className="bg-white border-amber-300 uppercase font-mono tracking-wider text-xs"
+                              value={invitationCode}
+                              onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
+                            />
+                            <p className="text-[10px] text-amber-800">
+                              Your code is printed on your official invitation. Verified single-use code admits one VIP guest.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-
-                  {/* Dynamic Day 3 Payment / Special Invitation Options */}
-                  {day3 && (
-                    <div className="mt-4 rounded-xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-50/80 to-amber-100/40 p-4 space-y-3.5 text-xs text-amber-950 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 font-bold text-amber-900">
-                          <Crown className="size-4 text-amber-600" />
-                          <span>Day 3 VVIP Access Verification</span>
-                        </div>
-                        <Badge variant="outline" className="border-amber-500 text-amber-800 text-[10px]">
-                          Distinct Deep Gold Pass
-                        </Badge>
-                      </div>
-
-                      <p className="text-[11px] leading-relaxed text-amber-900">
-                        Day 3 is dedicated to royal patrons and invited dignitaries. Choose how you will access the Grand Finale:
-                      </p>
-
-                      <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setHasInviteCode(false)}
-                          className={`flex-1 rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
-                            !hasInviteCode
-                              ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
-                              : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 font-semibold text-xs">
-                            <CreditCard className="size-3.5" /> Paystack Gateway (₦50,000)
-                          </div>
-                          <span className="text-[10px] opacity-90 block mt-0.5">
-                            Instant online redirect to Paystack
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setHasInviteCode(true)}
-                          className={`flex-1 rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
-                            hasInviteCode
-                              ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
-                              : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 font-semibold text-xs">
-                            <KeyRound className="size-3.5" /> Special Invitation Code
-                          </div>
-                          <span className="text-[10px] opacity-90 block mt-0.5">
-                            Claim complimentary VIP guest pass
-                          </span>
-                        </button>
-                      </div>
-
-                      {hasInviteCode && (
-                        <div className="space-y-1.5 pt-2 border-t border-amber-300/60">
-                          <Label htmlFor="inviteCode" className="text-xs font-bold text-amber-950">
-                            Enter Special VIP Invitation Code *
-                          </Label>
-                          <Input
-                            id="inviteCode"
-                            placeholder="Enter the code from your invitation"
-                            autoComplete="off"
-                            className="bg-white border-amber-300 uppercase font-mono tracking-wider text-xs"
-                            value={invitationCode}
-                            onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
-                          />
-                          <p className="text-[10px] text-amber-800">
-                            Your code is printed on your official invitation. One code admits one guest.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                 {/* Submit CTA */}
@@ -715,7 +1069,7 @@ function RegisterContent() {
                       "Processing Pass Issuance..."
                     ) : day3 && (!hasInviteCode || !invitationCode.trim()) ? (
                       <span className="flex items-center justify-center gap-2">
-                        <CreditCard className="size-5" /> Proceed to Paystack Payment (₦50,000) →
+                        <CreditCard className="size-5" /> Proceed to Paystack Payment ({day3TicketCount === 1 ? "₦50,000" : `${day3TicketCount} Tickets · ₦${(day3TicketCount * 50000).toLocaleString()}`}) →
                       </span>
                     ) : (
                       "Complete Registration & Get ID Pass →"
@@ -770,10 +1124,15 @@ function RegisterContent() {
                   {!day1 && !day2 && day3 && (
                     <div className="rounded-xl border-2 border-amber-500 bg-amber-50 p-3.5 text-amber-950 space-y-1">
                       <span className="font-bold block text-sm text-amber-900 flex items-center gap-1.5">
-                        <Crown className="size-4 text-amber-600" /> 1 Distinct Deep Gold VVIP Pass (Day 3 Alone)
+                        <Crown className="size-4 text-amber-600" />{" "}
+                        {day3TicketCount > 1 && !hasInviteCode
+                          ? `${day3TicketCount} Distinct Deep Gold VVIP Passes`
+                          : "1 Distinct Deep Gold VVIP Pass (Day 3 Alone)"}
                       </span>
                       <p className="text-[11px] text-amber-800">
-                        Issued separately with classic gold styling upon Paystack payment or Special VIP Invitation.
+                        {day3TicketCount > 1 && !hasInviteCode
+                          ? `1 Primary Pass for yourself plus ${day3TicketCount - 1} serialized guest passes. You can forward guest tickets once via WhatsApp or link.`
+                          : "Issued separately with classic gold styling upon Paystack payment or Special VIP Invitation."}
                       </p>
                     </div>
                   )}
@@ -781,14 +1140,17 @@ function RegisterContent() {
                   {(day1 || day2) && day3 && (
                     <div className="rounded-xl border-2 border-gold/70 bg-gold/10 p-3.5 text-forest space-y-2">
                       <span className="font-bold block text-sm text-forest flex items-center gap-1.5">
-                        <Sparkles className="size-4 text-gold-deep" /> 2 Distinct ID Passes Will Be Issued:
+                        <Sparkles className="size-4 text-gold-deep" />{" "}
+                        {day3TicketCount > 1 && !hasInviteCode
+                          ? `${1 + day3TicketCount} Distinct ID Passes Will Be Issued:`
+                          : "2 Distinct ID Passes Will Be Issued:"}
                       </span>
                       <ul className="list-disc pl-4 space-y-1 text-[11px] text-muted-brand">
                         <li>
                           <strong>Card 1:</strong> {day1 && day2 ? "Day 1 & 2 Combined Pass (Free)" : day1 ? "Day 1 Free Pass" : "Day 2 Free Pass"} (Forest Green / Ivory standard card).
                         </li>
                         <li>
-                          <strong>Card 2:</strong> Day 3 VVIP Grand Finale Pass (Distinct classic Deep Gold luxury card).
+                          <strong>{day3TicketCount > 1 && !hasInviteCode ? `Cards 2 to ${1 + day3TicketCount}:` : "Card 2:"}</strong> Day 3 VVIP Grand Finale {day3TicketCount > 1 && !hasInviteCode ? `(${day3TicketCount} passes: 1 personal + ${day3TicketCount - 1} guest passes)` : "Pass"} (Distinct classic Deep Gold luxury card).
                         </li>
                       </ul>
                     </div>
@@ -803,14 +1165,27 @@ function RegisterContent() {
 
                   <IdAccessCard
                     pass={{
-                      passCode: day3 ? "ABK-2026-VVIP-PREVIEW" : day1 && day2 ? "ABK-2026-D12-PREVIEW" : "ABK-2026-D1-PREVIEW",
-                      holderName: formData.firstName || formData.lastName
-                        ? `${formData.firstName} ${formData.lastName}`.trim()
-                        : "Your Full Name",
-                      category: day3 ? "Day 3 VVIP Grand Finale Pass" : day1 && day2 ? "Day 1 & Day 2 Dual Pass" : "Day 1 Free Gate Pass",
+                      passCode: day3
+                        ? "ABK-2026-VVIP-PREVIEW"
+                        : day1 && day2
+                        ? "ABK-2026-D12-PREVIEW"
+                        : day2
+                        ? "ABK-2026-D2-PREVIEW"
+                        : "ABK-2026-D1-PREVIEW",
+                      holderName:
+                        formData.firstName || formData.lastName
+                          ? `${formData.firstName} ${formData.lastName}`.trim()
+                          : "Your Full Name",
+                      category: day3
+                        ? "Day 3 VVIP Grand Finale Pass"
+                        : day1 && day2
+                        ? "Day 1 & Day 2 Dual Pass"
+                        : day2
+                        ? "Day 2 Free Gate Pass"
+                        : "Day 1 Free Gate Pass",
                       affiliationType: formData.affiliationType,
                       registeredAt: new Date().toISOString(),
-                      daysCovered: day3 ? [3] : day1 && day2 ? [1, 2] : [1],
+                      daysCovered: day3 ? [3] : day1 && day2 ? [1, 2] : day2 ? [2] : [1],
                       isVvip: day3,
                       designTheme: day3 ? "gold" : "standard",
                     }}
