@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { forceDownloadOfflinePassCard, type StoredPass } from "@/lib/storage/pass-storage";
+import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
+import { formatWhatsAppUrl } from "@/lib/utils/phone";
 
 interface IdAccessCardProps {
   pass: StoredPass;
@@ -58,7 +60,11 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
   const whatsappShareText = isSponsored
     ? `👑 *Official VVIP Guest Invitation — 2026 Abeokuta Polo Festival*\n\nYou have been gifted a sponsored VVIP gate access ticket to the Royal Cup Grand Finale (Day 3 — Sunday 20 Dec 2026) at Abeokuta Polo Club!\n\n🎟️ *Pass Serial:* ${serialText || "VIP Invitation"}\n👤 *${pass.holderName}*\n🔑 *Pass Code:* ${pass.passCode}\n\n👉 *Click to open and save your digital gate card directly to your phone:* ${passUrl}`
     : `🏇 *Official Gate Access Card — 2026 Abeokuta Polo Festival*\n\nGate accreditation pass for *${pass.holderName}* (${serialText || "Official Pass"}).\n🔑 *Pass Code:* ${pass.passCode}\n\n👉 *Open and save your pass:* ${passUrl}`;
-  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappShareText)}`;
+  const whatsappUrl = isSponsored
+    ? `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappShareText)}`
+    : pass.phone
+    ? formatWhatsAppUrl(pass.phone, whatsappShareText)
+    : `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappShareText)}`;
 
   const daysLabel = pass.daysCovered && pass.daysCovered.length === 2
     ? "Day 1 & Day 2 (18–19 Dec)"
@@ -400,7 +406,7 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[10px] h-7 px-2 shadow-xs cursor-pointer"
                 >
                   <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="mr-1 size-3" />
+                    <WhatsAppIcon className="mr-1 size-3" />
                     WhatsApp to Guest
                   </a>
                 </Button>

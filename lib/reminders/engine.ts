@@ -1,5 +1,6 @@
 import { sendEmail } from "@/lib/email/client";
 import { OFFICIAL_PROGRAMME } from "@/lib/data/programme";
+import { validateWhatsAppPhone, formatWhatsAppUrl } from "@/lib/utils/phone";
 
 export interface ReminderRecipient {
   name: string;
@@ -12,11 +13,21 @@ export interface ReminderRecipient {
   hasDay3Ticket?: boolean;
 }
 
+export interface DirectWhatsAppLinkItem {
+  name: string;
+  phone: string;
+  passCode: string;
+  url: string;
+}
+
 export interface ReminderDispatchResult {
   totalProcessed: number;
   emailsSent: number;
   emailsFailed: number;
   whatsappQueued: number;
+  whatsappPrimarySent: number;
+  whatsappDirectLinks: DirectWhatsAppLinkItem[];
+  channelPriority: "whatsapp_primary_email_fallback";
   logs: string[];
 }
 
@@ -77,12 +88,92 @@ export function buildWhatsappReminderMessage(
 }
 
 /**
- * Builds direct WhatsApp click-to-chat URL.
+ * Builds direct WhatsApp click-to-chat URL using phone normalization.
  */
-export function buildWhatsappClickToChatUrl(recipient: ReminderRecipient, type: "weekly" | "daily", dayNumber?: 1 | 2 | 3): string {
+export function buildWhatsappClickToChatUrl(
+  recipient: ReminderRecipient,
+  type: "weekly" | "daily",
+  dayNumber?: 1 | 2 | 3,
+): string {
   const text = buildWhatsappReminderMessage(recipient, type, dayNumber);
-  const cleanPhone = recipient.phone.replace(/[^0-9]/g, "");
-  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+  return formatWhatsAppUrl(recipient.phone, text);
+}
+
+/**
+ * Sends a message via Meta WhatsApp Business Cloud API if configured.
+ */
+async function sendMetaWhatsAppMessage(
+  normalizedPhone: string,
+  messageText: string,
+): Promise<{ success: boolean; id?: string; error?: string }> {
+  const token = process.env.WHATSAPP_CLOUD_API_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!token || !phoneNumberId) {
+    return { success: false, error: "Meta WhatsApp Cloud API credentials not configured." };
+  }
+
+  try {
+    const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: normalizedPhone,
+        type: "text",
+        text: { preview_url: true, body: messageText },
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data?.messages?.[0]?.id) {
+      return { success: true, id: data.messages[0].id };
+    }
+    return { success: false, error: data?.error?.message || "WhatsApp Cloud API error" };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+/**
+ * Sends a WhatsApp message via Termii API if configured.
+ */
+async function sendTermiiWhatsAppMessage(
+  normalizedPhone: string,
+  messageText: string,
+): Promise<{ success: boolean; id?: string; error?: string }> {
+  const apiKey = process.env.TERMII_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: "Termii API key not configured." };
+  }
+
+  try {
+    const res = await fetch("https://api.ng.termii.com/api/sms/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: normalizedPhone,
+        from: process.env.TERMII_SENDER_ID || "AbeokutaPolo",
+        sms: messageText,
+        type: "plain",
+        channel: "whatsapp",
+        api_key: apiKey,
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok && (data?.message_id || data?.code === "ok" || data?.message === "Successfully Sent")) {
+      return { success: true, id: data?.message_id || "sent" };
+    }
+    return { success: false, error: data?.message || "Termii WhatsApp dispatch failed" };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
 }
 
 /**
@@ -96,7 +187,7 @@ export function buildWeeklyEmailHtml(recipient: ReminderRecipient): string {
   return `
     <div style="font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #1B1C1C; background-color: #FCF9F8; border-radius: 16px; border: 1px solid #C1C9BF;">
       <div style="background-color: #002F1A; padding: 24px; border-radius: 12px; text-align: center; color: #FCF9F8;">
-        <p style="color: #D4AF37; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0; font-weight: bold;">Weekly Tournament Brief</p>
+        <p style="color: #D4AF37; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0; font-weight: bold;">Weekly Tournament Brief · Email Fallback Dispatch</p>
         <h1 style="margin: 0; font-size: 26px; font-weight: 700; font-family: 'Cormorant Garamond', Georgia, serif;">Abeokuta Polo Festival 2026</h1>
         <p style="margin: 6px 0 0 0; font-size: 13px; color: #D4AF37; font-style: italic;">“The Blueprint: Celebrating Heritage, Empowering Tomorrow”</p>
         <p style="margin: 4px 0 0 0; font-size: 12px; color: #C1C9BF;">18–20 December 2026 · Kobape Grounds, Ogun State</p>
@@ -180,7 +271,7 @@ export function buildDailyEmailHtml(recipient: ReminderRecipient, dayNumber: 1 |
   return `
     <div style="font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #1B1C1C; background-color: #FCF9F8; border-radius: 16px; border: 1px solid #C1C9BF;">
       <div style="background-color: #002F1A; padding: 24px; border-radius: 12px; text-align: center; color: #FCF9F8;">
-        <p style="color: #D4AF37; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0; font-weight: bold;">Official Tournament Day Alert</p>
+        <p style="color: #D4AF37; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0; font-weight: bold;">Official Tournament Day Alert · Email Fallback Dispatch</p>
         <h1 style="margin: 0; font-size: 26px; font-weight: 700; font-family: 'Cormorant Garamond', Georgia, serif;">Day ${day.dayNumber}: ${day.theme}</h1>
         <p style="margin: 6px 0 0 0; font-size: 13px; color: #D4AF37; font-weight: 600;">${dateLabel} · Abeokuta Polo Club, Kobape</p>
       </div>
@@ -238,7 +329,8 @@ export function buildDailyEmailHtml(recipient: ReminderRecipient, dayNumber: 1 |
 }
 
 /**
- * Dispatches reminders to a list of recipients via Email and generates WhatsApp payloads.
+ * Dispatches reminders to a list of recipients with WhatsApp as OPTION ONE (Primary Channel)
+ * and Email as OPTION TWO (Fallback Channel).
  */
 export async function dispatchRemindersBatch(
   recipients: ReminderRecipient[],
@@ -248,10 +340,57 @@ export async function dispatchRemindersBatch(
   let emailsSent = 0;
   let emailsFailed = 0;
   let whatsappQueued = 0;
+  let whatsappPrimarySent = 0;
+  const whatsappDirectLinks: DirectWhatsAppLinkItem[] = [];
   const logs: string[] = [];
 
+  logs.push(`[Channel Priority] Initiating dispatch: Option 1 (WhatsApp Primary) -> Option 2 (Email Fallback)`);
+
   for (const r of recipients) {
-    // 1. Email Dispatch
+    const waText = buildWhatsappReminderMessage(r, type, dayNumber);
+    const phoneVal = validateWhatsAppPhone(r.phone);
+    const normalizedPhone = phoneVal.isValid ? phoneVal.normalized : r.phone.replace(/[^0-9]/g, "");
+    const directChatUrl = formatWhatsAppUrl(r.phone, waText);
+
+    whatsappDirectLinks.push({
+      name: r.name,
+      phone: r.phone,
+      passCode: r.passCode,
+      url: directChatUrl,
+    });
+
+    // ── OPTION 1: WHATSAPP TRANSMISSION (PRIMARY) ──
+    let whatsappDelivered = false;
+
+    // Check for Meta WhatsApp Cloud API credentials
+    if (process.env.WHATSAPP_CLOUD_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+      const metaRes = await sendMetaWhatsAppMessage(normalizedPhone, waText);
+      if (metaRes.success) {
+        whatsappPrimarySent++;
+        whatsappDelivered = true;
+        logs.push(`WhatsApp (Meta Cloud API) delivered to ${r.phone} (${r.passCode})`);
+      } else {
+        logs.push(`WhatsApp (Meta Cloud API) failed for ${r.phone}: ${metaRes.error}`);
+      }
+    } else if (process.env.TERMII_API_KEY) {
+      // Check for Termii API credentials
+      const termiiRes = await sendTermiiWhatsAppMessage(normalizedPhone, waText);
+      if (termiiRes.success) {
+        whatsappPrimarySent++;
+        whatsappDelivered = true;
+        logs.push(`WhatsApp (Termii API) delivered to ${r.phone} (${r.passCode})`);
+      } else {
+        logs.push(`WhatsApp (Termii API) failed for ${r.phone}: ${termiiRes.error}`);
+      }
+    } else {
+      // Direct click-to-chat payload queued for instant Secretariat click-to-chat dispatch
+      whatsappQueued++;
+      logs.push(
+        `WhatsApp direct wa.me link generated & queued for ${r.phone} (${r.name}) [Zero-Touch API keys pending]`,
+      );
+    }
+
+    // ── OPTION 2: EMAIL TRANSMISSION (FALLBACK & SECONDARY GUARANTEE) ──
     try {
       const subject =
         type === "daily" && dayNumber
@@ -271,26 +410,25 @@ export async function dispatchRemindersBatch(
 
       if (emailResult.success) {
         emailsSent++;
-        logs.push(`Email sent to ${r.email} (${r.passCode})`);
+        logs.push(`Email fallback delivered to ${r.email} (${r.passCode})`);
       } else {
         emailsFailed++;
-        logs.push(`Email skipped/failed for ${r.email}: ${emailResult.error}`);
+        logs.push(`Email fallback skipped/failed for ${r.email}: ${emailResult.error}`);
       }
     } catch (err) {
       emailsFailed++;
-      logs.push(`Email exception for ${r.email}: ${String(err)}`);
+      logs.push(`Email fallback exception for ${r.email}: ${String(err)}`);
     }
-
-    // 2. WhatsApp payload queued/logged
-    whatsappQueued++;
-    logs.push(`WhatsApp reminder queued for ${r.phone} (${r.name})`);
   }
 
   return {
     totalProcessed: recipients.length,
+    whatsappPrimarySent,
+    whatsappQueued,
+    whatsappDirectLinks,
     emailsSent,
     emailsFailed,
-    whatsappQueued,
+    channelPriority: "whatsapp_primary_email_fallback",
     logs,
   };
 }

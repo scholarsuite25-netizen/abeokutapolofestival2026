@@ -16,7 +16,13 @@ import {
   Calendar,
   CreditCard,
   KeyRound,
+  Send,
+  CheckCircle2,
+  AlertCircle,
+  Radio,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
+import { formatWhatsAppUrl } from "@/lib/utils/phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +80,40 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
   const [editingParticipant, setEditingParticipant] = useState<ParticipantRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  // WhatsApp & Email Broadcast Station state
+  const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
+  const [broadcastType, setBroadcastType] = useState<"weekly" | "daily">("weekly");
+  const [broadcastDay, setBroadcastDay] = useState<1 | 2 | 3>(1);
+  const [broadcastTestPhone, setBroadcastTestPhone] = useState("");
+  const [broadcastTestEmail, setBroadcastTestEmail] = useState("");
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastResponse, setBroadcastResponse] = useState<any>(null);
+
+  const handleTriggerBroadcast = async (isTestOnly: boolean) => {
+    setBroadcastLoading(true);
+    setBroadcastResponse(null);
+    try {
+      const res = await fetch("/api/reminders/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: broadcastType,
+          dayNumber: broadcastDay,
+          testPhone: isTestOnly ? broadcastTestPhone || "+234 803 123 4567" : undefined,
+          testEmail: isTestOnly ? broadcastTestEmail || "secretariat@abeokutapolo.com" : undefined,
+          testName: isTestOnly ? "Secretariat Test Recipient" : undefined,
+          limit: isTestOnly ? 1 : 2500,
+        }),
+      });
+      const data = await res.json();
+      setBroadcastResponse(data);
+    } catch (err) {
+      setBroadcastResponse({ success: false, error: String(err) });
+    } finally {
+      setBroadcastLoading(false);
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -496,7 +536,15 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={() => setIsBroadcastOpen(true)}
+              size="sm"
+              className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <WhatsAppIcon className="size-3.5" />
+              WhatsApp &amp; Email Dispatch
+            </Button>
             <Button
               onClick={handleExportCSV}
               variant="outline"
@@ -799,6 +847,31 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                               </Button>
                             </>
                           )}
+                          {/* Direct WhatsApp Instant Dispatch (Option 1 Primary Channel) */}
+                          {(() => {
+                            const pCode = creds[0]?.pass_code || "PENDING";
+                            const siteOrigin =
+                              typeof window !== "undefined"
+                                ? window.location.origin
+                                : "https://abeokuta-polo-festival-2026.vercel.app";
+                            const pUrl = `${siteOrigin}/pass/${pCode}`;
+                            const waText = `🏇 *ABEOKUTA POLO FESTIVAL 2026 — OFFICIAL PASS ACCREDITATION*\n\nHello *${p.first_name} ${p.last_name}*,\n\nYour official gate accreditation pass is *${pCode}* (${p.category}).\n\n👉 *View & Save your pass on phone:* ${pUrl}\n\n📍 *Venue:* Abeokuta Polo Club & Country Resort, Kobape\n_Please present this pass at turnstiles for entry._`;
+                            const waUrl = formatWhatsAppUrl(p.phone, waText);
+
+                            return (
+                              <Button
+                                asChild
+                                size="sm"
+                                variant="ghost"
+                                title={`Send WhatsApp Pass to ${p.phone} (Option 1 Primary)`}
+                                className="h-7 w-7 p-0 text-[#25D366] hover:text-emerald-700 hover:bg-emerald-50 cursor-pointer"
+                              >
+                                <a href={waUrl} target="_blank" rel="noopener noreferrer">
+                                  <WhatsAppIcon className="size-3.5" />
+                                </a>
+                              </Button>
+                            );
+                          })()}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -1097,6 +1170,266 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 3: WHATSAPP & EMAIL BROADCAST STATION ── */}
+      {isBroadcastOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-line bg-card p-6 shadow-2xl my-8">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-lg bg-[#25D366] text-white flex items-center justify-center shadow-xs">
+                  <WhatsAppIcon className="size-4" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-forest">
+                    Tournament Broadcast &amp; Alert Dispatch
+                  </h3>
+                  <p className="text-[11px] text-muted-brand">
+                    Option 1: WhatsApp (Primary) · Option 2: Email (Fallback) · 2,500 Attendees Scale
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsBroadcastOpen(false);
+                  setBroadcastResponse(null);
+                }}
+                className="text-muted-brand hover:text-forest text-sm font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4 text-xs">
+              {/* Channel Architecture Banner */}
+              <div className="rounded-xl border border-emerald-300 bg-emerald-50/80 p-3 text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div>
+                  <div className="font-bold flex items-center gap-1.5 text-xs text-emerald-900">
+                    <Radio className="size-3.5 text-emerald-700 animate-pulse" />
+                    <span>Transmission Architecture: Option 1 Primary + Option 2 Fallback</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 mt-0.5">
+                    1. <strong>WhatsApp (Primary):</strong> Dispatches instant ticket credentials, turnstile instructions, and daily schedule updates directly via Secretariat WhatsApp Business.
+                    <br />
+                    2. <strong>Email (Fallback):</strong> Delivers comprehensive HTML programme backup and ensures 100% reachability.
+                  </p>
+                </div>
+              </div>
+
+              {/* Broadcast Type Selector */}
+              <div className="space-y-1.5">
+                <label className="font-semibold text-forest">Select Tournament Alert Template:</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBroadcastType("weekly")}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      broadcastType === "weekly"
+                        ? "border-[#25D366] bg-emerald-50 text-emerald-950 font-bold"
+                        : "border-line bg-ivory text-muted-brand hover:border-emerald-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">Weekly Countdown Brief</span>
+                      <Badge className="bg-emerald-800 text-[9px]">General</Badge>
+                    </div>
+                    <p className="text-[10px] font-normal mt-1 opacity-80">
+                      Countdown update, 2,500 attendance goal, and 3-page schedule PDF link.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBroadcastType("daily");
+                      setBroadcastDay(1);
+                    }}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      broadcastType === "daily" && broadcastDay === 1
+                        ? "border-[#25D366] bg-emerald-50 text-emerald-950 font-bold"
+                        : "border-line bg-ivory text-muted-brand hover:border-emerald-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">Day 1 Morning Brief</span>
+                      <Badge className="bg-emerald-600 text-[9px]">Free Entry</Badge>
+                    </div>
+                    <p className="text-[10px] font-normal mt-1 opacity-80">
+                      Media Tour, Light-Up Ceremony, 100% Free Public Admission confirmation.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBroadcastType("daily");
+                      setBroadcastDay(2);
+                    }}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      broadcastType === "daily" && broadcastDay === 2
+                        ? "border-[#25D366] bg-emerald-50 text-emerald-950 font-bold"
+                        : "border-line bg-ivory text-muted-brand hover:border-emerald-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">Day 2 Morning Brief</span>
+                      <Badge className="bg-forest text-[9px]">Royal Opening</Badge>
+                    </div>
+                    <p className="text-[10px] font-normal mt-1 opacity-80">
+                      Royal opening by HRM Alake of Egbaland, 3 foundation layings, Queens Polo.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBroadcastType("daily");
+                      setBroadcastDay(3);
+                    }}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      broadcastType === "daily" && broadcastDay === 3
+                        ? "border-amber-500 bg-amber-50 text-amber-950 font-bold"
+                        : "border-line bg-ivory text-muted-brand hover:border-amber-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">Day 3 Grand Finale Brief</span>
+                      <Badge className="bg-amber-600 text-[9px]">Paid VVIP</Badge>
+                    </div>
+                    <p className="text-[10px] font-normal mt-1 opacity-80">
+                      Royal Cup Finals, 100 Kings Celebration, ARISTOS BAND & BERRYOLA.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Test Phone & Email Section */}
+              <div className="rounded-xl border border-line bg-ivory p-3 space-y-2">
+                <span className="font-semibold text-forest block">
+                  Send Test Broadcast (Recommended First Step):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Admin WhatsApp: e.g. 0803 123 4567"
+                    className="bg-card text-xs"
+                    value={broadcastTestPhone}
+                    onChange={(e) => setBroadcastTestPhone(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Admin Email: e.g. admin@abeokutapolo.com"
+                    className="bg-card text-xs"
+                    value={broadcastTestEmail}
+                    onChange={(e) => setBroadcastTestEmail(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={broadcastLoading}
+                    onClick={() => handleTriggerBroadcast(true)}
+                    className="border-emerald-600 text-emerald-800 hover:bg-emerald-50 text-xs cursor-pointer"
+                  >
+                    <Send className="mr-1 size-3 text-emerald-600" />
+                    {broadcastLoading ? "Dispatching Test..." : "Send Test Alert (Option 1 WhatsApp + Option 2 Email)"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Bulk Dispatch Station */}
+              <div className="rounded-xl border border-amber-300 bg-amber-50/60 p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div>
+                  <span className="font-bold text-amber-950 block">Bulk Attendees Dispatch:</span>
+                  <span className="text-[11px] text-amber-900">
+                    Dispatches to all {participants.length} registered attendees in the database.
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={broadcastLoading}
+                  onClick={() => handleTriggerBroadcast(false)}
+                  className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs px-4 py-2 cursor-pointer shadow-sm shrink-0"
+                >
+                  <WhatsAppIcon className="mr-1.5 size-3.5" />
+                  {broadcastLoading ? "Dispatching Bulk..." : "Dispatch to All Attendees"}
+                </Button>
+              </div>
+
+              {/* Dispatch Response Display */}
+              {broadcastResponse && (
+                <div className="rounded-xl border border-line bg-card p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-forest flex items-center gap-1.5">
+                      <CheckCircle2 className="size-4 text-emerald-600" />
+                      Dispatch Results &amp; Delivery Telemetry:
+                    </span>
+                    <Badge className="bg-emerald-800 text-[10px]">
+                      {broadcastResponse.channelStrategy || "WhatsApp Primary"}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                    <div className="p-2 rounded bg-ivory border">
+                      <div className="text-[10px] text-muted-brand">Processed</div>
+                      <div className="text-base font-bold text-forest">{broadcastResponse.totalProcessed ?? 0}</div>
+                    </div>
+                    <div className="p-2 rounded bg-emerald-50 border border-emerald-200">
+                      <div className="text-[10px] text-emerald-800">WhatsApp Sent</div>
+                      <div className="text-base font-bold text-emerald-800">{broadcastResponse.whatsappPrimarySent ?? 0}</div>
+                    </div>
+                    <div className="p-2 rounded bg-emerald-50 border border-emerald-200">
+                      <div className="text-[10px] text-emerald-800">WhatsApp Queued</div>
+                      <div className="text-base font-bold text-emerald-800">{broadcastResponse.whatsappQueued ?? 0}</div>
+                    </div>
+                    <div className="p-2 rounded bg-ivory border">
+                      <div className="text-[10px] text-muted-brand">Email Fallbacks</div>
+                      <div className="text-base font-bold text-forest">{broadcastResponse.emailsSent ?? 0}</div>
+                    </div>
+                  </div>
+
+                  {/* Direct WhatsApp Instant Links Queue */}
+                  {broadcastResponse.whatsappDirectLinks && broadcastResponse.whatsappDirectLinks.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <span className="font-semibold text-forest text-[11px] block">
+                        Instant WhatsApp Direct Click-to-Chat Queue ({broadcastResponse.whatsappDirectLinks.length}):
+                      </span>
+                      <div className="max-h-36 overflow-y-auto space-y-1 rounded border border-line bg-ivory p-2">
+                        {broadcastResponse.whatsappDirectLinks.map((item: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between text-[11px] py-1 border-b border-line/60 last:border-b-0">
+                            <span className="truncate max-w-[200px] font-medium text-forest">
+                              {item.name} ({item.passCode})
+                            </span>
+                            <Button
+                              asChild
+                              size="sm"
+                              className="h-6 bg-[#25D366] hover:bg-[#20ba59] text-white text-[10px] px-2"
+                            >
+                              <a href={item.url} target="_blank" rel="noopener noreferrer">
+                                <WhatsAppIcon className="mr-1 size-2.5" /> Open Chat
+                              </a>
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Logs Viewer */}
+                  {broadcastResponse.logs && (
+                    <div className="max-h-28 overflow-y-auto rounded bg-black/80 p-2 font-mono text-[10px] text-emerald-400 space-y-0.5">
+                      {broadcastResponse.logs.map((log: string, i: number) => (
+                        <div key={i}>{log}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

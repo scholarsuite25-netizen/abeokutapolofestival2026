@@ -11,12 +11,20 @@ import { isValidSpecialInvitation } from "@/lib/invitations/validate";
 import { attachClaimToRegistration, claimPaymentReference } from "@/lib/paystack/claims";
 import { verifyDay3Payment } from "@/lib/paystack/verify";
 import type { StoredPass } from "@/lib/storage/pass-storage";
+import { validateWhatsAppPhone } from "@/lib/utils/phone";
 
 const registrationSchema = z.object({
   firstName: z.string().trim().min(2, "First name must be at least 2 characters."),
   lastName: z.string().trim().min(2, "Last name must be at least 2 characters."),
   email: z.string().trim().email("Please provide a valid email address."),
-  phone: z.string().trim().min(7, "Please provide a valid phone number."),
+  phone: z
+    .string()
+    .trim()
+    .min(7, "Please provide a valid WhatsApp phone number.")
+    .refine(
+      (val) => validateWhatsAppPhone(val).isValid,
+      "Please enter a valid WhatsApp phone number (e.g. 0803 123 4567 or +234 803 123 4567).",
+    ),
   day1: z.boolean().default(false),
   day2: z.boolean().default(false),
   day3: z.boolean().default(false),
@@ -117,13 +125,15 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     firstName,
     lastName,
     email,
-    phone,
+    phone: rawPhone,
     day3InvitationCode,
     day3PaymentRef,
     affiliationType,
     hostName,
     organization,
   } = parsed.data;
+  const phoneValidation = validateWhatsAppPhone(rawPhone);
+  const phone = phoneValidation.isValid ? phoneValidation.formatted : rawPhone;
   let day3TicketCount = parsed.data.day3TicketCount;
 
   // Derive days selected, supporting both boolean flags and legacy hasDay2/3

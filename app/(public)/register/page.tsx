@@ -37,6 +37,12 @@ import {
 import { downloadProgrammePDF } from "@/lib/pdf/programme-pdf";
 import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
 import { IdAccessCard } from "@/components/shared/id-access-card";
+import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
+import {
+  validateWhatsAppPhone,
+  formatWhatsAppUrl,
+  buildAttendeePassWhatsAppMessage,
+} from "@/lib/utils/phone";
 
 export default function RegisterPage() {
   return (
@@ -214,6 +220,16 @@ function RegisterContent() {
     // Validate that at least one day is ticked
     if (!day1 && !day2 && !day3) {
       setErrorMsg("Please tick at least one festival day to register.");
+      return;
+    }
+
+    // Strict WhatsApp Phone Number Validation
+    const phoneCheck = validateWhatsAppPhone(formData.phone);
+    if (!phoneCheck.isValid) {
+      setErrorMsg(
+        phoneCheck.error ||
+          "Please enter a valid WhatsApp phone number (e.g. 0803 123 4567 or +234 803 123 4567).",
+      );
       return;
     }
 
@@ -504,6 +520,70 @@ function RegisterContent() {
                   </span>
                 </div>
               )}
+
+              {/* ── OPTION 1 PRIMARY ACTION: OPEN & SAVE PASS ON WHATSAPP ── */}
+              {(() => {
+                const appOrigin =
+                  typeof window !== "undefined"
+                    ? window.location.origin
+                    : "https://abeokuta-polo-festival-2026.vercel.app";
+                const primaryPass = issuedPasses[0];
+                const primaryPassUrl = primaryPass
+                  ? `${appOrigin}/pass/${primaryPass.passCode}`
+                  : appOrigin;
+                const whatsappSaveMessage = primaryPass
+                  ? buildAttendeePassWhatsAppMessage({
+                      holderName:
+                        result.holderName || `${formData.firstName} ${formData.lastName}`.trim(),
+                      phone: formData.phone,
+                      passCode: primaryPass.passCode,
+                      category: primaryPass.category,
+                      passUrl: primaryPassUrl,
+                      isMultiple: issuedPasses.length > 1,
+                      totalPasses: issuedPasses.length,
+                    })
+                  : "";
+                const whatsappSaveUrl = formatWhatsAppUrl(formData.phone, whatsappSaveMessage);
+
+                return (
+                  <div className="rounded-2xl border-2 border-emerald-500/80 bg-gradient-to-br from-emerald-50 via-emerald-100/40 to-teal-50 p-5 shadow-sm text-center space-y-3">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 text-white px-3 py-1 text-[11px] font-bold tracking-wide uppercase shadow-xs">
+                      <WhatsAppIcon className="size-3.5 text-white" />
+                      <span>Option 1: Primary Delivery Channel</span>
+                    </div>
+
+                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-forest">
+                      Instant Gate Pass Delivery to WhatsApp
+                    </h3>
+
+                    <p className="text-xs sm:text-sm text-forest/80 max-w-md mx-auto">
+                      Save your official credentials directly in WhatsApp for 1-tap offline display at
+                      the entrance turnstiles.
+                    </p>
+
+                    <div className="pt-1 flex justify-center">
+                      <Button
+                        asChild
+                        size="lg"
+                        className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-sm sm:text-base px-6 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer w-full sm:w-auto"
+                      >
+                        <a href={whatsappSaveUrl} target="_blank" rel="noopener noreferrer">
+                          <WhatsAppIcon className="mr-2 size-5" />
+                          Open &amp; Save Pass on WhatsApp
+                        </a>
+                      </Button>
+                    </div>
+
+                    <div className="text-[11px] text-muted-brand flex items-center justify-center gap-1.5 pt-1">
+                      <Mail className="size-3 text-muted-brand/70" />
+                      <span>
+                        Option 2 Fallback: Confirmation email also dispatched to{" "}
+                        <strong>{formData.email}</strong>
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Guest Forwarding Management Station (When multiple tickets are issued) */}
@@ -553,11 +633,46 @@ function RegisterContent() {
 
             {/* Actions */}
             <div className="pt-4 flex flex-col sm:flex-row justify-center items-center gap-3">
+              {(() => {
+                const appOrigin =
+                  typeof window !== "undefined"
+                    ? window.location.origin
+                    : "https://abeokuta-polo-festival-2026.vercel.app";
+                const primaryPass = issuedPasses[0];
+                const primaryPassUrl = primaryPass
+                  ? `${appOrigin}/pass/${primaryPass.passCode}`
+                  : appOrigin;
+                const whatsappSaveMessage = primaryPass
+                  ? buildAttendeePassWhatsAppMessage({
+                      holderName:
+                        result.holderName || `${formData.firstName} ${formData.lastName}`.trim(),
+                      phone: formData.phone,
+                      passCode: primaryPass.passCode,
+                      category: primaryPass.category,
+                      passUrl: primaryPassUrl,
+                      isMultiple: issuedPasses.length > 1,
+                      totalPasses: issuedPasses.length,
+                    })
+                  : "";
+                const whatsappSaveUrl = formatWhatsAppUrl(formData.phone, whatsappSaveMessage);
+
+                return (
+                  <Button
+                    asChild
+                    className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs px-5 py-2.5 shadow-sm cursor-pointer"
+                  >
+                    <a href={whatsappSaveUrl} target="_blank" rel="noopener noreferrer">
+                      <WhatsAppIcon className="mr-1.5 size-4" /> Save Pass on WhatsApp
+                    </a>
+                  </Button>
+                );
+              })()}
               <Button
                 onClick={() => forceDownloadAllPasses(issuedPasses)}
-                className="bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs px-5 py-2.5 shadow-sm"
+                variant="outline"
+                className="border-line text-forest font-semibold text-xs px-5 py-2.5 hover:bg-sage/40"
               >
-                <Download className="mr-2 size-4" /> Re-Download All Cards
+                <Download className="mr-2 size-4 text-forest" /> Re-Download All Cards
               </Button>
               <Button
                 onClick={() => {
@@ -648,21 +763,33 @@ function RegisterContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="phone" className="text-xs font-semibold text-forest">
-                        Mobile Phone Number *
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="phone" className="text-xs font-semibold text-forest flex items-center gap-1.5">
+                          <WhatsAppIcon className="size-4 text-[#25D366]" />
+                          <span>WhatsApp Phone Number *</span>
+                        </Label>
+                        <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                          Option 1 Primary Channel
+                        </span>
+                      </div>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-3 size-4 text-muted-brand" />
+                        <span className="absolute left-3 top-3 text-[#25D366] pointer-events-none">
+                          <WhatsAppIcon className="size-4" />
+                        </span>
                         <Input
                           id="phone"
                           type="tel"
                           required
-                          placeholder="+234 800 000 0000"
-                          className="pl-9 bg-ivory"
+                          placeholder="e.g. 0803 123 4567 or +234 803 123 4567"
+                          className="pl-9 bg-ivory border-emerald-800/30 focus-visible:ring-emerald-600"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         />
                       </div>
+                      <p className="text-[11px] text-emerald-900/90 font-medium flex items-center gap-1 pt-0.5">
+                        <span className="inline-block size-1.5 rounded-full bg-emerald-600 shrink-0" />
+                        Required: Active WhatsApp number for instant gate pass delivery &amp; morning tournament dispatches.
+                      </p>
                     </div>
                   </div>
                 </div>

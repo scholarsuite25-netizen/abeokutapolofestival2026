@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   buildWhatsappReminderMessage,
   buildWhatsappClickToChatUrl,
@@ -46,6 +46,15 @@ describe("Reminders & 2,500 Attendance Engine", () => {
     expect(url).toContain(encodeURIComponent("ABK-2026-X7K9"));
   });
 
+  it("correctly normalizes Nigerian local 080... format in wa.me click-to-chat URL", () => {
+    const localRecipient: ReminderRecipient = {
+      ...mockRecipient,
+      phone: "0803 123 4567",
+    };
+    const url = buildWhatsappClickToChatUrl(localRecipient, "weekly");
+    expect(url).toContain("https://wa.me/2348031234567?text=");
+  });
+
   it("generates rich HTML weekly countdown email with pass code and PDF link", () => {
     const html = buildWeeklyEmailHtml(mockRecipient);
     expect(html).toContain("ABK-2026-X7K9");
@@ -64,10 +73,13 @@ describe("Reminders & 2,500 Attendance Engine", () => {
     expect(htmlDay2).toContain("DAY 2 ADMISSION IS THROUGH TICKET");
   });
 
-  it("dispatches reminders batch gracefully and logs operations", async () => {
+  it("dispatches reminders batch with Option 1 WhatsApp as primary and Option 2 Email fallback", async () => {
     const result = await dispatchRemindersBatch([mockRecipient], "weekly");
     expect(result.totalProcessed).toBe(1);
     expect(result.whatsappQueued).toBe(1);
-    expect(result.logs.length).toBeGreaterThan(0);
+    expect(result.channelPriority).toBe("whatsapp_primary_email_fallback");
+    expect(result.whatsappDirectLinks.length).toBe(1);
+    expect(result.whatsappDirectLinks[0].url).toContain("https://wa.me/2348030001234");
+    expect(result.logs.some((l) => l.includes("Option 1 (WhatsApp Primary)"))).toBe(true);
   });
 });
