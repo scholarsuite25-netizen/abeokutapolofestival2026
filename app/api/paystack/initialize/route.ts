@@ -1,77 +1,133 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import {
+  DAY3_REFERENCE_PREFIX,
+  DAY3_VVIP_MAX_TICKETS,
+  DAY3_VVIP_PRICE_NGN,
+} from "@/lib/config/checkout-config";
 
+const bodySchema = z.object({
+  email: z.string().trim().email("A valid email is required."),
+  firstName: z.string().trim().max(80).optional(),
+  lastName: z.string().trim().max(80).optional(),
+  phone: z.string().trim().max(30).optional(),
+  day1: z.boolean().optional(),
+  day2: z.boolean().optional(),
+  quantity: z.coerce.number().int().min(1).max(DAY3_VVIP_MAX_TICKETS).default(1),
+});
+
+function newReference(simulatedQuantity?: number): string {
+  const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  return simulatedQuantity
+    ? `${DAY3_REFERENCE_PREFIX}SIM-${simulatedQuantity}-${suffix}`
+    : `${DAY3_REFERENCE_PREFIX}${suffix}`;
+}
+
+/**
+ * Starts a Day 3 VVIP checkout. The price and quantity are fixed here, on the
+ * server. Nothing returned from this route is proof of payment — the registration
+ * action verifies the reference with Paystack before issuing any pass.
+ */
 export async function POST(req: Request) {
+  let raw: unknown;
   try {
-    const body = await req.json();
-    const { email, firstName, lastName, phone, day1, day2, quantity, demo } = body;
+    raw = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required." }, { status: 400 });
+  const parsed = bodySchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid request." },
+      { status: 400 },
+    );
+  }
+
+  const { email, firstName, lastName, phone, day1, day2, quantity } = parsed.data;
+  const amountNgn = quantity * DAY3_VVIP_PRICE_NGN;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+  const secret = process.env.PAYSTACK_SECRET_KEY;
+
+  // The return URL only carries the registrant's form details. Paystack appends
+  // `reference` itself; the server re-verifies it, so nothing here can grant a pass.
+  const callback = new URL("/register", origin);
+  callback.searchParams.set("day1", day1 ? "1" : "0");
+  callback.searchParams.set("day2", day2 ? "1" : "0");
+  callback.searchParams.set("fn", firstName ?? "");
+  callback.searchParams.set("ln", lastName ?? "");
+  callback.searchParams.set("em", email);
+  callback.searchParams.set("ph", phone ?? "");
+
+  if (!secret) {
+    // Local development only: never simulate a payment in production.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Online payment is not available right now. Please contact the festival office." },
+        { status: 503 },
+      );
     }
-
-    const ticketCount = Math.max(1, Math.min(20, parseInt(String(quantity || 1), 10) || 1));
-    const pricePerTicket = 50000;
-    const amountNgn = ticketCount * pricePerTicket;
-    const amountInKobo = amountNgn * 100;
-
-    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
-    const reference = `ABK-VVIP-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-
-    // If live Paystack secret exists and demo mode is not forced
-    if (paystackSecret && !demo) {
-      const response = await fetch("https://api.paystack.co/transaction/initialize", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${paystackSecret}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          amount: amountInKobo,
-          reference,
-          callback_url: `${origin}/register?payment_ref=${reference}&day1=${day1 ? "1" : "0"}&day2=${day2 ? "1" : "0"}&day3=1&qty=${ticketCount}&fn=${encodeURIComponent(firstName || "")}&ln=${encodeURIComponent(lastName || "")}&em=${encodeURIComponent(email)}&ph=${encodeURIComponent(phone || "")}`,
-          metadata: {
-            custom_fields: [
-              { display_name: "Event", variable_name: "event", value: "Abeokuta Polo Festival 2026" },
-              { display_name: "Pass Type", variable_name: "pass_type", value: "Day 3 VVIP Grand Finale" },
-              { display_name: "Ticket Quantity", variable_name: "ticket_quantity", value: String(ticketCount) },
-              { display_name: "Total Amount NGN", variable_name: "total_amount", value: `₦${amountNgn.toLocaleString("en-NG")}` },
-              { display_name: "First Name", variable_name: "first_name", value: firstName },
-              { display_name: "Last Name", variable_name: "last_name", value: lastName },
-            ],
-          },
-        }),
-      });
-
-      const data = await response.json();
-      if (data.status && data.data?.authorization_url) {
-        return NextResponse.json({
-          status: "success",
-          authorization_url: data.data.authorization_url,
-          access_code: data.data.access_code,
-          reference,
-          amount: amountNgn,
-          quantity: ticketCount,
-          simulated: false,
-        });
-      }
-    }
-
-    // Demo/Simulated payment gateway pending live Paystack keys
-    const fallbackUrl = `${origin}/register?payment_ref=${reference}&status=success&paid=true&day1=${day1 ? "1" : "0"}&day2=${day2 ? "1" : "0"}&day3=1&qty=${ticketCount}&fn=${encodeURIComponent(firstName || "")}&ln=${encodeURIComponent(lastName || "")}&em=${encodeURIComponent(email)}&ph=${encodeURIComponent(phone || "")}`;
-
+    const reference = newReference(quantity);
+    callback.searchParams.set("payment_ref", reference);
     return NextResponse.json({
       status: "success",
-      authorization_url: fallbackUrl,
+      authorization_url: callback.toString(),
       reference,
       amount: amountNgn,
-      quantity: ticketCount,
+      quantity,
       simulated: true,
-      message: "Paystack Demo Mode: payment simulated successfully pending live API keys.",
+      message: "Development mode: payment simulated (no PAYSTACK_SECRET_KEY set).",
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Payment initialization error";
-    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  const reference = newReference();
+  try {
+    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secret}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        amount: amountNgn * 100,
+        currency: "NGN",
+        reference,
+        callback_url: callback.toString(),
+        metadata: {
+          custom_fields: [
+            { display_name: "Event", variable_name: "event", value: "Abeokuta Polo Festival 2026" },
+            { display_name: "Pass Type", variable_name: "pass_type", value: "Day 3 VVIP Grand Finale" },
+            { display_name: "Ticket Quantity", variable_name: "ticket_quantity", value: String(quantity) },
+          ],
+        },
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    const data = await response.json().catch(() => null);
+    if (response.ok && data?.status && data.data?.authorization_url) {
+      return NextResponse.json({
+        status: "success",
+        authorization_url: data.data.authorization_url,
+        access_code: data.data.access_code,
+        reference,
+        amount: amountNgn,
+        quantity,
+        simulated: false,
+      });
+    }
+
+    // A Paystack failure is a failure — it must never fall back to a fake success.
+    return NextResponse.json(
+      { error: "Could not start payment with Paystack. Please try again." },
+      { status: 502 },
+    );
+  } catch {
+    return NextResponse.json(
+      { error: "Could not reach Paystack. Please try again." },
+      { status: 502 },
+    );
   }
 }

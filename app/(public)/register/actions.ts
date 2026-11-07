@@ -6,6 +6,10 @@ import { sendEmail } from "@/lib/email/client";
 import { isSupabaseConfigured } from "@/lib/env";
 import { generateSignedPassToken, hashPassToken } from "@/lib/qr/token";
 import { writeAudit } from "@/lib/supabase/audit";
+import { DAY3_INVITATION_MAX_TICKETS } from "@/lib/config/checkout-config";
+import { isValidSpecialInvitation } from "@/lib/invitations/validate";
+import { attachClaimToRegistration, claimPaymentReference } from "@/lib/paystack/claims";
+import { verifyDay3Payment } from "@/lib/paystack/verify";
 import type { StoredPass } from "@/lib/storage/pass-storage";
 
 const registrationSchema = z.object({
@@ -54,33 +58,14 @@ export interface RegisterResult {
   ticketRefDay3?: string;
 }
 
-const AUTHORIZED_SPECIAL_INVITATION_CODES = new Set([
-  "ROYAL-VIP",
-  "PRESIDENTIAL",
-  "VIP2026",
-  "SPECIAL-GUEST",
-  "PATRON-INVITE",
-  "ALAKE-VIP",
-  "CHAIRMAN-VIP",
-  "KINGS-GUEST",
-  "DIGNITARY",
-  "HONORARY",
-  "SPECIAL-INVITATION",
-]);
-
-export async function isValidSpecialInvitation(code?: string): Promise<boolean> {
-  if (!code) return false;
-  const normalized = code.trim().toUpperCase();
-  if (AUTHORIZED_SPECIAL_INVITATION_CODES.has(normalized)) return true;
-  // Flexible VIP invite prefixes
-  return (
-    normalized.startsWith("VIP") ||
-    normalized.startsWith("ROYAL") ||
-    normalized.startsWith("PRES") ||
-    normalized.startsWith("PATRON") ||
-    normalized.startsWith("ALAKE") ||
-    normalized.length >= 5
-  );
+/** Escapes user-supplied text before it is placed in the confirmation email HTML. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function formatAffiliationLabel(
@@ -101,7 +86,8 @@ function formatAffiliationLabel(
  * Three-Day Event Registration:
  * - Day 1: 100% Free Entry
  * - Day 2: 100% Free Entry
- * - Day 3: Paid VVIP (redirected to Paystack or Special Invitation)
+ * - Day 3: Paid VVIP (Paystack payment verified server-side and single-use) or a
+ *   Special Invitation Code from the server allow-list (VVIP_INVITATION_CODES)
  *
  * Pass issuance rules:
  * - Days 1 & 2 selected together -> 1 single combined pass covering both days.
@@ -129,8 +115,8 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     affiliationType,
     hostName,
     organization,
-    day3TicketCount = 1,
   } = parsed.data;
+  let day3TicketCount = parsed.data.day3TicketCount;
 
   // Derive days selected, supporting both boolean flags and legacy hasDay2/3
   const day2 = parsed.data.day2 || Boolean(parsed.data.hasDay2Ticket && !parsed.data.day1 && !parsed.data.day2 && !parsed.data.day3);
@@ -142,12 +128,36 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     day1 = true;
   }
 
-  // Validate Day 3 VVIP admission condition
-  if (day3) {
-    const hasValidInvite = await isValidSpecialInvitation(day3InvitationCode);
-    const hasPayment = Boolean(day3PaymentRef && day3PaymentRef.length > 3);
+  // Day 3 VVIP admission: a Special Invitation Code from the server allow-list, or a
+  // Paystack payment verified server-side and claimed exactly once. Nothing the
+  // browser sends (reference text, "paid" flags, ticket count) is trusted on its own.
+  let verifiedPaymentRef: string | null = null;
+  let usedInvitationCode: string | null = null;
 
-    if (!hasValidInvite && !hasPayment) {
+  if (day3) {
+    if (isValidSpecialInvitation(day3InvitationCode)) {
+      usedInvitationCode = day3InvitationCode!.trim();
+      day3TicketCount = Math.min(day3TicketCount, DAY3_INVITATION_MAX_TICKETS);
+    } else if (day3PaymentRef) {
+      const payment = await verifyDay3Payment(day3PaymentRef, { expectedEmail: email });
+      if (!payment.ok) {
+        return { success: false, error: payment.message };
+      }
+
+      const claim = await claimPaymentReference({
+        reference: payment.reference,
+        email,
+        amountNgn: payment.amountNgn,
+        quantity: payment.quantity,
+      });
+      if (!claim.ok) {
+        return { success: false, error: claim.message };
+      }
+
+      verifiedPaymentRef = payment.reference;
+      // The amount Paystack confirmed decides how many passes were bought.
+      day3TicketCount = payment.quantity;
+    } else {
       return {
         success: false,
         error: "Day 3 requires Paystack VVIP payment or an authorized Special Invitation Code.",
@@ -299,12 +309,12 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         passTier: "vvip_day3",
         isVvip: true,
         designTheme: "gold",
-        paymentRef: day3PaymentRef || null,
-        invitationCode: day3InvitationCode || null,
+        paymentRef: verifiedPaymentRef,
+        invitationCode: usedInvitationCode,
         day1Status: "not_selected",
         day2Status: "not_selected",
         day3Status: "vvip_admitted",
-        ticketRefDay3: day3PaymentRef || day3InvitationCode || "VVIP-CONFIRMED",
+        ticketRefDay3: verifiedPaymentRef || usedInvitationCode || "VVIP-CONFIRMED",
         securityHash: hashPassToken(qrToken),
         ticketIndex: i,
         totalTickets: ticketCount,
@@ -346,6 +356,10 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         .single();
 
       if (reg) {
+        if (verifiedPaymentRef) {
+          await attachClaimToRegistration(verifiedPaymentRef, reg.id);
+        }
+
         // Save each issued pass in credentials table
         for (const pass of passes) {
           const credId = crypto.randomUUID();
@@ -379,7 +393,8 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
             day3,
             day3_ticket_count: day3 ? day3TicketCount : 0,
             is_vvip: day3,
-            payment_ref: day3PaymentRef || null,
+            payment_ref: verifiedPaymentRef,
+            invitation_used: Boolean(usedInvitationCode),
             sponsored_passes_count: passes.filter((p) => p.isSponsored).length,
           },
         }).catch(() => undefined);
@@ -401,7 +416,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
           <h2 style="font-size: 26px; color: ${p.isVvip ? "#F5D77F" : "#002F1A"}; margin: 6px 0; letter-spacing: 0.12em; font-family: monospace; font-weight: 800;">
             ${p.passCode}
           </h2>
-          <p style="font-size: 14px; font-weight: bold; margin: 4px 0;">${p.holderName}</p>
+          <p style="font-size: 14px; font-weight: bold; margin: 4px 0;">${escapeHtml(p.holderName)}</p>
           <p style="font-size: 12px; color: ${p.isVvip ? "#D4AF37" : "#55635A"}; margin: 2px 0;">
             ${p.daysCovered?.length === 2 ? "Valid for Day 1 (Fri 18) & Day 2 (Sat 19 Dec)" : p.daysCovered?.includes(3) ? "Valid for Day 3 Grand Finale (Sun 20 Dec)" : p.daysCovered?.includes(2) ? "Valid for Day 2 (Sat 19 Dec)" : "Valid for Day 1 (Fri 18 Dec)"}
           </p>
@@ -423,7 +438,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #C1C9BF;">18–20 December 2026 · Abeokuta Polo Club Grounds, Ogun State</p>
           </div>
           <div style="padding: 24px 0;">
-            <p style="font-size: 15px; margin: 0 0 12px 0;">Dear <strong>${holderName}</strong>,</p>
+            <p style="font-size: 15px; margin: 0 0 12px 0;">Dear <strong>${escapeHtml(holderName)}</strong>,</p>
             <p style="font-size: 14px; line-height: 1.6; color: #55635A;">
               Your digital gate access card(s) for the <strong>2026 Abeokuta Polo Festival</strong> have been successfully issued. Keep this email or download your offline card for contactless gate turnstile entry.
             </p>
