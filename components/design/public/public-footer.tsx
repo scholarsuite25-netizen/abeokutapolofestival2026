@@ -58,30 +58,30 @@ const LEGAL = [
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-line bg-forest text-ivory overflow-x-clip w-full max-w-full min-w-0 print:hidden">
+    <footer className="border-t border-neutral-800 bg-black text-ivory overflow-x-clip w-full max-w-full min-w-0 print:hidden font-semibold">
       <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-10 sm:py-14 min-w-0">
         {/* Pre-Footer Gate Protocol Notice */}
-        <div className="mb-12 rounded-2xl border-2 border-gold/60 bg-forest-deep p-4 sm:p-5 shadow-lg">
+        <div className="mb-12 rounded-2xl border-2 border-gold-deep/60 bg-neutral-950 p-4 sm:p-5 shadow-lg">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-gold text-forest shrink-0 shadow-sm mt-0.5 sm:mt-0">
-                <ShieldCheck className="size-5.5 text-forest" />
+              <div className="flex size-10 items-center justify-center rounded-xl bg-gold-deep text-black shrink-0 shadow-sm mt-0.5 sm:mt-0">
+                <ShieldCheck className="size-5.5 text-black" />
               </div>
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gold">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gold-deep">
                     Mandatory Gate Protocol
                   </span>
                   <span className="text-[10px] text-ivory/60 hidden sm:inline">· 18–20 Dec 2026</span>
                 </div>
-                <p className="text-xs sm:text-sm text-ivory/95 font-medium leading-relaxed">
+                <p className="text-xs sm:text-sm text-ivory/95 font-semibold leading-relaxed">
                   <strong>All attendees must be duly registered to attend any of the three festival days.</strong> No turnstile admission is permitted without an official digital access card.
                 </p>
               </div>
             </div>
             <Link
               href="/register"
-              className="inline-flex items-center justify-center rounded-lg bg-gold px-4 py-2 text-xs font-bold text-forest hover:bg-gold/90 transition-colors shrink-0 shadow-sm w-full sm:w-auto text-center"
+              className="inline-flex items-center justify-center rounded-lg bg-gold-deep px-4 py-2 text-xs font-bold text-black hover:bg-gold-deep/90 transition-colors shrink-0 shadow-sm w-full sm:w-auto text-center"
             >
               Register for Pass →
             </Link>
@@ -93,19 +93,19 @@ export function PublicFooter() {
             <p className="font-display text-xl font-bold tracking-tight text-ivory">
               Abeokuta Polo Festival 2026
             </p>
-            <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-gold">
+            <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-gold-deep">
               The Blueprint · 18–20 Dec 2026
             </p>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-ivory/80">
+            <p className="mt-4 max-w-sm text-sm font-semibold leading-relaxed text-ivory/90">
               All attendees must be duly registered to attend any of the three festival days.
               Entry requires an official digital access card for contactless turnstile admission.
             </p>
-            <div className="mt-5 space-y-1.5 text-sm text-ivory/80">
-              <div className="rounded-lg border border-gold/30 bg-forest-deep/60 p-3 text-xs leading-relaxed text-ivory/85 space-y-1">
-                <p className="font-semibold text-gold">Physical Secretariat (General Enquiries):</p>
+            <div className="mt-5 space-y-1.5 text-sm font-semibold text-ivory/90">
+              <div className="rounded-lg border border-gold-deep/30 bg-neutral-950/80 p-3 text-xs font-semibold leading-relaxed text-ivory/90 space-y-1">
+                <p className="font-semibold text-gold-deep">Physical Secretariat (General Enquiries):</p>
                 <p>Abeokuta Polo Club Secretariat, 4th Floor, Conference Hotel, Presidential Boulevard, Oke-Mosan, Abeokuta, Ogun State.</p>
               </div>
-              <p className="flex flex-wrap items-center gap-1">
+              <p className="flex flex-wrap items-center gap-1 font-semibold">
                 <a className="underline-offset-4 hover:underline" href={CONTACT.phone1Href}>
                   {CONTACT.phone1}
                 </a>
@@ -114,14 +114,14 @@ export function PublicFooter() {
                   {CONTACT.phone2}
                 </a>
               </p>
-              <p>
+              <p className="font-semibold">
                 <a className="underline-offset-4 hover:underline" href={CONTACT.emailHref}>
                   {CONTACT.email}
                 </a>
               </p>
-              <p>
+              <p className="font-semibold">
                 <a
-                  className="underline underline-offset-4 hover:text-gold"
+                  className="underline underline-offset-4 hover:text-gold-deep"
                   href={CONTACT.whatsapp}
                   rel="noopener noreferrer"
                   target="_blank"
@@ -132,10 +132,10 @@ export function PublicFooter() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:gap-8 sm:grid-cols-4 min-w-0">
+          <div className="grid grid-cols-2 gap-4 sm:gap-8 sm:grid-cols-4 min-w-0 font-semibold">
             {COLUMNS.map((column) => (
               <div key={column.title} className="min-w-0">
-                <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-gold truncate">
+                <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-gold-deep truncate">
                   {column.title}
                 </h2>
                 <ul className="mt-3 space-y-2">
@@ -143,7 +143,7 @@ export function PublicFooter() {
                     <li key={link.href} className="min-w-0">
                       <Link
                         href={link.href}
-                        className="text-xs sm:text-sm text-ivory/80 underline-offset-4 hover:text-ivory hover:underline block truncate"
+                        className="text-xs sm:text-sm font-semibold text-ivory/80 underline-offset-4 hover:text-ivory hover:underline block truncate"
                       >
                         {link.label}
                       </Link>
@@ -155,9 +155,9 @@ export function PublicFooter() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-ivory/15 pt-6 text-xs text-ivory/60 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-3 border-t border-neutral-800 pt-6 text-xs font-semibold text-ivory/70 sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 Abeokuta Polo Club. All rights reserved.</p>
-          <nav aria-label="Legal" className="flex flex-wrap gap-x-4 gap-y-1">
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-4 gap-y-1 font-semibold">
             {LEGAL.map((link) => (
               <Link key={link.href} href={link.href} className="hover:text-ivory">
                 {link.label}

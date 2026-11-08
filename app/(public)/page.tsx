@@ -63,10 +63,10 @@ export default function HomePage() {
             <div className="lg:col-span-7 space-y-4">
               <h1 className="font-display text-4xl font-semibold leading-[1.08] sm:text-6xl lg:text-7xl">
                 Abeokuta Polo <br />
-                <span className="font-normal italic text-gold">Festival 2026</span>
+                <span className="font-display font-semibold not-italic text-gold">Festival 2026</span>
               </h1>
 
-              <p className="font-display text-xl sm:text-2xl font-light text-gold italic">
+              <p className="font-display text-xl sm:text-2xl font-semibold not-italic text-gold">
                 &ldquo;{FESTIVAL_METADATA.theme}&rdquo;
               </p>
 
@@ -123,7 +123,7 @@ export default function HomePage() {
                   <Badge className="bg-gold text-black font-bold text-[9px] px-2 py-0.5">
                     <Ticket className="mr-1 size-2.5" /> OFFICIAL GATE ACCREDITATION
                   </Badge>
-                  <span className="text-[10px] text-emerald-400 font-semibold">● Instant Digital Drop</span>
+                  <span className="text-[10px] text-white font-semibold">● Instant Digital Drop</span>
                 </div>
 
                 <div>
@@ -145,13 +145,13 @@ export default function HomePage() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-1.5 text-center text-[9px] pt-0.5">
-                  <div className="rounded bg-black/80 p-1 border border-emerald-500/40 text-emerald-300 min-w-0">
+                  <div className="rounded bg-black/80 p-1 border border-white/40 text-white min-w-0">
                     <span className="block font-bold truncate">Day 1 (Fri 18)</span>
-                    <span className="text-[8px] text-ivory/80 block truncate font-bold">100% FREE</span>
+                    <span className="text-[8px] text-white/90 block truncate font-bold">100% FREE</span>
                   </div>
-                  <div className="rounded bg-black/80 p-1 border border-emerald-500/40 text-emerald-300 min-w-0">
+                  <div className="rounded bg-black/80 p-1 border border-white/40 text-white min-w-0">
                     <span className="block font-bold truncate">Day 2 (Sat 19)</span>
-                    <span className="text-[8px] text-ivory/80 block truncate font-bold">100% FREE</span>
+                    <span className="text-[8px] text-white/90 block truncate font-bold">100% FREE</span>
                   </div>
                   <div className="rounded bg-black/80 p-1 border border-gold/40 text-amber-300 min-w-0">
                     <span className="block font-bold truncate">Day 3 (Sun 20)</span>
