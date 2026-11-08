@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { verifyDay3Payment } from "@/lib/paystack/verify";
 import { claimPaymentReference, resetMemoryClaimsForTests } from "@/lib/paystack/claims";
+import { DAY3_VVIP_PRICE_NGN } from "@/lib/config/checkout-config";
 
 const REF = "ABK-VVIP-1700000000000-AB12CD34";
 
@@ -8,7 +9,7 @@ function paystackResponse(overrides: Record<string, unknown> = {}, httpStatus = 
   const data = {
     status: "success",
     reference: REF,
-    amount: 50000 * 100,
+    amount: DAY3_VVIP_PRICE_NGN * 100,
     currency: "NGN",
     customer: { email: "guest@example.com" },
     ...overrides,
@@ -29,9 +30,9 @@ describe("verifyDay3Payment — live Paystack", () => {
   });
 
   it("accepts a successful NGN payment and derives quantity from the amount", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(paystackResponse({ amount: 150000 * 100 })));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(paystackResponse({ amount: 3 * DAY3_VVIP_PRICE_NGN * 100 })));
     const result = await verifyDay3Payment(REF, { expectedEmail: "GUEST@example.com" });
-    expect(result).toMatchObject({ ok: true, quantity: 3, amountNgn: 150000, simulated: false });
+    expect(result).toMatchObject({ ok: true, quantity: 3, amountNgn: 3 * DAY3_VVIP_PRICE_NGN, simulated: false });
   });
 
   it("calls Paystack with the secret key and an encoded reference", async () => {
@@ -59,7 +60,7 @@ describe("verifyDay3Payment — live Paystack", () => {
   });
 
   it("rejects an amount below one VVIP pass", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(paystackResponse({ amount: 49999 * 100 })));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(paystackResponse({ amount: (DAY3_VVIP_PRICE_NGN - 1) * 100 })));
     expect(await verifyDay3Payment(REF)).toMatchObject({ ok: false, reason: "amount_too_low" });
   });
 
@@ -103,7 +104,7 @@ describe("verifyDay3Payment — no secret key", () => {
 
   it("accepts simulated references outside production", async () => {
     const result = await verifyDay3Payment("ABK-VVIP-SIM-3-1700000000000-ABCD1234");
-    expect(result).toMatchObject({ ok: true, quantity: 3, amountNgn: 150000, simulated: true });
+    expect(result).toMatchObject({ ok: true, quantity: 3, amountNgn: 3 * DAY3_VVIP_PRICE_NGN, simulated: true });
   });
 
   it("does not accept ordinary-looking references without a key", async () => {
@@ -120,7 +121,7 @@ describe("verifyDay3Payment — no secret key", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("PAYSTACK_DEMO_MODE", "true");
     const result = await verifyDay3Payment("ABK-VVIP-SIM-3-1700000000000-ABCD1234");
-    expect(result).toMatchObject({ ok: true, quantity: 3, amountNgn: 150000, simulated: true });
+    expect(result).toMatchObject({ ok: true, quantity: 3, amountNgn: 3 * DAY3_VVIP_PRICE_NGN, simulated: true });
   });
 });
 
@@ -133,7 +134,7 @@ describe("claimPaymentReference (single use)", () => {
   });
 
   const claim = (reference: string) =>
-    claimPaymentReference({ reference, email: "guest@example.com", amountNgn: 50000, quantity: 1 });
+    claimPaymentReference({ reference, email: "guest@example.com", amountNgn: DAY3_VVIP_PRICE_NGN, quantity: 1 });
 
   it("lets a reference be claimed once and refuses the second claim", async () => {
     expect(await claim(REF)).toEqual({ ok: true });

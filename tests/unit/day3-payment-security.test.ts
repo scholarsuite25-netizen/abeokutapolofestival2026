@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { submitRegistration } from "@/app/(public)/register/actions";
 import { resetMemoryClaimsForTests } from "@/lib/paystack/claims";
+import { DAY3_VVIP_PRICE_NGN } from "@/lib/config/checkout-config";
 
 /**
  * Regression tests for the Day 3 VVIP bypasses that existed before server-side
@@ -83,7 +84,7 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
               data: {
                 status: "success",
                 reference,
-                amount: 50000 * 100,
+                amount: DAY3_VVIP_PRICE_NGN * 100,
                 currency: "NGN",
                 customer: { email: "guest@example.com" },
               },

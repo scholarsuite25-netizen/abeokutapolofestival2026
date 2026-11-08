@@ -39,7 +39,11 @@ import { downloadProgrammePDF } from "@/lib/pdf/programme-pdf";
 import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
 import { IdAccessCard } from "@/components/shared/id-access-card";
 import { WemaBankPaymentCard } from "@/components/shared/wema-bank-payment-card";
-import { generateWemaTransferReference } from "@/lib/config/checkout-config";
+import {
+  generateWemaTransferReference,
+  DAY3_VVIP_PRICE_NGN,
+  DAY3_VVIP_PRICE_DISPLAY,
+} from "@/lib/config/checkout-config";
 import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
 import {
   validateWhatsAppPhone,
@@ -602,7 +606,7 @@ function RegisterContent() {
                     `• *Phone:* ${formData.phone}\n` +
                     `• *Email:* ${formData.email}\n` +
                     `• *Quantity Claimed:* ${issuedPasses.length} Day 3 VVIP Ticket(s)\n` +
-                    `• *Amount Transferred:* ₦${((issuedPasses.length || 1) * 50000).toLocaleString()}\n\n` +
+                    `• *Amount Transferred:* ₦${((issuedPasses.length || 1) * DAY3_VVIP_PRICE_NGN).toLocaleString()}\n\n` +
                     `📎 *Attached:* My bank debit payment advice/slip. Please verify and release my Day 3 VVIP passes.\n\n` +
                     `_Abeokuta Polo Club Secretariat_`;
                   const waReceiptUrl = formatWhatsAppUrl("2348181888884", waReceiptText);
@@ -1075,7 +1079,7 @@ function RegisterContent() {
                       </div>
 
                       <Badge variant="outline" className="border-amber-600 bg-white/90 text-amber-900 text-[10px] font-bold self-start sm:self-auto">
-                        ₦50,000 / Ticket or VIP Invite
+                        {DAY3_VVIP_PRICE_DISPLAY} / Ticket or VIP Invite
                       </Badge>
                     </div>
 
@@ -1124,7 +1128,7 @@ function RegisterContent() {
                         </div>
 
                         <p className="text-[11px] leading-relaxed text-amber-900">
-                          Select whether you are purchasing Day 3 VVIP admission (₦50,000 per pass) or redeeming an official single-use Special VIP Invitation Code:
+                          Select whether you are purchasing Day 3 VVIP admission ({DAY3_VVIP_PRICE_DISPLAY} per pass) or redeeming an official single-use Special VIP Invitation Code:
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1194,7 +1198,7 @@ function RegisterContent() {
                           <WemaBankPaymentCard
                             flow="vvip"
                             referenceCode={wemaRef}
-                            amountNgn={day3TicketCount * 50000}
+                            amountNgn={day3TicketCount * DAY3_VVIP_PRICE_NGN}
                             itemName={`Day 3 VVIP Admission (${day3TicketCount} Ticket${day3TicketCount > 1 ? "s" : ""})`}
                             buyerName={`${formData.firstName} ${formData.lastName}`.trim() || "VVIP Buyer"}
                             phone={formData.phone}
@@ -1208,7 +1212,7 @@ function RegisterContent() {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <div>
                                 <Label htmlFor="ticketQty" className="text-xs font-bold text-amber-950 block">
-                                  Number of Day 3 VVIP Tickets (₦50,000 each)
+                                  Number of Day 3 VVIP Tickets ({DAY3_VVIP_PRICE_DISPLAY} each)
                                 </Label>
                                 <span className="text-[11px] text-amber-800">
                                   Purchase for yourself, invitees, or delegation
@@ -1242,7 +1246,7 @@ function RegisterContent() {
                             <div className="pt-2 border-t border-amber-200/80 flex items-center justify-between text-xs">
                               <span className="font-bold text-amber-900">Total Amount Payable:</span>
                               <span className="font-mono font-extrabold text-lg text-amber-950">
-                                ₦{(day3TicketCount * 50000).toLocaleString()}
+                                ₦{(day3TicketCount * DAY3_VVIP_PRICE_NGN).toLocaleString()}
                               </span>
                             </div>
 
@@ -1415,7 +1419,7 @@ function RegisterContent() {
                         <CreditCard className="size-4 sm:size-5 shrink-0" />
                         <span>Proceed to Paystack Payment</span>
                         <span className="text-xs sm:text-sm opacity-95">
-                          ({day3TicketCount === 1 ? "₦50,000" : `${day3TicketCount} Tickets · ₦${(day3TicketCount * 50000).toLocaleString()}`}) →
+                          ({day3TicketCount === 1 ? DAY3_VVIP_PRICE_DISPLAY : `${day3TicketCount} Tickets · ₦${(day3TicketCount * DAY3_VVIP_PRICE_NGN).toLocaleString()}`}) →
                         </span>
                       </span>
                     ) : (

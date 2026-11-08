@@ -73,3 +73,4 @@ create policy offline_commitments_executive_manage
   using (
     public.current_app_role() in ('super_admin', 'president', 'general_secretary')
   );
+

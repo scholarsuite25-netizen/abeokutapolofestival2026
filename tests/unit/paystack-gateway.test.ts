@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as initRoute } from "@/app/api/paystack/initialize/route";
 import { GET as verifyRoute } from "@/app/api/paystack/verify/route";
+import { DAY3_VVIP_PRICE_NGN } from "@/lib/config/checkout-config";
 
 const post = (body: unknown) =>
   new Request("http://localhost:3000/api/paystack/initialize", {
@@ -20,23 +21,23 @@ describe("Initialize Route (/api/paystack/initialize)", () => {
       vi.stubEnv("PAYSTACK_SECRET_KEY", "");
     });
 
-    it("simulates checkout for 1 ticket (₦50,000)", async () => {
+    it("simulates checkout for 1 ticket", async () => {
       const res = await initRoute(post({ email: "attendee@example.com", firstName: "Kabiru", lastName: "Sani" }));
       const data = await res.json();
 
       expect(res.status).toBe(200);
-      expect(data).toMatchObject({ status: "success", simulated: true, amount: 50000, quantity: 1 });
+      expect(data).toMatchObject({ status: "success", simulated: true, amount: DAY3_VVIP_PRICE_NGN, quantity: 1 });
       expect(data.reference).toMatch(/^ABK-VVIP-SIM-1-/);
       expect(data.authorization_url).toContain("payment_ref=");
     });
 
-    it("prices multiple tickets on the server (3 tickets = ₦150,000)", async () => {
+    it("prices multiple tickets on the server", async () => {
       const res = await initRoute(
         post({ email: "delegation@example.com", day1: true, day2: true, quantity: 3 }),
       );
       const data = await res.json();
 
-      expect(data).toMatchObject({ amount: 150000, quantity: 3 });
+      expect(data).toMatchObject({ amount: 3 * DAY3_VVIP_PRICE_NGN, quantity: 3 });
       expect(data.reference).toMatch(/^ABK-VVIP-SIM-3-/);
       const url = new URL(data.authorization_url);
       expect(url.searchParams.get("day1")).toBe("1");
@@ -54,7 +55,7 @@ describe("Initialize Route (/api/paystack/initialize)", () => {
       const data = await (
         await initRoute(post({ email: "a@example.com", quantity: 1, amount: 1, price: 1, demo: true }))
       ).json();
-      expect(data.amount).toBe(50000);
+      expect(data.amount).toBe(DAY3_VVIP_PRICE_NGN);
     });
 
     it("rejects an invalid email with 400", async () => {
@@ -93,7 +94,7 @@ describe("Initialize Route (/api/paystack/initialize)", () => {
     const res = await initRoute(post({ email: "a@example.com", quantity: 2 }));
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data).toMatchObject({ status: "success", simulated: true, amount: 100000, quantity: 2 });
+    expect(data).toMatchObject({ status: "success", simulated: true, amount: 2 * DAY3_VVIP_PRICE_NGN, quantity: 2 });
   });
 
   it("returns 502 (not a fake success) when Paystack refuses or is unreachable", async () => {
@@ -124,9 +125,9 @@ describe("Initialize Route (/api/paystack/initialize)", () => {
 
     const data = await (await initRoute(post({ email: "a@example.com", quantity: 2 }))).json();
 
-    expect(data).toMatchObject({ status: "success", simulated: false, amount: 100000, quantity: 2 });
+    expect(data).toMatchObject({ status: "success", simulated: false, amount: 2 * DAY3_VVIP_PRICE_NGN, quantity: 2 });
     const sent = JSON.parse((fetchMock.mock.calls[0]![1] as RequestInit).body as string);
-    expect(sent).toMatchObject({ amount: 10000000, currency: "NGN", email: "a@example.com" });
+    expect(sent).toMatchObject({ amount: 2 * DAY3_VVIP_PRICE_NGN * 100, currency: "NGN", email: "a@example.com" });
     expect(sent.reference).toBe(data.reference);
     expect(sent.reference).toMatch(/^ABK-VVIP-/);
   });
@@ -145,7 +146,7 @@ describe("Verify Route (/api/paystack/verify)", () => {
       new Request("http://localhost:3000/api/paystack/verify?reference=ABK-VVIP-SIM-4-1700000000000-ABCD1234"),
     );
     const data = await res.json();
-    expect(data).toMatchObject({ verified: true, quantity: 4, amount: 200000, simulated: true });
+    expect(data).toMatchObject({ verified: true, quantity: 4, amount: 4 * DAY3_VVIP_PRICE_NGN, simulated: true });
   });
 
   it("ignores a client-supplied quantity", async () => {

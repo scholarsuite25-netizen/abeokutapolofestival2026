@@ -129,7 +129,8 @@ function formatAffiliationLabel(
  * - Day 1 + Day 3, or Day 2 + Day 3, or Day 1 + 2 + 3 -> 2 distinct access cards issued.
  */
 export async function submitRegistration(rawInput: unknown): Promise<RegisterResult> {
-  const parsed = registrationSchema.safeParse(rawInput);
+  try {
+    const parsed = registrationSchema.safeParse(rawInput);
   if (!parsed.success) {
     return {
       success: false,
@@ -598,28 +599,35 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     // Non-blocking
   }
 
-  return {
-    success: true,
-    status: isBankTransfer ? "pending_verification" : "confirmed",
-    bankTransferRef: isBankTransfer ? bankTransferRef || undefined : undefined,
-    paymentMethod: isBankTransfer ? "bank_transfer" : verifiedPaymentRef ? "paystack" : usedInvitationCode ? "invitation" : "free",
-    secretariatNotification,
-    passes,
-    passCode: primaryPass.passCode,
-    qrToken: primaryPass.qrToken,
-    holderName,
-    category: affiliationLabel,
-    affiliationType,
-    hostName: hostName || undefined,
-    organization: organization || undefined,
-    zoneAccess: primaryPass.isVvip
-      ? ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
-      : ["Festival Grounds & Grandstand"],
-    day1Status: day1 ? "free_admitted" : "not_selected",
-    day2Status: day2 ? "free_admitted" : "not_selected",
-    day3Status: day3 ? (isBankTransfer ? "pending_verification" : "vvip_admitted") : "not_selected",
-    message: isBankTransfer
-      ? "Bank transfer registered! Please submit your payment receipt to the Secretariat via WhatsApp to activate your Day 3 VVIP access credentials."
-      : "Registration confirmed and access card(s) issued successfully!",
-  };
+    return {
+      success: true,
+      status: isBankTransfer ? "pending_verification" : "confirmed",
+      bankTransferRef: isBankTransfer ? bankTransferRef || undefined : undefined,
+      paymentMethod: isBankTransfer ? "bank_transfer" : verifiedPaymentRef ? "paystack" : usedInvitationCode ? "invitation" : "free",
+      secretariatNotification,
+      passes,
+      passCode: primaryPass.passCode,
+      qrToken: primaryPass.qrToken,
+      holderName,
+      category: affiliationLabel,
+      affiliationType,
+      hostName: hostName || undefined,
+      organization: organization || undefined,
+      zoneAccess: primaryPass.isVvip
+        ? ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
+        : ["Festival Grounds & Grandstand"],
+      day1Status: day1 ? "free_admitted" : "not_selected",
+      day2Status: day2 ? "free_admitted" : "not_selected",
+      day3Status: day3 ? (isBankTransfer ? "pending_verification" : "vvip_admitted") : "not_selected",
+      message: isBankTransfer
+        ? "Bank transfer registered! Please submit your payment receipt to the Secretariat via WhatsApp to activate your Day 3 VVIP access credentials."
+        : "Registration confirmed and access card(s) issued successfully!",
+    };
+  } catch (error) {
+    console.error("submitRegistration error:", error);
+    return {
+      success: false,
+      error: (error as Error)?.message || "Failed to process registration. Please verify details and try again.",
+    };
+  }
 }
