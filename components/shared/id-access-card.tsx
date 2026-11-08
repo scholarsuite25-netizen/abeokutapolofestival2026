@@ -81,7 +81,9 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
     ? "Day 2 (Sat 19 Dec 2026)"
     : "Day 1 (Fri 18 Dec 2026)";
 
-  const cardTitle = isGold
+  const cardTitle = isPendingVerification
+    ? "PROVISIONAL BANK CLAIM SLIP"
+    : isGold
     ? isSponsored
       ? "Day 3 VVIP Guest Pass"
       : "Day 3 VVIP Grand Finale"
@@ -106,11 +108,23 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
       {/* ── REALISTIC COMPACT ID CARD (CR80 ID BADGE RATIO & SIZING: max-w-[290px] sm:max-w-[305px]) ── */}
       <div
         className={`relative w-full max-w-[290px] sm:max-w-[305px] rounded-2xl overflow-hidden shadow-xl transition-all duration-300 min-w-0 ${
-          isGold
+          isPendingVerification
+            ? "border-2 border-amber-600 bg-amber-50/95 text-amber-950 shadow-lg"
+            : isGold
             ? "border-2 border-[#C9A84C] bg-gradient-to-b from-[#1C1605] via-[#2A2007] to-[#120E03] text-[#FCF9F8] shadow-[0_4px_25px_rgba(201,168,76,0.25)]"
             : "border-2 border-[#002F1A] bg-[#FCF9F8] text-[#1B1C1C] shadow-lg"
         }`}
       >
+        {/* Anti-Fraud Watermark for Pending Bursary Verification */}
+        {isPendingVerification && (
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center p-3">
+            <div className="rotate-[-25deg] rounded-xl border-2 border-dashed border-red-600/90 bg-red-950/85 p-2 text-center text-[10px] font-black uppercase tracking-wider text-red-100 shadow-2xl backdrop-blur-xs">
+              ⚠️ PENDING BURSARY VERIFICATION
+              <br />
+              <span className="text-[8.5px] font-bold text-amber-300">NOT VALID FOR GATE ENTRY</span>
+            </div>
+          </div>
+        )}
         {/* Lanyard punch-hole simulation */}
         <div className="pt-1.5 pb-0.5 flex justify-center">
           <div
@@ -207,9 +221,9 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
           <div className="mt-0.5">
             {isPendingVerification ? (
               <div className="flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500 text-amber-300 shadow-xs">
-                <AlertTriangle className="size-2.5 text-amber-400" />
-                <span className="text-[8px] font-bold tracking-wider uppercase text-amber-300">
-                  Pending Verification · Amber Warning
+                <AlertTriangle className="size-2.5 text-amber-400 shrink-0" />
+                <span className="text-[7.5px] font-bold tracking-wider uppercase text-amber-300">
+                  ⚠️ PENDING BURSARY VERIFICATION · NOT VALID FOR GATE ENTRY
                 </span>
               </div>
             ) : isGold ? (

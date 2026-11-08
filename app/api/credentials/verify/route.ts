@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyPassToken, hashPassToken } from "@/lib/qr/token";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
+import { isPassPendingVerification } from "@/lib/storage/unverified-passes";
 
 /**
  * Minimal in-memory token bucket (per Vercel instance).
@@ -26,12 +27,12 @@ function rateLimit(key: string): boolean {
 const invalid = (message: string) =>
   NextResponse.json({ valid: false, status: "invalid", error: message }, { status: 404 });
 
-async function lookupCredential(tokenHash: string) {
+async function lookupCredential(identifier: string) {
   const supabase = await createClient();
   const query = supabase
     .from("credentials")
     .select("id, status, pass_type, holder_name, pass_code")
-    .eq("token_hash", tokenHash)
+    .or(`token_hash.eq.${identifier},pass_code.eq.${identifier.toUpperCase()}`)
     .maybeSingle();
 
   const { data } = await query;
@@ -42,6 +43,19 @@ async function lookupCredential(tokenHash: string) {
 
 async function processVerification(token: string) {
   const trimmed = token.trim();
+
+  // Instant check: unverified / pending bursary registry
+  if (isPassPendingVerification(trimmed)) {
+    return NextResponse.json(
+      {
+        valid: false,
+        status: "pending_verification",
+        error: "Admission Pending Bursary Verification",
+        message: "Admission Pending Bursary Verification",
+      },
+      { status: 403 },
+    );
+  }
 
   // 1. Structured signed token — verify HMAC first, then require a DB row.
   if (trimmed.startsWith("ABK26.")) {
@@ -62,22 +76,47 @@ async function processVerification(token: string) {
     }
 
     try {
-      const cred = await lookupCredential(hashPassToken(trimmed));
+      const hashed = hashPassToken(trimmed);
+      const cred = await lookupCredential(hashed);
 
       // Fail closed: a valid signature without a database row is NOT proof of
       // accreditation — the row is the source of truth.
       if (!cred) {
         return invalid("Credential not found in the accreditation registry.");
       }
-      if (cred.status === "revoked") {
-        return NextResponse.json({
-          valid: false,
-          status: "revoked",
-          error: "This accreditation pass has been revoked by festival security.",
-        });
+
+      if (
+        cred.status === "pending_verification" ||
+        cred.status === "pending_bank_verification" ||
+        cred.status === "pending_approval" ||
+        isPassPendingVerification(cred.pass_code)
+      ) {
+        return NextResponse.json(
+          {
+            valid: false,
+            status: "pending_verification",
+            error: "Admission Pending Bursary Verification",
+            message: "Admission Pending Bursary Verification",
+            passType: cred.pass_type,
+            guestName: cred.holder_name,
+          },
+          { status: 403 },
+        );
       }
+
+      if (cred.status === "revoked") {
+        return NextResponse.json(
+          {
+            valid: false,
+            status: "revoked",
+            error: "This accreditation pass has been revoked by festival security.",
+          },
+          { status: 403 },
+        );
+      }
+
       return NextResponse.json({
-        valid: true,
+        valid: cred.status === "active",
         status: cred.status,
         passType: cred.pass_type,
         guestName: cred.holder_name,
@@ -92,8 +131,38 @@ async function processVerification(token: string) {
   // 2. Plain pass code lookup.
   if (isSupabaseConfigured()) {
     try {
-      const cred = await lookupCredential("");
+      const cred = await lookupCredential(trimmed);
       if (cred) {
+        if (
+          cred.status === "pending_verification" ||
+          cred.status === "pending_bank_verification" ||
+          cred.status === "pending_approval" ||
+          isPassPendingVerification(cred.pass_code)
+        ) {
+          return NextResponse.json(
+            {
+              valid: false,
+              status: "pending_verification",
+              error: "Admission Pending Bursary Verification",
+              message: "Admission Pending Bursary Verification",
+              passType: cred.pass_type,
+              guestName: cred.holder_name,
+            },
+            { status: 403 },
+          );
+        }
+
+        if (cred.status === "revoked") {
+          return NextResponse.json(
+            {
+              valid: false,
+              status: "revoked",
+              error: "This accreditation pass has been revoked by festival security.",
+            },
+            { status: 403 },
+          );
+        }
+
         return NextResponse.json({
           valid: cred.status === "active",
           status: cred.status,

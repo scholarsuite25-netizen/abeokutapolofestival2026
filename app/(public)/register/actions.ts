@@ -115,6 +115,41 @@ function formatAffiliationLabel(
 }
 
 /**
+ * Resilient insert helper that handles remote database schema drift gracefully.
+ * If PostgREST returns PGRST204 (column does not exist), it automatically prunes
+ * the missing column and retries until insertion succeeds or base columns remain.
+ */
+async function adaptiveInsert<T extends Record<string, unknown>>(
+  supabase: ReturnType<typeof createAdminClient>,
+  table: string,
+  payload: T,
+  selectQuery = "id",
+): Promise<{ data: any; error: any }> {
+  const currentPayload: Record<string, unknown> = { ...payload };
+  const maxAttempts = Object.keys(payload).length + 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const res = await (supabase.from(table as any) as any)
+      .insert(currentPayload)
+      .select(selectQuery)
+      .maybeSingle();
+
+    if (!res.error) {
+      return { data: res.data, error: null };
+    }
+    const msg = res.error.message || "";
+    const match =
+      msg.match(/Could not find the '([^']+)' column/) ||
+      msg.match(/column "?([^"'\s]+)"? of relation "[^"]+" does not exist/);
+    if (match && match[1] && match[1] in currentPayload) {
+      delete currentPayload[match[1]];
+      continue;
+    }
+    return { data: null, error: res.error };
+  }
+  return { data: null, error: new Error("Max insert attempts reached") };
+}
+
+/**
  * Three-Day Event Registration:
  * - Day 1: 100% Free Entry
  * - Day 2: 100% Free Entry
@@ -352,7 +387,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       passes.push({
         passCode,
         holderName: passHolderName,
-        category: "Day 3 VVIP Grand Finale Pass",
+        category: isBankTransfer
+          ? "Day 3 VVIP Provisional Claim (Pending Bursary Verification)"
+          : "Day 3 VVIP Grand Finale Pass",
         affiliationType: isSponsored ? "guest_of" : affiliationType,
         hostName: isSponsored ? holderName : (hostName || null),
         organization: organization || null,
@@ -361,9 +398,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         qrToken,
         registeredAt: issuedAt,
         daysCovered: [3],
-        passTier: "vvip_day3",
-        isVvip: true,
-        designTheme: "gold",
+        passTier: isBankTransfer ? "free_day1" : "vvip_day3",
+        isVvip: isBankTransfer ? false : true,
+        designTheme: isBankTransfer ? "standard" : "gold",
         paymentRef: verifiedPaymentRef || (isBankTransfer ? bankTransferRef : null),
         bankTransferRef: isBankTransfer ? bankTransferRef : null,
         status: isBankTransfer ? "pending_verification" : "active",
@@ -405,9 +442,10 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         ? "invitation"
         : "free";
 
-      const { data: reg } = await supabase
-        .from("registrations")
-        .insert({
+      const { data: reg } = await adaptiveInsert(
+        supabase,
+        "registrations",
+        {
           edition_id: edition?.id ?? null,
           first_name: firstName,
           last_name: lastName,
@@ -423,36 +461,43 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
           payment_method: paymentMethod,
           has_day3_ticket: day3,
           day3_ticket_ref: bankTransferRef || verifiedPaymentRef || usedInvitationCode || null,
-        })
-        .select("id")
-        .single();
+        },
+        "id",
+      );
 
-      if (reg) {
+      if (reg && reg.id) {
         if (verifiedPaymentRef) {
           await attachClaimToRegistration(verifiedPaymentRef, reg.id);
         }
 
-        // Save each issued pass in credentials table
+        // Save each issued pass in credentials table with adaptive schema pruning
         for (const pass of passes) {
           const credId = crypto.randomUUID();
-          await supabase.from("credentials").insert({
-            id: credId,
-            registration_id: reg.id,
-            holder_name: pass.holderName,
-            token_hash: hashPassToken(pass.qrToken || pass.passCode),
-            pass_code: pass.passCode,
-            pass_type: pass.category,
-            zone_access: pass.isVvip
-              ? ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
-              : ["Festival Grounds & Grandstand"],
-            affiliation_type: pass.affiliationType,
-            host_name: pass.hostName,
-            organization: pass.organization,
-            status: isBankTransfer ? "pending_verification" : "active",
-            bank_transfer_ref: isBankTransfer ? bankTransferRef : null,
-            day3_ticket_ref: bankTransferRef || verifiedPaymentRef || null,
-            issued_at: issuedAt,
-          });
+          await adaptiveInsert(
+            supabase,
+            "credentials",
+            {
+              id: credId,
+              registration_id: reg.id,
+              holder_name: pass.holderName,
+              token_hash: hashPassToken(pass.qrToken || pass.passCode),
+              pass_code: pass.passCode,
+              pass_type: pass.category,
+              zone_access: pass.isVvip
+                ? ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
+                : isBankTransfer
+                ? ["Accreditation Desk Verification Only"]
+                : ["Festival Grounds & Grandstand"],
+              affiliation_type: pass.affiliationType,
+              host_name: pass.hostName,
+              organization: pass.organization,
+              status: isBankTransfer ? "pending_verification" : "active",
+              bank_transfer_ref: isBankTransfer ? bankTransferRef : null,
+              day3_ticket_ref: bankTransferRef || verifiedPaymentRef || null,
+              issued_at: issuedAt,
+            },
+            "id",
+          );
         }
 
         if (isBankTransfer && bankTransferRef) {

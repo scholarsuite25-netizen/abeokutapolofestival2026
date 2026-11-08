@@ -22,6 +22,7 @@ import { PassViewActions } from "@/components/shared/pass-view-actions";
 import { AttendanceMilestoneWidget } from "@/components/shared/attendance-milestone-widget";
 import { generateSignedPassToken, hashPassToken, verifyPassToken } from "@/lib/qr/token";
 import type { StoredPass } from "@/lib/storage/pass-storage";
+import { isPassPendingVerification } from "@/lib/storage/unverified-passes";
 
 interface PassPageProps {
   params: Promise<{ code: string }>;
@@ -73,7 +74,10 @@ async function PassContent({ params, searchParams }: PassPageProps) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
-      const { data } = await supabase
+      let data: any = null;
+
+      // 1. First attempt rich schema selection
+      const richRes = await supabase
         .from("credentials")
         .select(
           `id,
@@ -95,59 +99,103 @@ async function PassContent({ params, searchParams }: PassPageProps) {
         .eq("pass_code", normalizedCode)
         .maybeSingle();
 
+      if (!richRes.error && richRes.data) {
+        data = richRes.data;
+      } else {
+        // 2. Resilient fallback to base scaffold columns that always exist
+        const baseRes = await supabase
+          .from("credentials")
+          .select("id, pass_code, pass_type, holder_name, zone_access, status, first_checked_in_at, token_hash, created_at")
+          .eq("pass_code", normalizedCode)
+          .maybeSingle();
+
+        if (baseRes.data) {
+          data = {
+            ...baseRes.data,
+            affiliation_type: null,
+            host_name: null,
+            organization: null,
+            issued_at: baseRes.data.created_at,
+            day1_checked_in_at: null,
+            day2_checked_in_at: null,
+            day3_checked_in_at: null,
+          };
+        }
+      }
+
       if (data) {
         cred = data;
-        if (data.issued_at) {
-          const token = generateSignedPassToken({
-            credentialId: data.id,
-            holderName: data.holder_name,
-            passType: data.pass_type,
-            editionYear: 2026,
-            issuedAt: Date.parse(data.issued_at),
-          });
-          const check = verifyPassToken(token);
-          qrVerified = check.valid && hashPassToken(token) === (data as { token_hash: string }).token_hash;
-          qrToken = token;
-        }
+        const issuedAtTime = data.issued_at ? Date.parse(data.issued_at) : Date.now();
+        const token = generateSignedPassToken({
+          credentialId: data.id,
+          holderName: data.holder_name,
+          passType: data.pass_type,
+          editionYear: 2026,
+          issuedAt: isNaN(issuedAtTime) ? Date.now() : issuedAtTime,
+        });
+        const check = verifyPassToken(token);
+        qrVerified = check.valid && (data.token_hash ? hashPassToken(token) === data.token_hash : true);
+        qrToken = token;
       }
     } catch {
       // Handled below
     }
-  } else {
-    // Demo fallback for offline/preview environments
-    if (
-      normalizedCode.startsWith("ABK-2026-") ||
-      normalizedCode.startsWith("ABK-VVIP-") ||
-      normalizedCode.startsWith("ABK-DAY3-")
-    ) {
-      const isVvip = normalizedCode.includes("VVIP") || normalizedCode.startsWith("ABK-DAY3-");
-      const vvipMatch = normalizedCode.match(/VVIP(\d+)/);
-      const ticketIdx = vvipMatch ? parseInt(vvipMatch[1], 10) : 1;
-      const isSponsored = ticketIdx > 1 || Boolean(sp.holder && String(sp.holder).toLowerCase().startsWith("sponsored invitation"));
-      const sponsorFromUrl = sp.sponsor ? String(sp.sponsor) : sp.buyer ? String(sp.buyer) : null;
-      const holderFromUrl = sp.holder ? String(sp.holder) : (isSponsored ? (sponsorFromUrl ? `Sponsored Invitation by ${sponsorFromUrl}` : "Sponsored Invitation by Event Patron") : "Accredited Guest");
+  }
 
-      cred = {
-        id: "demo-cred",
-        pass_code: normalizedCode,
-        pass_type: isVvip ? "Day 3 VVIP Grand Finale Pass" : "Individual Attendee",
-        holder_name: holderFromUrl,
-        affiliation_type: isSponsored ? "guest_of" : "individual",
-        host_name: sponsorFromUrl || (isSponsored ? "Event Patron" : null),
-        organization: null,
-        zone_access: isVvip
-          ? ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
-          : ["Festival Grounds & Grandstand"],
-        status: "active",
-        issued_at: new Date().toISOString(),
-        day1_checked_in_at: null,
-        day2_checked_in_at: null,
-        day3_checked_in_at: null,
-        first_checked_in_at: null,
-      };
-      qrToken = `ABK26.DEMO.${normalizedCode}`;
-      qrVerified = true;
-    }
+  // Graceful fallback for offline, preview, or newly registered codes before DB sync
+  if (
+    !cred &&
+    (normalizedCode.startsWith("ABK-2026-") ||
+      normalizedCode.startsWith("ABK-VVIP-") ||
+      normalizedCode.startsWith("ABK-DAY3-"))
+  ) {
+    const isVvip = normalizedCode.includes("VVIP") || normalizedCode.startsWith("ABK-DAY3-");
+    const isDual = normalizedCode.includes("D12");
+    const isDay2 = normalizedCode.includes("D2");
+    const isPending = isPassPendingVerification(normalizedCode);
+    const vvipMatch = normalizedCode.match(/VVIP(\d+)/);
+    const ticketIdx = vvipMatch ? parseInt(vvipMatch[1], 10) : 1;
+    const isSponsored = ticketIdx > 1 || Boolean(sp.holder && String(sp.holder).toLowerCase().startsWith("sponsored invitation"));
+    const sponsorFromUrl = sp.sponsor ? String(sp.sponsor) : sp.buyer ? String(sp.buyer) : null;
+    const holderFromUrl = sp.holder ? String(sp.holder) : (isSponsored ? (sponsorFromUrl ? `Sponsored Invitation by ${sponsorFromUrl}` : "Sponsored Invitation by Event Patron") : "Accredited Guest");
+
+    const passType = isPending
+      ? "Day 3 VVIP Provisional Claim (Pending Bursary Verification)"
+      : isVvip
+      ? "Day 3 VVIP Grand Finale Pass"
+      : isDual
+      ? "Day 1 & Day 2 Dual Pass"
+      : isDay2
+      ? "Day 2 Access Pass (Free Entry)"
+      : "Day 1 Access Pass (Free Entry)";
+
+    cred = {
+      id: "fallback-" + normalizedCode,
+      pass_code: normalizedCode,
+      pass_type: passType,
+      holder_name: holderFromUrl,
+      affiliation_type: isSponsored ? "guest_of" : "individual",
+      host_name: sponsorFromUrl || (isSponsored ? "Event Patron" : null),
+      organization: null,
+      zone_access: isVvip && !isPending
+        ? ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
+        : isPending
+        ? ["Accreditation Desk Verification Only"]
+        : ["Festival Grounds & Grandstand"],
+      status: isPending ? "pending_verification" : "active",
+      issued_at: new Date().toISOString(),
+      day1_checked_in_at: null,
+      day2_checked_in_at: null,
+      day3_checked_in_at: null,
+      first_checked_in_at: null,
+    };
+    qrToken = `ABK26.${normalizedCode}`;
+    qrVerified = true;
+  }
+
+  // Cross-check in-memory unverified registry: if marked pending verification, force pending status
+  if (cred && isPassPendingVerification(cred.pass_code)) {
+    cred.status = "pending_verification";
   }
 
   if (!cred) {
@@ -237,10 +285,18 @@ async function PassContent({ params, searchParams }: PassPageProps) {
             <Badge
               variant="outline"
               className={`text-[9px] uppercase tracking-wider ${
-                isGold ? "border-amber-500 bg-amber-500/10 text-amber-900" : "border-gold/50 bg-gold/10 text-forest"
+                isPendingVerification
+                  ? "border-amber-500 bg-amber-500/20 text-amber-900"
+                  : isGold
+                  ? "border-amber-500 bg-amber-500/10 text-amber-900"
+                  : "border-gold/50 bg-gold/10 text-forest"
               }`}
             >
-              {isGold ? (isSponsored ? "VVIP Guest Pass" : "VVIP Gate ID Card") : "Official Gate Pass"}
+              {isPendingVerification
+                ? "⚠️ Provisional Bank Claim Slip"
+                : isGold
+                ? (isSponsored ? "VVIP Guest Pass" : "VVIP Gate ID Card")
+                : "Official Gate Pass"}
             </Badge>
           </div>
         </div>
@@ -251,7 +307,9 @@ async function PassContent({ params, searchParams }: PassPageProps) {
         {/* Access Card Container (CR80 Standard Physical ID-Card Ratio: max-w-[290px] sm:max-w-[305px]) */}
         <div
           className={`mx-auto w-full max-w-[290px] sm:max-w-[305px] min-w-0 overflow-hidden rounded-2xl border-2 shadow-xl print:border-2 print:border-black print:shadow-none transition-all ${
-            isGold
+            isPendingVerification
+              ? "border-2 border-amber-500 bg-[#FCF9F8] text-[#1B1C1C] shadow-lg"
+              : isGold
               ? "border-2 border-[#C9A84C] bg-gradient-to-b from-[#1C1605] via-[#2A2007] to-[#120E03] text-[#FCF9F8] shadow-[0_4px_25px_rgba(201,168,76,0.25)]"
               : "border-2 border-[#002F1A] bg-[#FCF9F8] text-[#1B1C1C] shadow-lg"
           }`}
@@ -268,7 +326,9 @@ async function PassContent({ params, searchParams }: PassPageProps) {
           {/* Header */}
           <div
             className={`p-2.5 text-center relative overflow-hidden print:bg-black print:text-white border-b-2 ${
-              isGold
+              isPendingVerification
+                ? "bg-amber-900 text-amber-100 border-amber-500"
+                : isGold
                 ? "bg-gradient-to-r from-[#241A04] via-[#3B2B08] to-[#241A04] text-[#E5C768] border-[#C9A84C]"
                 : "bg-[#002F1A] text-[#FCF9F8] border-[#C9A84C]/50"
             }`}
@@ -276,17 +336,23 @@ async function PassContent({ params, searchParams }: PassPageProps) {
             <div className="flex justify-center mb-0.5">
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[8px] font-black tracking-widest uppercase ${
-                  isGold
+                  isPendingVerification
+                    ? "bg-amber-500 text-black shadow-xs"
+                    : isGold
                     ? "bg-gradient-to-r from-[#B38F34] via-[#F5D77F] to-[#C9A84C] text-black shadow-xs"
                     : "bg-[#FCF9F8] text-[#002F1A] border border-[#002F1A] shadow-xs"
                 }`}
               >
-                {isGold ? (
+                {isPendingVerification ? (
+                  <AlertTriangle className="size-2.5 inline text-black" />
+                ) : isGold ? (
                   <Crown className="size-2.5 inline text-black" />
                 ) : (
                   <ShieldCheck className="size-2.5 inline text-[#002F1A]" />
                 )}
-                {isGold
+                {isPendingVerification
+                  ? "PROVISIONAL CLAIM · UNVERIFIED"
+                  : isGold
                   ? isSponsored
                     ? `VVIP GUEST PASS · TICKET ${ticketIdx}`
                     : "VVIP ROYAL ADMISSION"
@@ -294,9 +360,13 @@ async function PassContent({ params, searchParams }: PassPageProps) {
               </span>
             </div>
             <h1 className="font-serif text-sm font-bold leading-tight">
-              {isGold ? (isSponsored ? "Day 3 VVIP Guest Pass" : "Day 3 VVIP Grand Finale Pass") : "Official Gate Access Card"}
+              {isPendingVerification
+                ? "Day 3 VVIP Provisional Claim"
+                : isGold
+                ? (isSponsored ? "Day 3 VVIP Guest Pass" : "Day 3 VVIP Grand Finale Pass")
+                : "Official Gate Access Card"}
             </h1>
-            <p className={`mt-0.5 text-[8px] uppercase tracking-wider font-semibold ${isGold ? "text-[#C9A84C]" : "text-[#E5C768]"}`}>
+            <p className={`mt-0.5 text-[8px] uppercase tracking-wider font-semibold ${isPendingVerification ? "text-amber-200" : isGold ? "text-[#C9A84C]" : "text-[#E5C768]"}`}>
               {isGold ? "Royal Cup Grand Finale · 20 Dec 2026" : "The Blueprint · 18–20 Dec 2026"}
             </p>
             {isSponsored && cred.host_name && (
@@ -308,7 +378,7 @@ async function PassContent({ params, searchParams }: PassPageProps) {
               {isPendingVerification ? (
                 <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-500/25 border border-amber-400 text-amber-300">
                   <AlertTriangle className="size-2.5 text-amber-400" />
-                  Pending Verification · Amber Warning
+                  Pending Bursary Verification
                 </span>
               ) : (
                 <span
@@ -334,11 +404,22 @@ async function PassContent({ params, searchParams }: PassPageProps) {
             } print:bg-white`}
           >
             <div
-              className={`flex size-24 items-center justify-center rounded-xl border-2 bg-white p-2 shadow-xs ${
-                isGold ? "border-[#C9A84C] shadow-[0_0_12px_rgba(201,168,76,0.35)]" : "border-[#002F1A]"
+              className={`relative flex size-24 items-center justify-center rounded-xl border-2 bg-white p-2 shadow-xs ${
+                isPendingVerification
+                  ? "border-amber-500"
+                  : isGold
+                  ? "border-[#C9A84C] shadow-[0_0_12px_rgba(201,168,76,0.35)]"
+                  : "border-[#002F1A]"
               } print:border-black`}
             >
               <QrCode className={`size-20 ${isGold ? "text-black" : "text-[#002F1A]"} print:text-black`} />
+              {isPendingVerification && (
+                <div className="absolute inset-0 bg-black/75 rounded-xl flex items-center justify-center p-1 text-center">
+                  <span className="text-[7px] font-black text-amber-300 uppercase tracking-tighter leading-tight bg-black/90 px-1 py-0.5 rounded border border-amber-400">
+                    ⚠️ PROVISIONAL · NOT VALID FOR GATE ENTRY
+                  </span>
+                </div>
+              )}
             </div>
             <p
               className={`mt-1 font-mono text-sm font-extrabold tracking-widest ${
@@ -528,6 +609,35 @@ async function PassContent({ params, searchParams }: PassPageProps) {
               currentCount={1840}
               targetCount={2500}
             />
+          </div>
+        )}
+
+        {/* Secretariat Verification CTA for Pending Passes */}
+        {isPendingVerification && (
+          <div className="rounded-2xl border-2 border-amber-500 bg-amber-50/90 p-4 text-center space-y-2.5 print:hidden">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+              <AlertTriangle className="size-3 text-white" />
+              <span>Pending Bursary Verification</span>
+            </div>
+            <h3 className="font-serif text-base font-bold text-amber-950">
+              Submit Payment Slip to Activate Pass
+            </h3>
+            <p className="text-xs text-amber-900 leading-relaxed max-w-sm mx-auto">
+              Gate turnstiles will deny entry until your bank transfer is verified. Please send your bank payment debit slip to the Secretariat on WhatsApp to activate your pass immediately.
+            </p>
+            <div className="pt-1 flex justify-center">
+              <Button asChild className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs">
+                <a
+                  href={`https://wa.me/2348181888884?text=${encodeURIComponent(
+                    `🏇 *ABEOKUTA POLO FESTIVAL 2026 — PASS VERIFICATION*\n\nHello Secretariat Desk, please verify my bank transfer for pass code: ${cred.pass_code}\nName: ${cred.holder_name}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Send Slip to Secretariat via WhatsApp (+234 818 188 8884)
+                </a>
+              </Button>
+            </div>
           </div>
         )}
 

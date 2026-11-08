@@ -96,8 +96,8 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
   }
 
   // 2b. Check in-memory unverified pass registry (Anti-Fraud Gate Guard)
-  if (isPassPendingVerification(identifier)) {
-    return rejected("PAYMENT UNVERIFIED — ADMISSION DENIED. Please proceed to Secretariat accreditation desk.");
+  if (isPassPendingVerification(identifier) || isPassPendingVerification(passIdentifier)) {
+    return rejected("Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.");
   }
 
   // 3. Database check via process_gate_scan RPC
@@ -128,7 +128,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
           organization: directCred.organization,
           eventDay,
           gate,
-          message: "PAYMENT UNVERIFIED — ADMISSION DENIED. Please proceed to Secretariat accreditation desk.",
+          message: "Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.",
         };
       }
 
@@ -143,7 +143,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
         if (
           data.status === "unverified" ||
           data.status === "pending_verification" ||
-          (data.message && data.message.includes("PAYMENT UNVERIFIED"))
+          (data.message && (data.message.includes("PAYMENT UNVERIFIED") || data.message.includes("Pending Bursary Verification")))
         ) {
           return {
             status: "invalid",
@@ -155,7 +155,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
             organization: data.organization,
             eventDay: data.event_day || eventDay,
             gate: data.gate || gate,
-            message: "PAYMENT UNVERIFIED — ADMISSION DENIED. Please proceed to Secretariat accreditation desk.",
+            message: "Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.",
           };
         }
 
@@ -194,6 +194,9 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
 
   // 4. Local simulation for testing valid demo codes
   if (identifier.startsWith("ABK-2026-") || decodedHolderName) {
+    if (isPassPendingVerification(identifier) || isPassPendingVerification(passIdentifier)) {
+      return rejected("Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.");
+    }
     const passKey = identifier;
     const history = localAttendanceCache.get(passKey) || {};
 

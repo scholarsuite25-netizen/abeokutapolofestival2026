@@ -295,6 +295,7 @@ function RegisterContent() {
 
       setResult(res);
       if (res.passes && res.passes.length > 0) {
+        setIssuedPasses(res.passes);
         persistRegisteredPass(res.passes);
       }
       setLoading(false);
@@ -337,12 +338,18 @@ function RegisterContent() {
           window.location.href = data.authorization_url;
           return;
         } else {
-          setErrorMsg(data.error || "Could not connect to Paystack gateway.");
+          // Fall back gracefully to Bank Wire Transfer
+          setDay3PaymentMethod("bank_transfer");
+          setErrorMsg(
+            (data.error ? `${data.error} ` : "") +
+              "Switched to Abeokuta Polo Club Wema Bank wire transfer below. Please transfer the gate fee and submit.",
+          );
           setLoading(false);
           return;
         }
       } catch {
-        setErrorMsg("Network error connecting to payment gateway.");
+        setDay3PaymentMethod("bank_transfer");
+        setErrorMsg("Network error connecting to payment gateway. Switched to direct Wema Bank wire transfer.");
         setLoading(false);
         return;
       }

@@ -260,14 +260,20 @@ export function claimGiftedPassOnDevice(passCode: string, recipientName: string)
 }
 
 /**
- * Generates and triggers an automatic download of a self-contained offline Digital Access ID Card.
+ * Generates the self-contained offline Digital Access ID Card HTML string.
  * Day 3 VVIP passes render a distinct, classic deep gold design.
  * Days 1 & 2 passes render the classic Forest Green & Warm Ivory royal design.
+ * Pending verification passes render a Provisional Claim Slip with high-contrast watermarks.
  */
-export function forceDownloadOfflinePassCard(pass: StoredPass): void {
-  if (typeof window === "undefined") return;
+export function generateOfflinePassHtml(pass: StoredPass): string {
+  const isPending =
+    pass.status === "pending_verification" ||
+    pass.status === "pending_bank_verification" ||
+    pass.status === "pending_approval" ||
+    pass.day3Status === "pending_verification" ||
+    pass.day3Status === "pending_bank_verification";
 
-  const isGold = pass.isVvip || pass.designTheme === "gold" || pass.passTier === "vvip_day3";
+  const isGold = (pass.isVvip || pass.designTheme === "gold" || pass.passTier === "vvip_day3") && !isPending;
   const isSponsored = Boolean(pass.isSponsored || pass.holderName.toLowerCase().startsWith("sponsored invitation"));
   const serialLabel = pass.serialLabel || (pass.totalTickets && pass.totalTickets > 1 && pass.ticketIndex ? `Ticket ${pass.ticketIndex} of ${pass.totalTickets}` : "");
 
@@ -280,7 +286,9 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
     ? "Day 2: Saturday 19 Dec 2026"
     : "Day 1: Friday 18 Dec 2026";
 
-  const cardTitle = isGold
+  const cardTitle = isPending
+    ? "PROVISIONAL BANK CLAIM SLIP"
+    : isGold
     ? isSponsored
       ? "DAY 3 VVIP GUEST INVITATION"
       : "DAY 3 VVIP GRAND FINALE PASS"
@@ -290,11 +298,17 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
     ? "DAY 2 ACCESS PASS"
     : "DAY 1 ACCESS PASS";
 
-  const badgeTheme = isGold
+  const badgeTheme = isPending
+    ? `⚠️ PROVISIONAL CLAIM SLIP${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
+    : isGold
     ? isSponsored
       ? `👑 VVIP GUEST INVITATION${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
       : `👑 VVIP ROYAL ADMISSION${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`
     : `🛡️ CLASSIC HERITAGE BADGE${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`;
+
+  const securityStatusHtml = isPending
+    ? `<div class="security-status" style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; font-weight: 800; font-size: 8px;">⚠️ PENDING BURSARY VERIFICATION · NOT VALID FOR GATE ENTRY</div>`
+    : `<div class="security-status">${isGold ? "👑 VVIP ACTIVE STATUS · ROYAL ADMISSION" : "✓ EMERALD ACTIVE STATUS · HERITAGE ADMISSION"}</div>`;
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -478,15 +492,20 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
   </style>
 </head>
 <body>
-  <div class="id-card">
+  <div class="id-card"${isPending ? ' style="border: 2px solid #D97706; background: #FFFBEB;"' : ""}>
     <div class="lanyard-slot"></div>
-    <div class="card-header">
-      <div class="badge-pill">${badgeTheme}</div>
+    <div class="card-header"${isPending ? ' style="background: #78350F; color: #FEF3C7; border-bottom: 2px solid #D97706;"' : ""}>
+      <div class="badge-pill"${isPending ? ' style="background: #F59E0B; color: #78350F; border: 1px solid #B45309;"' : ""}>${badgeTheme}</div>
       <div class="card-title">${cardTitle}</div>
-      <div class="festival-sub">Abeokuta Polo Festival 2026</div>
+      <div class="festival-sub"${isPending ? ' style="color: #FDE68A;"' : ""}>Abeokuta Polo Festival 2026</div>
     </div>
 
-    <div class="qr-core">
+    ${isPending ? `
+    <div style="position: absolute; top: 46%; left: 50%; transform: translate(-50%, -50%) rotate(-25deg); font-size: 13px; font-weight: 900; color: #991B1B; text-align: center; pointer-events: none; text-transform: uppercase; border: 3px dashed #DC2626; padding: 10px 14px; border-radius: 8px; width: 85%; z-index: 50; line-height: 1.35; background: rgba(254, 242, 242, 0.95); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+      ⚠️ PENDING BURSARY VERIFICATION · NOT VALID FOR GATE ENTRY
+    </div>` : ""}
+
+    <div class="qr-core"${isPending ? ' style="background: #FEF3C7; border-bottom: 1px solid #FDE68A;"' : ""}>
       <div class="qr-frame">
         <img
           src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(pass.passCode)}"
@@ -496,8 +515,8 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
           style="display: block; border-radius: 4px;"
         />
       </div>
-      <div class="pass-code">${pass.passCode}</div>
-      <div class="security-status">${isGold ? "👑 VVIP ACTIVE STATUS · ROYAL ADMISSION" : "✓ EMERALD ACTIVE STATUS · HERITAGE ADMISSION"}</div>
+      <div class="pass-code"${isPending ? ' style="color: #92400E;"' : ""}>${pass.passCode}</div>
+      ${securityStatusHtml}
     </div>
 
     <div class="card-body">
@@ -508,7 +527,7 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       ${serialLabel ? `
       <div class="info-row">
         <span class="info-label">Ticket Serial</span>
-        <span class="info-val" style="color: ${isGold ? "#E5C768" : "#002F1A"}; font-family: monospace;">${serialLabel}</span>
+        <span class="info-val" style="color: ${isGold ? "#E5C768" : isPending ? "#92400E" : "#002F1A"}; font-family: monospace;">${serialLabel}</span>
       </div>` : ""}
       ${pass.sponsorName || pass.hostName ? `
       <div class="info-row">
@@ -517,11 +536,11 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       </div>` : ""}
       <div class="info-row">
         <span class="info-label">Admission Days</span>
-        <span class="info-val" style="color: ${isGold ? "#E5C768" : "#002F1A"};">${daysLabel}</span>
+        <span class="info-val" style="color: ${isGold ? "#E5C768" : isPending ? "#92400E" : "#002F1A"};">${daysLabel}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Tier / Access</span>
-        <span class="info-val" style="color: ${isGold ? "#E5C768" : "#002F1A"};">${isGold ? "Royal Pavilion & Grandstand" : "Festival Grounds & Grandstand"}</span>
+        <span class="info-val" style="color: ${isGold ? "#E5C768" : isPending ? "#92400E" : "#002F1A"};">${isGold ? "Royal Pavilion & Grandstand" : isPending ? "Provisional Claim (Unverified)" : "Festival Grounds & Grandstand"}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Venue</span>
@@ -529,24 +548,42 @@ export function forceDownloadOfflinePassCard(pass: StoredPass): void {
       </div>
 
       <div class="security-foil">
-        <span>🛡️ <strong>HMAC-256:</strong> SEALED</span>
-        <span>${isGold ? "GOLD FOIL SECURITY HOLOGRAM" : "CLASSIC HERITAGE BADGE"}</span>
+        <span>🛡️ <strong>HMAC-256:</strong> ${isPending ? "PROVISIONAL" : "SEALED"}</span>
+        <span>${isPending ? "⚠️ AWAITING SECRETARIAT VERIFICATION" : isGold ? "GOLD FOIL SECURITY HOLOGRAM" : "CLASSIC HERITAGE BADGE"}</span>
       </div>
     </div>
 
-    <div class="card-footer">
-      ${isGold ? "Turnstile accreditation required. Royal Gate Marshals on duty." : "Turnstile accreditation required. Complimentary Heritage Entry."}
+    <div class="card-footer"${isPending ? ' style="background: #FEF3C7; color: #92400E; border-top: 1px solid #FDE68A;"' : ""}>
+      ${isPending ? "⚠️ PROVISIONAL CLAIM SLIP: Not valid for turnstile gate admission until bursary verification is complete." : isGold ? "Turnstile accreditation required. Royal Gate Marshals on duty." : "Turnstile accreditation required. Complimentary Heritage Entry."}
     </div>
   </div>
 </body>
 </html>`;
+
+  return htmlContent;
+}
+
+/**
+ * Downloads a self-contained offline Digital Access ID Card file directly on the user's device.
+ */
+export function forceDownloadOfflinePassCard(pass: StoredPass): void {
+  if (typeof window === "undefined") return;
+
+  const isPending =
+    pass.status === "pending_verification" ||
+    pass.status === "pending_bank_verification" ||
+    pass.status === "pending_approval" ||
+    pass.day3Status === "pending_verification" ||
+    pass.day3Status === "pending_bank_verification";
+  const isGold = (pass.isVvip || pass.designTheme === "gold" || pass.passTier === "vvip_day3") && !isPending;
+  const htmlContent = generateOfflinePassHtml(pass);
 
   try {
     const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    const prefix = isGold ? "Abeokuta_Polo_VVIP_Day3" : "Abeokuta_Polo_Pass";
+    const prefix = isPending ? "Abeokuta_Polo_PROVISIONAL_CLAIM" : isGold ? "Abeokuta_Polo_VVIP_Day3" : "Abeokuta_Polo_Pass";
     link.download = `${prefix}_${pass.passCode}.html`;
     document.body.appendChild(link);
     link.click();
