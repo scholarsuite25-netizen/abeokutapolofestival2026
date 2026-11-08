@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, KeyRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
@@ -11,31 +10,74 @@ import { Label } from "@/components/ui/label";
 import { PasswordStrengthMeter } from "./password-strength-meter";
 
 export function ResetPasswordForm() {
-  const router = useRouter();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [status, setStatus] = useState<"checking" | "ready" | "pending" | "success" | "error">("checking");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasValidSession, setHasValidSession] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    try {
-      const supabase = createClient();
 
-      // Check current session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!mounted) return;
-        if (!session) {
-          // Check if hash contains access_token or type=recovery
-          const hash = window.location.hash;
-          if (!hash || !hash.includes("access_token")) {
-            setHasValidSession(false);
+    try {
+      // 1. Inspect URL search params and hash fragment for Supabase auth errors
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const rawError =
+        searchParams.get("error_description") ||
+        searchParams.get("error") ||
+        hashParams.get("error_description") ||
+        hashParams.get("error");
+
+      if (rawError) {
+        const decoded = decodeURIComponent(rawError.replace(/\+/g, " "));
+        setErrorMessage(
+          decoded === "auth_callback_failed" || decoded === "otp_failed"
+            ? "Your password reset link is invalid or has expired. Please request a new one."
+            : decoded,
+        );
+        setHasValidSession(false);
+        setStatus("ready");
+        return;
+      }
+
+      const supabase = createClient();
+      const code = searchParams.get("code");
+
+      const initAuthSession = async () => {
+        // If query param carries a code, exchange it directly
+        if (code) {
+          try {
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (!mounted) return;
+            if (exchangeError) {
+              setErrorMessage(exchangeError.message);
+              setHasValidSession(false);
+              setStatus("ready");
+              return;
+            }
+          } catch {
+            // Already exchanged or handled
           }
         }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        if (!session) {
+          const hash = window.location.hash;
+          if (!hash || (!hash.includes("access_token") && !hash.includes("type=recovery"))) {
+            setHasValidSession(false);
+          }
+        } else {
+          setHasValidSession(true);
+        }
         setStatus("ready");
-      });
+      };
+
+      initAuthSession();
 
       // Listen for PASSWORD_RECOVERY or SIGNED_IN event
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -59,6 +101,11 @@ export function ResetPasswordForm() {
     event.preventDefault();
     setErrorMessage(null);
 
+    if (!hasValidSession) {
+      setErrorMessage("No active password reset session was detected. Please request a fresh reset link.");
+      return;
+    }
+
     if (newPassword.length < 8) {
       setErrorMessage("Password must be at least 8 characters long.");
       return;
@@ -73,7 +120,7 @@ export function ResetPasswordForm() {
 
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
@@ -134,13 +181,13 @@ export function ResetPasswordForm() {
   return (
     <div className="space-y-4">
       {!hasValidSession && status === "ready" && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 flex items-start gap-2.5">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
           <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <p className="font-semibold">Reset session not detected</p>
             <p className="text-amber-800 leading-relaxed">
-              If you did not click a password reset link from your email, this submission may fail. You can request a fresh link at{" "}
-              <Link href="/forgot-password" className="font-semibold underline">
+              Password reset links are single-use and time-sensitive. If you did not click a valid recovery link or it has expired, you can request a new one at{" "}
+              <Link href="/forgot-password" className="font-semibold underline text-amber-950 hover:text-forest">
                 Forgot Password
               </Link>.
             </p>
@@ -183,10 +230,29 @@ export function ResetPasswordForm() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="flex items-center gap-1 text-xs text-muted-brand hover:text-forest"
+            >
+              {showConfirmPassword ? (
+                <>
+                  <EyeOff className="h-3.5 w-3.5" />
+                  <span>Hide</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3.5 w-3.5" />
+                  <span>Show</span>
+                </>
+              )}
+            </button>
+          </div>
           <Input
             id="confirmPassword"
-            type={showPassword ? "text" : "password"}
+            type={showConfirmPassword ? "text" : "password"}
             autoComplete="new-password"
             required
             placeholder="Re-enter new password"
@@ -219,3 +285,4 @@ export function ResetPasswordForm() {
     </div>
   );
 }
+

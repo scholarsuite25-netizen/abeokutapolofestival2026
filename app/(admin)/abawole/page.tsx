@@ -17,6 +17,7 @@ import {
   Building,
   CalendarCheck,
   Printer,
+  KeyRound,
 } from "lucide-react";
 
 export const metadata = {
@@ -419,6 +420,19 @@ async function CommandCentreContent() {
                 </div>
                 <p className="text-[11px] text-muted-brand">
                   High-res scannable signage for Kobape turnstiles, car parks, and reception stands.
+                </p>
+              </Link>
+
+              <Link
+                href="/abawole/change-password"
+                className="flex flex-col items-start gap-1 rounded-lg border border-line bg-sage/30 p-3 text-left transition-colors hover:border-forest/40 hover:bg-sage/60"
+              >
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-forest">
+                  <KeyRound className="h-3.5 w-3.5 text-gold-deep" />
+                  <span>Security &amp; Password Rotation</span>
+                </div>
+                <p className="text-[11px] text-muted-brand">
+                  Self-service credential updates for Super Admin, President, Secretary, and Marshals.
                 </p>
               </Link>
             </div>

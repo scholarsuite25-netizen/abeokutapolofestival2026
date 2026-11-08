@@ -40,13 +40,21 @@ export async function changeOwnPasswordAction(formData: FormData) {
     }
   }
 
-  const supabaseAdmin = createAdminClient();
-
   try {
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      session.user.id,
-      { password: newPassword },
-    );
+    let updateError: { message: string } | null = null;
+
+    try {
+      const supabaseAdmin = createAdminClient();
+      const res = await supabaseAdmin.auth.admin.updateUserById(session.user.id, {
+        password: newPassword,
+      });
+      updateError = res.error;
+    } catch {
+      // Fallback to authenticated user client if service-role client is not configured
+      const authClient = await createClient();
+      const res = await authClient.auth.updateUser({ password: newPassword });
+      updateError = res.error;
+    }
 
     if (updateError) {
       return { ok: false, error: updateError.message };
@@ -66,6 +74,7 @@ export async function changeOwnPasswordAction(formData: FormData) {
 
     revalidatePath("/abawole");
     revalidatePath("/abawole/admins");
+    revalidatePath("/abawole/change-password");
     return { ok: true, message: "Your password has been updated successfully." };
   } catch (err) {
     return {

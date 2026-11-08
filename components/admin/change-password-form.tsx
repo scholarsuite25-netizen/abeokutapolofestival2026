@@ -85,7 +85,14 @@ export function ChangePasswordForm({ userEmail, userRole }: ChangePasswordFormPr
               <p className="text-xs text-emerald-800 leading-relaxed">
                 {message} All subsequent logins for <span className="font-mono font-medium">{userEmail}</span> must use this new passphrase.
               </p>
-              <div className="pt-2">
+              <div className="pt-2 flex flex-wrap items-center gap-2">
+                <Link
+                  href="/abawole"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-900 transition-colors shadow-xs"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>Return to Console (/abawole)</span>
+                </Link>
                 <Button
                   type="button"
                   variant="outline"

@@ -26,12 +26,19 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 const mockSignInWithPassword = vi.fn().mockResolvedValue({ data: {}, error: null });
+const mockUpdateUser = vi.fn().mockResolvedValue({ data: {}, error: null });
+const mockExchangeCodeForSession = vi.fn().mockResolvedValue({ data: {}, error: null });
+const mockVerifyOtp = vi.fn().mockResolvedValue({ data: {}, error: null });
+
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn().mockResolvedValue({
+  createClient: vi.fn().mockImplementation(async () => ({
     auth: {
       signInWithPassword: mockSignInWithPassword,
+      updateUser: mockUpdateUser,
+      exchangeCodeForSession: mockExchangeCodeForSession,
+      verifyOtp: mockVerifyOtp,
     },
-  }),
+  })),
 }));
 
 const mockWriteAudit = vi.fn().mockResolvedValue(undefined);
@@ -175,6 +182,106 @@ describe("Password Management & Evaluation Rules", () => {
       expect(res.ok).toBe(false);
       expect(res.error).toMatch(/current password is incorrect/i);
       expect(mockUpdateUserById).not.toHaveBeenCalled();
+    });
+
+    it("falls back to user client auth.updateUser when admin client is unavailable", async () => {
+      mockUpdateUserById.mockRejectedValueOnce(new Error("Admin client unavailable"));
+      mockUpdateUser.mockResolvedValueOnce({ data: {}, error: null });
+
+      const { changeOwnPasswordAction } = await import(
+        "@/app/(admin)/abawole/change-password/actions"
+      );
+
+      const formData = new FormData();
+      formData.append("newPassword", "FallbackPassword2026#");
+      formData.append("confirmPassword", "FallbackPassword2026#");
+
+      const res = await changeOwnPasswordAction(formData);
+      expect(res.ok).toBe(true);
+      expect(mockUpdateUser).toHaveBeenCalledWith({ password: "FallbackPassword2026#" });
+    });
+  });
+
+  describe("Auth Callback Route Handler (/auth/callback)", () => {
+    it("exchanges PKCE code and redirects to /reset-password when next=/reset-password", async () => {
+      mockExchangeCodeForSession.mockResolvedValueOnce({ data: {}, error: null });
+      const { GET } = await import("@/app/auth/callback/route");
+
+      const req = new Request("https://festival.ng/auth/callback?code=pkce123&next=/reset-password");
+      const res = await GET(req);
+
+      expect(res.status).toBe(307);
+      expect(res.headers.get("location")).toBe("https://festival.ng/reset-password");
+      expect(mockExchangeCodeForSession).toHaveBeenCalledWith("pkce123");
+    });
+
+    it("redirects to /reset-password with error when PKCE code exchange fails", async () => {
+      mockExchangeCodeForSession.mockResolvedValueOnce({
+        data: null,
+        error: { message: "Code has expired" },
+      });
+      const { GET } = await import("@/app/auth/callback/route");
+
+      const req = new Request("https://festival.ng/auth/callback?code=bad_code&next=/reset-password");
+      const res = await GET(req);
+
+      expect(res.status).toBe(307);
+      expect(res.headers.get("location")).toContain("/reset-password?error=Code%20has%20expired");
+    });
+
+    it("verifies OTP token_hash for type=recovery and redirects to /reset-password", async () => {
+      mockVerifyOtp.mockResolvedValueOnce({ data: {}, error: null });
+      const { GET } = await import("@/app/auth/callback/route");
+
+      const req = new Request(
+        "https://festival.ng/auth/callback?token_hash=token123&type=recovery&next=/reset-password",
+      );
+      const res = await GET(req);
+
+      expect(res.status).toBe(307);
+      expect(res.headers.get("location")).toBe("https://festival.ng/reset-password");
+      expect(mockVerifyOtp).toHaveBeenCalledWith({
+        type: "recovery",
+        token_hash: "token123",
+      });
+    });
+
+    it("forwards incoming error_description from Supabase to /reset-password", async () => {
+      const { GET } = await import("@/app/auth/callback/route");
+
+      const req = new Request(
+        "https://festival.ng/auth/callback?error=access_denied&error_description=Email+link+expired&next=/reset-password",
+      );
+      const res = await GET(req);
+
+      expect(res.status).toBe(307);
+      expect(res.headers.get("location")).toBe("https://festival.ng/reset-password?error=Email%20link%20expired");
+    });
+
+    it("respects x-forwarded-host in production environment", async () => {
+      mockExchangeCodeForSession.mockResolvedValueOnce({ data: {}, error: null });
+      const origEnv = process.env.NODE_ENV;
+      // @ts-expect-error test override
+      process.env.NODE_ENV = "production";
+
+      try {
+        const { GET } = await import("@/app/auth/callback/route");
+        const req = new Request("http://internal-node-host/auth/callback?code=pkce123&next=/reset-password", {
+          headers: {
+            "x-forwarded-host": "abeokuta-polo-festival-2026.vercel.app",
+            "x-forwarded-proto": "https",
+          },
+        });
+        const res = await GET(req);
+
+        expect(res.status).toBe(307);
+        expect(res.headers.get("location")).toBe(
+          "https://abeokuta-polo-festival-2026.vercel.app/reset-password",
+        );
+      } finally {
+        // @ts-expect-error test restore
+        process.env.NODE_ENV = origEnv;
+      }
     });
   });
 });
