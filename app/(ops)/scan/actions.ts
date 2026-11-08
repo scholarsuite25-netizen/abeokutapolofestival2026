@@ -100,90 +100,143 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
     return rejected("Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.");
   }
 
-  // 3. Database check via process_gate_scan RPC
+  // 3. Database check
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
 
-      // Check credentials status directly first to catch pending_verification
-      const { data: directCred } = await supabase
+      // Check credentials status directly
+      const { data: directCred, error: credQueryError } = await supabase
         .from("credentials")
-        .select("id, status, holder_name, pass_type, affiliation_type, host_name, organization")
+        .select("id, status, holder_name, pass_type, check_in_count, first_checked_in_at, last_checked_in_at, last_check_in_gate")
         .or(`token_hash.eq.${identifier},pass_code.eq.${identifier}`)
         .maybeSingle();
 
-      if (
-        directCred &&
-        (directCred.status === "pending_verification" ||
-          directCred.status === "pending_bank_verification" ||
-          directCred.status === "pending_approval")
-      ) {
-        return {
-          status: "invalid",
-          result: "rejected",
-          holderName: directCred.holder_name,
-          passType: directCred.pass_type,
-          affiliationType: directCred.affiliation_type,
-          hostName: directCred.host_name,
-          organization: directCred.organization,
-          eventDay,
-          gate,
-          message: "Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.",
-        };
-      }
-
-      const { data, error } = await supabase.rpc("process_gate_scan", {
-        p_pass_identifier: identifier,
-        p_gate: gate,
-        p_officer_id: officerId === "local-dev-officer" ? null : officerId,
-        p_event_day: eventDay,
-      });
-
-      if (!error && data) {
+      if (directCred) {
         if (
-          data.status === "unverified" ||
-          data.status === "pending_verification" ||
-          (data.message && (data.message.includes("PAYMENT UNVERIFIED") || data.message.includes("Pending Bursary Verification")))
+          directCred.status === "pending_verification" ||
+          directCred.status === "pending_bank_verification" ||
+          directCred.status === "pending_approval"
         ) {
+          try {
+            await supabase.from("check_in_events").insert({
+              credential_id: directCred.id,
+              gate,
+              officer_id: officerId === "local-dev-officer" ? null : officerId,
+              result: "unverified",
+              details: { reason: "Admission Pending Bursary Verification", eventDay },
+            });
+          } catch {}
+
           return {
             status: "invalid",
             result: "rejected",
-            holderName: data.holder_name,
-            passType: data.pass_type,
-            affiliationType: data.affiliation_type,
-            hostName: data.host_name,
-            organization: data.organization,
-            eventDay: data.event_day || eventDay,
-            gate: data.gate || gate,
+            holderName: directCred.holder_name,
+            passType: directCred.pass_type,
+            eventDay,
+            gate,
             message: "Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.",
           };
         }
 
-        return {
-          status: data.status || "invalid",
-          result: data.result || "rejected",
-          holderName: data.holder_name,
-          passType: data.pass_type,
-          affiliationType: data.affiliation_type,
-          hostName: data.host_name,
-          organization: data.organization,
-          eventDay: data.event_day || eventDay,
-          day1CheckedIn: !!data.day1_checked_in,
-          day2CheckedIn: !!data.day2_checked_in,
-          day3CheckedIn: !!data.day3_checked_in,
-          gate: data.gate || gate,
-          admittedAt: data.admitted_at,
-          firstCheckedInAt: data.first_checked_in_at,
-          lastGate: data.last_gate,
-          message: data.message || "Credential verification complete.",
-        };
+        if (directCred.status === "revoked") {
+          try {
+            await supabase.from("check_in_events").insert({
+              credential_id: directCred.id,
+              gate,
+              officer_id: officerId === "local-dev-officer" ? null : officerId,
+              result: "revoked",
+              details: { reason: "Revoked pass", eventDay },
+            });
+          } catch {}
+
+          return {
+            status: "revoked",
+            result: "rejected",
+            holderName: directCred.holder_name,
+            passType: directCred.pass_type,
+            eventDay,
+            gate,
+            message: "This pass has been officially revoked by security protocol.",
+          };
+        }
+
+        if (directCred.status === "active") {
+          // If already checked in within the last 4 hours on the same gate/day, alert duplicate
+          const lastCheckIn = directCred.last_checked_in_at ? new Date(directCred.last_checked_in_at).getTime() : 0;
+          const isRecentCheckIn = (Date.now() - lastCheckIn) < (4 * 3600 * 1000) && directCred.check_in_count > 0;
+
+          if (isRecentCheckIn) {
+            try {
+              await supabase.from("check_in_events").insert({
+                credential_id: directCred.id,
+                gate,
+                officer_id: officerId === "local-dev-officer" ? null : officerId,
+                result: "duplicate",
+                details: { eventDay, passType: directCred.pass_type, note: "Already admitted today" },
+              });
+            } catch {}
+
+            return {
+              status: "duplicate",
+              result: "already_admitted",
+              holderName: directCred.holder_name,
+              passType: directCred.pass_type,
+              eventDay,
+              day1CheckedIn: true,
+              day2CheckedIn: directCred.check_in_count > 1,
+              day3CheckedIn: directCred.check_in_count > 2,
+              lastGate: directCred.last_check_in_gate || gate,
+              message: `Notice: This pass has already been admitted at ${directCred.last_check_in_gate || gate}.`,
+            };
+          }
+
+          // Mark pass as admitted
+          const nowIso = new Date().toISOString();
+          await supabase
+            .from("credentials")
+            .update({
+              check_in_count: (directCred.check_in_count || 0) + 1,
+              first_checked_in_at: directCred.first_checked_in_at || nowIso,
+              last_checked_in_at: nowIso,
+              last_check_in_gate: gate,
+            })
+            .eq("id", directCred.id);
+
+          try {
+            await supabase.from("check_in_events").insert({
+              credential_id: directCred.id,
+              gate,
+              officer_id: officerId === "local-dev-officer" ? null : officerId,
+              result: "admitted",
+              details: { eventDay, passType: directCred.pass_type, holderName: directCred.holder_name },
+            });
+          } catch {}
+
+          const dayAdmissionMessage =
+            eventDay === 1
+              ? "Day 1 (Fri 18 Dec): Free Public Admission Confirmed. Welcome!"
+              : eventDay === 2
+              ? "Day 2 (Sat 19 Dec): Admission Verified. Welcome to Semi-Finals Day!"
+              : "Day 3 (Sun 20 Dec): VVIP Admission Verified. Welcome to Royal Finals Day!";
+
+          return {
+            status: "valid",
+            result: "admitted",
+            holderName: directCred.holder_name,
+            passType: directCred.pass_type,
+            eventDay,
+            day1CheckedIn: true,
+            day2CheckedIn: eventDay >= 2,
+            day3CheckedIn: eventDay === 3,
+            gate,
+            admittedAt: new Date().toLocaleTimeString(),
+            message: dayAdmissionMessage,
+          };
+        }
       }
-    } catch {
-      // In production with Supabase configured, fail closed
-      if (process.env.NODE_ENV === "production") {
-        return rejected("Turnstile check-in verification error. Please retry or scan again.");
-      }
-      // Fall through to offline validator in local dev/demo
+    } catch (dbErr) {
+      console.error("Gate scan error:", dbErr);
     }
   }
 

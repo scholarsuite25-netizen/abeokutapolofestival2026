@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import ModelSelector from "@/components/shared/model-selector";
 import { PermissionError, requirePermission } from "@/lib/auth/require";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { NotConfigured, PermissionDenied } from "@/components/shared/guards";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -43,7 +43,7 @@ async function CommandCentreContent() {
     throw error;
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const [
     { count: registrationsCount },
@@ -53,7 +53,7 @@ async function CommandCentreContent() {
     { count: pendingBankVerificationsCount },
     { data: recentScans },
     { data: commitments },
-    { data: recentRegistrations },
+    { data: recentRegistrationsRaw },
   ] = await Promise.all([
     supabase.from("registrations").select("*", { count: "exact", head: true }),
     supabase
@@ -68,9 +68,7 @@ async function CommandCentreContent() {
     supabase
       .from("registrations")
       .select("*", { count: "exact", head: true })
-      .or("status.eq.pending_verification,status.eq.pending_bank_verification,bank_transfer_ref.not.is.null")
-      .neq("status", "confirmed")
-      .neq("status", "cancelled"),
+      .in("status", ["pending_verification", "pending_bank_verification", "pending_approval"]),
     supabase
       .from("check_in_events")
       .select("id, result, scanned_at, gate, credentials(pass_code, pass_type)")
@@ -81,10 +79,32 @@ async function CommandCentreContent() {
       .select("proposed_amount, confirmed_amount, status"),
     supabase
       .from("registrations")
-      .select("id, first_name, last_name, category, affiliation_type, host_name, organization, status, created_at")
+      .select("id, first_name, last_name, category, status, created_at")
       .order("created_at", { ascending: false })
       .limit(6),
   ]);
+
+  const recentRegistrations = (recentRegistrationsRaw || []).map((r: any) => {
+    const cat = r.category || "";
+    const isGuestOf = cat.toLowerCase().includes("guest of");
+    const isCorporate = cat.toLowerCase().includes("corporate") || cat.toLowerCase().includes("sponsor");
+    let host_name: string | null = null;
+    let organization: string | null = null;
+    if (isGuestOf) {
+      const match = cat.match(/Guest of (.*)/i);
+      host_name = match ? match[1] : null;
+    }
+    if (isCorporate) {
+      const match = cat.match(/Corporate.*?\(?(.*?)\)?$/i);
+      organization = match ? match[1] : null;
+    }
+    return {
+      ...r,
+      affiliation_type: isGuestOf ? "guest_of" : isCorporate ? "corporate" : "individual",
+      host_name,
+      organization,
+    };
+  });
 
   const totalGuests = registrationsCount ?? 0;
   const totalCapacity = 12000;

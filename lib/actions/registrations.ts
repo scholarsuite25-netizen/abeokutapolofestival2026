@@ -101,9 +101,6 @@ export async function createParticipantAction(rawInput: unknown): Promise<Action
         phone,
         category: resolvedCategory,
         group_size: groupSize,
-        affiliation_type: affiliationType,
-        host_name: hostName || null,
-        organization: organization || null,
         status: initialStatus,
       })
       .select("id")
@@ -137,11 +134,7 @@ export async function createParticipantAction(rawInput: unknown): Promise<Action
         pass_code: passCode,
         pass_type: resolvedCategory,
         zone_access: zoneAccessFor(),
-        affiliation_type: affiliationType,
-        host_name: hostName || null,
-        organization: organization || null,
         status: "active",
-        issued_at: issuedAt,
       });
     }
 
@@ -189,11 +182,14 @@ export async function updateParticipantAction(
   if (parsed.data.lastName) updateData.last_name = parsed.data.lastName;
   if (parsed.data.email) updateData.email = parsed.data.email;
   if (parsed.data.phone) updateData.phone = parsed.data.phone;
-  if (parsed.data.category) updateData.category = parsed.data.category;
+  if (parsed.data.category || parsed.data.affiliationType) {
+    updateData.category = parsed.data.category || formatParticipantCategory(
+      parsed.data.affiliationType || "individual",
+      parsed.data.hostName,
+      parsed.data.organization
+    );
+  }
   if (parsed.data.groupSize !== undefined) updateData.group_size = parsed.data.groupSize;
-  if (parsed.data.affiliationType) updateData.affiliation_type = parsed.data.affiliationType;
-  if (parsed.data.hostName !== undefined) updateData.host_name = parsed.data.hostName || null;
-  if (parsed.data.organization !== undefined) updateData.organization = parsed.data.organization || null;
 
   try {
     const { error: regError } = await supabase
@@ -207,7 +203,7 @@ export async function updateParticipantAction(
     if (parsed.data.firstName || parsed.data.lastName || parsed.data.category || parsed.data.affiliationType) {
       const { data: reg } = await supabase
         .from("registrations")
-        .select("first_name, last_name, category, affiliation_type, host_name, organization")
+        .select("first_name, last_name, category")
         .eq("id", registrationId)
         .single();
 
@@ -218,9 +214,6 @@ export async function updateParticipantAction(
             holder_name: `${reg.first_name} ${reg.last_name}`.trim(),
             pass_type: reg.category,
             zone_access: zoneAccessFor(),
-            affiliation_type: reg.affiliation_type,
-            host_name: reg.host_name,
-            organization: reg.organization,
           })
           .eq("registration_id", registrationId);
       }
@@ -308,7 +301,7 @@ export async function approveRegistrationAction(registrationId: string): Promise
 
   const { data: reg, error: fetchError } = await supabase
     .from("registrations")
-    .select("id, first_name, last_name, email, phone, category, status, affiliation_type, host_name, organization, bank_transfer_ref")
+    .select("id, first_name, last_name, email, phone, category, status")
     .eq("id", registrationId)
     .maybeSingle();
 
@@ -359,18 +352,14 @@ export async function approveRegistrationAction(registrationId: string): Promise
       pass_code: passCode,
       pass_type: reg.category,
       zone_access: zoneAccessFor(),
-      affiliation_type: reg.affiliation_type || "individual",
-      host_name: reg.host_name,
-      organization: reg.organization,
       status: "active",
-      issued_at: issuedAt,
     });
 
     if (credError) return { ok: false, error: "Could not issue the credential." };
   }
 
-  if (reg.bank_transfer_ref) {
-    markPassVerified(reg.bank_transfer_ref);
+  if ((reg as any).bank_transfer_ref) {
+    markPassVerified((reg as any).bank_transfer_ref);
   }
 
   const { error: regError } = await supabase

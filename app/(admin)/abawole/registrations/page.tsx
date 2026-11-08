@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { PermissionError, requirePermission } from "@/lib/auth/require";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { PermissionDenied } from "@/components/shared/guards";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
@@ -30,10 +30,10 @@ async function RegistrationsContent() {
 
   let participants: ParticipantRecord[] = [];
 
-  // 2. Data Fetching
+  // 2. Data Fetching from live Supabase database
   if (isSupabaseConfigured()) {
     try {
-      const supabase = await createClient();
+      const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("registrations")
         .select(`
@@ -45,190 +45,76 @@ async function RegistrationsContent() {
           category,
           group_size,
           status,
-          affiliation_type,
-          host_name,
-          organization,
-          payment_method,
-          bank_transfer_ref,
-          day3_ticket_ref,
           created_at,
           credentials (
             id,
             pass_code,
             pass_type,
             status,
-            bank_transfer_ref,
-            day3_ticket_ref,
-            day1_checked_in_at,
-            day2_checked_in_at,
-            day3_checked_in_at
+            check_in_count,
+            first_checked_in_at,
+            last_checked_in_at,
+            last_check_in_gate
           )
         `)
         .order("created_at", { ascending: false });
 
       if (data && !error) {
-        participants = data as unknown as ParticipantRecord[];
+        participants = data.map((r: any) => {
+          const cat = r.category || "";
+          const isGuestOf = cat.toLowerCase().includes("guest of");
+          const isCorporate = cat.toLowerCase().includes("corporate") || cat.toLowerCase().includes("sponsor");
+          const affiliation_type: "individual" | "guest_of" | "corporate" = isGuestOf ? "guest_of" : isCorporate ? "corporate" : "individual";
+          
+          let host_name: string | null = null;
+          let organization: string | null = null;
+          if (isGuestOf) {
+            const match = cat.match(/Guest of (.*)/i);
+            host_name = match ? match[1] : null;
+          }
+          if (isCorporate) {
+            const match = cat.match(/Corporate.*?\(?(.*?)\)?$/i);
+            organization = match ? match[1] : null;
+          }
+
+          const creds = r.credentials || [];
+          const passTypes = creds.map((c: any) => c.pass_type || "").join(" ") + " " + cat;
+          const day1 = passTypes.includes("Day 1") || passTypes.includes("Dual Pass") || passTypes.includes("Royal");
+          const day2 = passTypes.includes("Day 2") || passTypes.includes("Dual Pass") || passTypes.includes("Royal");
+          const day3 = passTypes.includes("Day 3") || passTypes.includes("VVIP") || passTypes.includes("Royal");
+
+          return {
+            id: r.id,
+            first_name: r.first_name,
+            last_name: r.last_name,
+            email: r.email,
+            phone: r.phone,
+            category: r.category,
+            group_size: r.group_size || 1,
+            status: r.status,
+            affiliation_type,
+            host_name,
+            organization,
+            created_at: r.created_at,
+            day1,
+            day2,
+            day3,
+            payment_method: cat.toLowerCase().includes("wire") ? "bank_transfer" : cat.toLowerCase().includes("pstk") ? "online_gateway" : "free",
+            credentials: creds.map((c: any) => ({
+              id: c.id,
+              pass_code: c.pass_code,
+              pass_type: c.pass_type,
+              status: c.status,
+              day1_checked_in_at: c.first_checked_in_at,
+              day2_checked_in_at: c.check_in_count > 1 ? c.last_checked_in_at : null,
+              day3_checked_in_at: c.check_in_count > 2 ? c.last_checked_in_at : null,
+            })),
+          };
+        });
       }
     } catch {
-      // Fallback to sample data below
+      participants = [];
     }
-  }
-
-  // 3. Fallback sample data for local preview or unconfigured database
-  if (participants.length === 0) {
-    participants = [
-      {
-        id: "demo-1",
-        first_name: "Oladipupo",
-        last_name: "Adeleke",
-        email: "oladipupo.adeleke@example.com",
-        phone: "+234 803 123 4567",
-        category: "Day 1 & Day 2 Dual Pass",
-        group_size: 1,
-        status: "confirmed",
-        affiliation_type: "guest_of",
-        host_name: "Chief Olumide (Tournament Patron)",
-        organization: null,
-        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-        day1: true,
-        day2: true,
-        day3: false,
-        credentials: [
-          {
-            id: "cred-1",
-            pass_code: "ABK-D12-X7K9",
-            pass_type: "Day 1 & Day 2 Dual Pass",
-            status: "active",
-            day1_checked_in_at: new Date(Date.now() - 3600000).toISOString(),
-            day2_checked_in_at: null,
-            day3_checked_in_at: null,
-          },
-        ],
-      },
-      {
-        id: "demo-2",
-        first_name: "Folashade",
-        last_name: "Balogun",
-        email: "folashade.b@firstbank.com.ng",
-        phone: "+234 802 987 6543",
-        category: "Day 3 VVIP Grand Finale Pass",
-        group_size: 1,
-        status: "confirmed",
-        affiliation_type: "corporate",
-        host_name: null,
-        organization: "First Bank of Nigeria (Lead Sponsor)",
-        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-        day1: true,
-        day2: true,
-        day3: true,
-        day3_payment_ref: "PSTK-ABK-992104",
-        credentials: [
-          {
-            id: "cred-2a",
-            pass_code: "ABK-D12-FB01",
-            pass_type: "Day 1 & Day 2 Dual Pass",
-            status: "active",
-            day1_checked_in_at: new Date(Date.now() - 7200000).toISOString(),
-            day2_checked_in_at: new Date(Date.now() - 3600000).toISOString(),
-            day3_checked_in_at: null,
-          },
-          {
-            id: "cred-2b",
-            pass_code: "ABK-VVIP-FB02",
-            pass_type: "Day 3 VVIP Grand Finale Pass",
-            status: "active",
-            day1_checked_in_at: null,
-            day2_checked_in_at: null,
-            day3_checked_in_at: null,
-          },
-        ],
-      },
-      {
-        id: "demo-3",
-        first_name: "Babatunde",
-        last_name: "Ogunleye",
-        email: "babatunde.ogunleye@gmail.com",
-        phone: "+234 818 456 7890",
-        category: "Day 1 Access Pass (Free Entry)",
-        group_size: 1,
-        status: "confirmed",
-        affiliation_type: "individual",
-        host_name: null,
-        organization: null,
-        created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-        day1: true,
-        day2: false,
-        day3: false,
-        credentials: [
-          {
-            id: "cred-3",
-            pass_code: "ABK-D1-LAWN4",
-            pass_type: "Day 1 Access Pass (Free Entry)",
-            status: "active",
-            day1_checked_in_at: null,
-            day2_checked_in_at: null,
-            day3_checked_in_at: null,
-          },
-        ],
-      },
-      {
-        id: "demo-4",
-        first_name: "Dr. Ngozi",
-        last_name: "Chukwuma",
-        email: "ngozi.chukwuma@channels.tv",
-        phone: "+234 805 333 4444",
-        category: "Day 2 Access Pass (Free Entry)",
-        group_size: 1,
-        status: "confirmed",
-        affiliation_type: "corporate",
-        host_name: null,
-        organization: "Channels Television",
-        created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
-        day1: false,
-        day2: true,
-        day3: false,
-        credentials: [
-          {
-            id: "cred-4",
-            pass_code: "ABK-D2-MED01",
-            pass_type: "Day 2 Access Pass (Free Entry)",
-            status: "active",
-            day1_checked_in_at: null,
-            day2_checked_in_at: null,
-            day3_checked_in_at: null,
-          },
-        ],
-      },
-      {
-        id: "demo-5",
-        first_name: "Ibrahim",
-        last_name: "Dantata",
-        email: "ibrahim.d@kano-polo.com",
-        phone: "+234 803 777 8888",
-        category: "Day 3 VVIP Grand Finale Pass",
-        group_size: 1,
-        status: "confirmed",
-        affiliation_type: "guest_of",
-        host_name: "Col. Adebayo (Polo Captain)",
-        organization: null,
-        created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-        day1: false,
-        day2: false,
-        day3: true,
-        day3_invitation_code: "SAMPLE-INVITE",
-        credentials: [
-          {
-            id: "cred-5",
-            pass_code: "ABK-VVIP-RY01",
-            pass_type: "Day 3 VVIP Grand Finale Pass",
-            status: "active",
-            day1_checked_in_at: null,
-            day2_checked_in_at: null,
-            day3_checked_in_at: null,
-          },
-        ],
-      },
-    ];
   }
 
   return (
@@ -246,9 +132,8 @@ async function RegistrationsContent() {
         </div>
       </div>
 
-      {/* Interactive Manager */}
+      {/* Interactive Manager with ZERO Demo Data */}
       <RegistrationsManager initialParticipants={participants} />
     </div>
   );
 }
-

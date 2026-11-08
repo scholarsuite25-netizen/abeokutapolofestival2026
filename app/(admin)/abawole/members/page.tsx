@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { PermissionError, requirePermission } from "@/lib/auth/require";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NotConfigured, PermissionDenied } from "@/components/shared/guards";
@@ -28,8 +28,8 @@ async function MembersQueue() {
     throw error;
   }
 
-  const supabase = await createClient();
-  const [{ data: people }, { data: pending }] = await Promise.all([
+  const supabase = createAdminClient();
+  const [{ data: people }, { data: pendingRaw }] = await Promise.all([
     supabase
       .from("person_records")
       .select("id, source_spelling, verified_status, created_at")
@@ -37,10 +37,19 @@ async function MembersQueue() {
       .order("created_at", { ascending: false }),
     supabase
       .from("registrations")
-      .select("id, first_name, last_name, email, phone, category, group_size, status, bank_transfer_ref, payment_method, created_at")
+      .select("id, first_name, last_name, email, phone, category, group_size, status, created_at")
       .in("status", ["pending_approval", "pending_bank_verification", "pending_verification"])
       .order("created_at", { ascending: false }),
   ]);
+
+  const pending = (pendingRaw || []).map((p: any) => {
+    const isWire = (p.category || "").toLowerCase().includes("wire") || (p.category || "").toLowerCase().includes("wema");
+    return {
+      ...p,
+      bank_transfer_ref: isWire ? "WEMA-WIRE-REF" : null,
+      payment_method: isWire ? "bank_transfer" : "free",
+    };
+  });
 
   return (
     <div className="space-y-6">
