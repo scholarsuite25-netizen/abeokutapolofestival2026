@@ -32,11 +32,11 @@ export default function HomePage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP HERO SECTION WITH REGISTRATION PRIORITY & LIVE COUNTDOWN     */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-forest text-ivory">
+      <section className="relative overflow-hidden bg-black text-ivory">
         {/* Ambient Radial Lights safely clipped to prevent horizontal overflow */}
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,168,76,0.3),transparent_60%)]" />
-          <div className="absolute -bottom-32 -left-32 size-96 rounded-full bg-forest-interactive/40 blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,168,76,0.22),transparent_65%)]" />
+          <div className="absolute -bottom-32 -left-32 size-96 rounded-full bg-gold/10 blur-3xl" />
         </div>
 
         {/* 2025 Foundation Watermark */}
@@ -51,7 +51,7 @@ export default function HomePage() {
 
         <div className="relative mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 pt-10 sm:pt-16 pb-14 sm:pb-20 min-w-0">
           {/* Eyebrow Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-forest-deep/80 px-4 py-1.5 shadow-sm backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-neutral-900/90 px-4 py-1.5 shadow-sm backdrop-blur-md">
             <span className="size-2 rounded-full bg-gold animate-pulse" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
               {FESTIVAL_METADATA.title} · {FESTIVAL_METADATA.subTitle.toUpperCase()}
@@ -76,7 +76,7 @@ export default function HomePage() {
 
               {/* Architectural Metadata Bar */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2">
-                <div className="flex items-center gap-3 rounded-xl border border-line/20 bg-forest-deep/70 p-3 shadow-md backdrop-blur-sm">
+                <div className="flex items-center gap-3 rounded-xl border border-gold/25 bg-neutral-900/80 p-3 shadow-md backdrop-blur-sm">
                   <Calendar className="size-5 text-gold shrink-0" />
                   <div>
                     <span className="text-[10px] uppercase font-bold tracking-wider text-gold">Dates</span>
@@ -84,7 +84,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-xl border border-line/20 bg-forest-deep/70 p-3 shadow-md backdrop-blur-sm">
+                <div className="flex items-center gap-3 rounded-xl border border-gold/25 bg-neutral-900/80 p-3 shadow-md backdrop-blur-sm">
                   <MapPin className="size-5 text-gold shrink-0" />
                   <div>
                     <span className="text-[10px] uppercase font-bold tracking-wider text-gold">Venue</span>
@@ -95,7 +95,7 @@ export default function HomePage() {
 
               {/* Quick Hero Actions: Immediate Registration & Video */}
               <div className="flex flex-wrap items-center gap-3 pt-3">
-                <Button asChild className="bg-gold font-bold text-forest hover:bg-gold/90 text-xs shadow-md py-4 px-5">
+                <Button asChild className="bg-gold font-bold text-black hover:bg-gold/90 text-xs shadow-md py-4 px-5">
                   <Link href="/register">Register Gate Pass (Days 1 &amp; 2 Free) →</Link>
                 </Button>
                 <FestivalVideoModal
@@ -112,15 +112,15 @@ export default function HomePage() {
             {/* ───────────────────────────────────────────────────────────── */}
             {/* PRIORITY REGISTRATION COCKPIT (PRIMARY APP FOCUS) & COUNTDOWN */}
             {/* ───────────────────────────────────────────────────────────── */}
-            <div className="lg:col-span-5 rounded-3xl border-2 border-gold/50 bg-forest-deep/95 p-4 sm:p-7 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-5 min-w-0">
+            <div className="lg:col-span-5 rounded-3xl border-2 border-gold/50 bg-neutral-950/95 p-4 sm:p-7 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-5 min-w-0">
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div className="absolute -right-12 -top-12 size-40 rounded-full bg-gold/15 blur-2xl" />
               </div>
 
               {/* 1. REGISTRATION MODULE CENTERPIECE */}
-              <div className="relative z-10 rounded-2xl border border-gold/40 bg-forest/85 p-3 sm:p-4 space-y-2.5 shadow-inner min-w-0">
+              <div className="relative z-10 rounded-2xl border border-gold/40 bg-neutral-900/90 p-3 sm:p-4 space-y-2.5 shadow-inner min-w-0">
                 <div className="flex items-center justify-between">
-                  <Badge className="bg-gold text-forest font-bold text-[9px] px-2 py-0.5">
+                  <Badge className="bg-gold text-black font-bold text-[9px] px-2 py-0.5">
                     <Ticket className="mr-1 size-2.5" /> OFFICIAL GATE ACCREDITATION
                   </Badge>
                   <span className="text-[10px] text-emerald-400 font-semibold">● Instant Digital Drop</span>
@@ -145,15 +145,15 @@ export default function HomePage() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-1.5 text-center text-[9px] pt-0.5">
-                  <div className="rounded bg-emerald-950/80 p-1 border border-emerald-500/40 text-emerald-300 min-w-0">
+                  <div className="rounded bg-black/80 p-1 border border-emerald-500/40 text-emerald-300 min-w-0">
                     <span className="block font-bold truncate">Day 1 (Fri 18)</span>
                     <span className="text-[8px] text-ivory/80 block truncate font-bold">100% FREE</span>
                   </div>
-                  <div className="rounded bg-emerald-950/80 p-1 border border-emerald-500/40 text-emerald-300 min-w-0">
+                  <div className="rounded bg-black/80 p-1 border border-emerald-500/40 text-emerald-300 min-w-0">
                     <span className="block font-bold truncate">Day 2 (Sat 19)</span>
                     <span className="text-[8px] text-ivory/80 block truncate font-bold">100% FREE</span>
                   </div>
-                  <div className="rounded bg-amber-950/80 p-1 border border-gold/40 text-amber-300 min-w-0">
+                  <div className="rounded bg-black/80 p-1 border border-gold/40 text-amber-300 min-w-0">
                     <span className="block font-bold truncate">Day 3 (Sun 20)</span>
                     <span className="text-[8px] text-gold block truncate font-bold">PAID VVIP</span>
                   </div>
@@ -164,7 +164,7 @@ export default function HomePage() {
                   <Button
                     asChild
                     size="sm"
-                    className="w-full min-w-0 bg-gold font-bold text-forest hover:bg-gold/90 shadow-md text-xs py-2.5 px-2 text-center"
+                    className="w-full min-w-0 bg-gold font-bold text-black hover:bg-gold/90 shadow-md text-xs py-2.5 px-2 text-center"
                   >
                     <Link href="/register" className="truncate">
                       Register Pass Now →

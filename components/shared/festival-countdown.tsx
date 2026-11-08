@@ -126,7 +126,7 @@ export function FestivalCountdown({
 
       <div className="grid grid-cols-4 gap-1.5 sm:gap-3 text-center">
         {/* Days */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-neutral-900/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
           <span className="font-mono text-xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight truncate">
             {timeLeft.days}
           </span>
@@ -136,7 +136,7 @@ export function FestivalCountdown({
         </div>
 
         {/* Hours */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-neutral-900/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
           <span className="font-mono text-xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight truncate">
             {String(timeLeft.hours).padStart(2, "0")}
           </span>
@@ -146,7 +146,7 @@ export function FestivalCountdown({
         </div>
 
         {/* Minutes */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-neutral-900/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
           <span className="font-mono text-xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight truncate">
             {String(timeLeft.minutes).padStart(2, "0")}
           </span>
@@ -156,7 +156,7 @@ export function FestivalCountdown({
         </div>
 
         {/* Seconds */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-forest-deep/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gold/40 bg-neutral-900/90 px-1.5 py-2.5 sm:p-4 shadow-xl backdrop-blur-md min-w-0">
           <span className="font-mono text-xl sm:text-4xl lg:text-5xl font-extrabold text-gold tracking-tight truncate">
             {String(timeLeft.seconds).padStart(2, "0")}
           </span>
