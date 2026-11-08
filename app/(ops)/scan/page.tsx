@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   QrCode,
   ShieldCheck,
@@ -9,6 +10,7 @@ import {
   CheckCircle2,
   Camera,
   CalendarCheck,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -333,6 +335,17 @@ export default function GateScanPage() {
                 <li>Each attendee&apos;s access card is scanned once per day to record daily attendance.</li>
                 <li>Duplicates on the same day alert in amber; foreign or forged tokens alert in red.</li>
               </ul>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-ivory/10 bg-white/5 px-4 py-3 text-xs">
+              <span className="text-ivory/60">Gate Marshal Credentials</span>
+              <Link
+                href="/abawole/change-password"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gold/30 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold hover:bg-gold/20 transition-colors"
+              >
+                <KeyRound className="size-3.5" />
+                <span>Change Marshal Password</span>
+              </Link>
             </div>
           </div>
         </div>

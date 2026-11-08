@@ -9,7 +9,8 @@ import {
   ExternalLink,
   Printer,
   UserCog,
-  BadgeCheck
+  BadgeCheck,
+  KeyRound
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +21,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: "Verification Queue", href: "/abawole/members", icon: BadgeCheck },
     { label: "Reports & Export", href: "/abawole/reports", icon: FileSpreadsheet },
     { label: "Admin Hierarchy", href: "/abawole/admins", icon: UserCog },
+    { label: "Change Password", href: "/abawole/change-password", icon: KeyRound },
     { label: "Turnstile Scanner", href: "/scan", icon: QrCode },
     { label: "Venue QR Poster", href: "/register/poster", icon: Printer },
   ];
@@ -47,6 +49,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/abawole/change-password"
+              className="inline-flex items-center gap-1.5 rounded-md border border-ivory/20 bg-ivory/10 px-2.5 py-1 text-xs text-ivory transition-colors hover:bg-gold hover:text-forest"
+            >
+              <KeyRound className="h-3 w-3" />
+              <span>Change Password</span>
+            </Link>
+
             <Link
               href="/"
               className="inline-flex items-center gap-1 text-xs text-ivory/80 transition-colors hover:text-gold"
@@ -101,6 +111,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span>·</span>
             <Link href="/abawole/admins" className="transition-colors hover:text-forest">
               Admin Console
+            </Link>
+            <span>·</span>
+            <Link href="/abawole/change-password" className="transition-colors hover:text-forest">
+              Change Password
             </Link>
             <span>·</span>
             <Link href="/scan" className="transition-colors hover:text-forest">

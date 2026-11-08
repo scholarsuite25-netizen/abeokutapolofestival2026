@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { 
   ShieldCheck, 
   UserPlus, 
@@ -15,6 +16,7 @@ import {
   FileText,
   Lock
 } from "lucide-react";
+import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import { 
   createAdminAccountAction, 
   updateAdminDetailsAction, 
@@ -305,13 +307,22 @@ export function AdminManagementClient({
               As Super Admin, you have exclusive privilege to create, edit designations, reset passwords, or revoke administrator roles.
             </p>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3.5 py-2 text-xs font-semibold text-forest hover:bg-sage/40 transition-colors shadow-xs"
-          >
-            <UserPlus className="h-3.5 w-3.5 text-gold-deep" />
-            <span>Create New Admin</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/abawole/change-password"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3.5 py-2 text-xs font-semibold text-forest hover:bg-sage/40 transition-colors shadow-xs"
+            >
+              <KeyRound className="h-3.5 w-3.5 text-gold-deep" />
+              <span>Change My Password</span>
+            </Link>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-forest px-3.5 py-2 text-xs font-semibold text-ivory hover:bg-forest-light transition-colors shadow-xs"
+            >
+              <UserPlus className="h-3.5 w-3.5 text-gold" />
+              <span>Create New Admin</span>
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 overflow-x-auto">
@@ -505,6 +516,7 @@ export function AdminManagementClient({
                   placeholder="e.g. PoloPres2026!Executive"
                   className="w-full rounded-lg border border-line bg-sage/20 px-3 py-2 text-xs font-mono text-ink focus:border-forest focus:outline-hidden"
                 />
+                <PasswordStrengthMeter password={newPassword} />
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
