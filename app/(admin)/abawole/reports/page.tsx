@@ -4,6 +4,7 @@ import { PermissionError, requirePermission } from "@/lib/auth/require";
 import { isSupabaseConfigured } from "@/lib/env";
 import { NotConfigured, PermissionDenied } from "@/components/shared/guards";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
+import { ReportDownloadButton } from "@/components/admin/report-download-button";
 import { 
   Download, 
   ShieldCheck, 
@@ -156,13 +157,10 @@ async function ReportsContent() {
                   {report.filename}
                 </span>
 
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-forest px-3.5 py-1.5 text-xs font-semibold text-ivory shadow-xs transition-colors hover:bg-forest-interactive"
-                >
-                  <Download className="h-3.5 w-3.5 text-gold" />
-                  <span>Download Manifest</span>
-                </button>
+                <ReportDownloadButton
+                  reportId={report.id}
+                  filename={report.filename}
+                />
               </div>
             </div>
           );

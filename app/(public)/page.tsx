@@ -423,7 +423,7 @@ export default function HomePage() {
                   <Link href="/programme">View Day 1 Schedule →</Link>
                 </Button>
                 <Button asChild size="sm" className="bg-forest text-ivory hover:bg-forest-interactive text-[11px] h-7 px-2.5">
-                  <Link href="/register">Get Free Pass</Link>
+                  <Link href="/register?day=1">Get Free Pass</Link>
                 </Button>
               </div>
             </div>
@@ -472,7 +472,7 @@ export default function HomePage() {
                   <Link href="/programme">View Day 2 Schedule →</Link>
                 </Button>
                 <Button asChild size="sm" className="bg-forest text-ivory hover:bg-forest-interactive text-[11px] h-7 px-2.5">
-                  <Link href="/register">Get Free Pass</Link>
+                  <Link href="/register?day=2">Get Free Pass</Link>
                 </Button>
               </div>
             </div>
@@ -521,7 +521,7 @@ export default function HomePage() {
                   <Link href="/programme">View Day 3 Schedule →</Link>
                 </Button>
                 <Button asChild size="sm" className="bg-gold font-bold text-forest hover:bg-gold/90 text-[11px] h-7 px-2.5 shadow-xs">
-                  <Link href="/register">VVIP Checkout</Link>
+                  <Link href="/register?day=3">VVIP Checkout</Link>
                 </Button>
               </div>
             </div>

@@ -95,6 +95,37 @@ function RegisterContent() {
   const [hasInviteCode, setHasInviteCode] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
 
+  // Listen for deep-linked query parameters (e.g. ?day=3 or ?tier=vvip or ?day=1 or ?day=2)
+  useEffect(() => {
+    const dayParam = searchParams.get("day");
+    const tierParam = searchParams.get("tier");
+    if (dayParam === "3" || tierParam === "vvip") {
+      setDay1(false);
+      setDay2(false);
+      setDay3(true);
+      setTimeout(() => {
+        const el = document.getElementById("day3-section");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 150);
+    } else if (dayParam === "1") {
+      setDay1(true);
+      setDay2(false);
+      setDay3(false);
+    } else if (dayParam === "2") {
+      setDay1(false);
+      setDay2(true);
+      setDay3(false);
+    } else if (dayParam === "1,2" || dayParam === "both" || dayParam === "dual") {
+      setDay1(true);
+      setDay2(true);
+      setDay3(false);
+    } else if (dayParam === "all") {
+      setDay1(true);
+      setDay2(true);
+      setDay3(true);
+    }
+  }, [searchParams]);
+
   // Individual VVIP Ticket Holder Names (Ticket 1: Buyer/First Guest, Ticket 2+: Guests)
   const [ticketAttendees, setTicketAttendees] = useState<Array<{ firstName: string; lastName: string }>>([
     { firstName: "", lastName: "" },
@@ -1004,9 +1035,10 @@ function RegisterContent() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Day 1 Button */}
-                      <div
+                      <button
+                        type="button"
                         onClick={() => setDay1(!day1)}
-                        className={`cursor-pointer rounded-xl border-2 p-3.5 transition-all duration-200 flex items-start gap-3 ${
+                        className={`w-full text-left cursor-pointer rounded-xl border-2 p-3.5 transition-all duration-200 flex items-start gap-3 ${
                           day1
                             ? "border-forest bg-card shadow-xs"
                             : "border-line bg-card/60 hover:border-forest/40 opacity-80"
@@ -1032,12 +1064,13 @@ function RegisterContent() {
                             Media Tour, Light-Up Ceremony &amp; Welcome Dinner.
                           </p>
                         </div>
-                      </div>
+                      </button>
 
                       {/* Day 2 Button */}
-                      <div
+                      <button
+                        type="button"
                         onClick={() => setDay2(!day2)}
-                        className={`cursor-pointer rounded-xl border-2 p-3.5 transition-all duration-200 flex items-start gap-3 ${
+                        className={`w-full text-left cursor-pointer rounded-xl border-2 p-3.5 transition-all duration-200 flex items-start gap-3 ${
                           day2
                             ? "border-forest bg-card shadow-xs"
                             : "border-line bg-card/60 hover:border-forest/40 opacity-80"
@@ -1063,12 +1096,12 @@ function RegisterContent() {
                             HRM Royal Opening, Queens Polo, Sip &amp; Paint.
                           </p>
                         </div>
-                      </div>
+                      </button>
                     </div>
                   </div>
 
                   {/* ── PART B: SEPARATE REGISTRATION — DAY 3 VVIP GRAND FINALE (PAID ₦50,000 OR SPECIAL INVITE) ── */}
-                  <div className="rounded-2xl border-2 border-amber-500/70 bg-gradient-to-br from-amber-500/10 via-amber-400/10 to-amber-500/5 p-4 sm:p-5 space-y-4">
+                  <div id="day3-section" className="rounded-2xl border-2 border-amber-500/70 bg-gradient-to-br from-amber-500/10 via-amber-400/10 to-amber-500/5 p-4 sm:p-5 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-300/70 pb-2.5">
                       <div>
                         <div className="flex items-center gap-1.5">
@@ -1091,9 +1124,10 @@ function RegisterContent() {
                     </div>
 
                     {/* Day 3 Toggle Button */}
-                    <div
+                    <button
+                      type="button"
                       onClick={() => setDay3(!day3)}
-                      className={`cursor-pointer rounded-xl border-2 p-4 transition-all duration-200 flex items-start gap-3.5 ${
+                      className={`w-full text-left cursor-pointer rounded-xl border-2 p-4 transition-all duration-200 flex items-start gap-3.5 ${
                         day3
                           ? "border-amber-600 bg-white shadow-sm"
                           : "border-line bg-white/60 hover:border-amber-500/50"
@@ -1119,7 +1153,7 @@ function RegisterContent() {
                           Royal Cup Grand Final, 100 Kings Celebration, Aristos Band &amp; Berryola Concert. Distinct Deep Gold ID Card.
                         </p>
                       </div>
-                    </div>
+                    </button>
 
                     {/* Dynamic Day 3 Payment / Special Invitation Options */}
                     {day3 && (

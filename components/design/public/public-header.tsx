@@ -332,14 +332,28 @@ export function PublicHeader() {
 
         {/* ── 4. Mobile Quick Actions & Drawer ── */}
         <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden shrink-0">
+          {storedPass && (
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs h-8 px-2 sm:hidden"
+            >
+              <Link href={`/pass/${storedPass.passCode}`} className="flex items-center gap-1">
+                <ShieldCheck className="size-3.5 text-gold-deep" />
+                <span>My Pass</span>
+              </Link>
+            </Button>
+          )}
+
           <Button
             asChild
             size="sm"
             className="bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs px-2.5 sm:px-3 shadow-xs border border-gold/40 sm:hidden"
           >
-            <Link href={storedPass ? `/pass/${storedPass.passCode}` : "/register"} className="flex items-center gap-1.5">
+            <Link href="/register" className="flex items-center gap-1.5">
               <Ticket className="size-3.5 text-gold" />
-              <span>{storedPass ? "My Pass" : "Register"}</span>
+              <span>Register</span>
             </Link>
           </Button>
 
@@ -384,13 +398,23 @@ export function PublicHeader() {
                   <p className="text-xs text-emerald-100/80">
                     Day 1: Free Entry · Day 2 &amp; 3: Through Ticket
                   </p>
-                  <SheetClose asChild>
-                    <Button asChild className="w-full mt-3 bg-gold font-bold text-forest-deep hover:bg-gold/90 text-xs">
-                      <Link href={`/pass/${storedPass.passCode}`}>
-                        <ShieldCheck className="mr-1.5 size-4" /> Open Access Card QR
-                      </Link>
-                    </Button>
-                  </SheetClose>
+                  <div className="mt-3 space-y-2">
+                    <SheetClose asChild>
+                      <Button asChild className="w-full bg-gold font-bold text-forest-deep hover:bg-gold/90 text-xs">
+                        <Link href={`/pass/${storedPass.passCode}`}>
+                          <ShieldCheck className="mr-1.5 size-4" /> Open Access Card QR
+                        </Link>
+                      </Button>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Button asChild variant="outline" className="w-full border-emerald-400/40 bg-white/10 text-ivory hover:bg-white/20 text-xs font-semibold">
+                        <Link href="/register" className="flex items-center justify-center gap-1.5">
+                          <Ticket className="size-3.5 text-gold" />
+                          <span>Register Another Person / New Pass</span>
+                        </Link>
+                      </Button>
+                    </SheetClose>
+                  </div>
                 </div>
               ) : (
                 <div className="mt-5 rounded-2xl border-2 border-gold/60 bg-forest p-4 text-ivory shadow-lg relative overflow-hidden">
