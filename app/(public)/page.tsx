@@ -24,6 +24,7 @@ import { FestivalVideoPlayer, FestivalVideoModal } from "@/components/shared/fes
 import { AttendanceMilestoneWidget } from "@/components/shared/attendance-milestone-widget";
 import { ReadMoreSection } from "@/components/shared/read-more-section";
 import { FESTIVAL_METADATA } from "@/lib/data/programme";
+import { DAY3_VVIP_PRICE_DISPLAY } from "@/lib/config/checkout-config";
 
 export default function HomePage() {
   return (
@@ -117,53 +118,53 @@ export default function HomePage() {
               </div>
 
               {/* 1. REGISTRATION MODULE CENTERPIECE */}
-              <div className="relative z-10 rounded-2xl border border-gold/40 bg-forest/85 p-3.5 sm:p-5 space-y-3.5 shadow-inner min-w-0">
+              <div className="relative z-10 rounded-2xl border border-gold/40 bg-forest/85 p-3 sm:p-4 space-y-2.5 shadow-inner min-w-0">
                 <div className="flex items-center justify-between">
-                  <Badge className="bg-gold text-forest font-bold text-[10px]">
-                    <Ticket className="mr-1 size-3" /> OFFICIAL GATE ACCREDITATION
+                  <Badge className="bg-gold text-forest font-bold text-[9px] px-2 py-0.5">
+                    <Ticket className="mr-1 size-2.5" /> OFFICIAL GATE ACCREDITATION
                   </Badge>
-                  <span className="text-[11px] text-emerald-400 font-semibold">● Instant Digital Drop</span>
+                  <span className="text-[10px] text-emerald-400 font-semibold">● Instant Digital Drop</span>
                 </div>
 
                 <div>
-                  <h3 className="font-display text-lg font-semibold text-ivory">
+                  <h3 className="font-display text-sm sm:text-base font-semibold text-ivory">
                     Register for Your Festival Gate Pass
                   </h3>
-                  <p className="text-xs text-ivory/70 mt-1 leading-relaxed">
-                    Days 1 &amp; 2 are 100% Free Public Admission. Day 3 is Paid VVIP (₦50,000) or by Special Invitation. Combined pass for Days 1 &amp; 2; luxury deep-gold ID-card for Day 3.
+                  <p className="text-[11px] text-ivory/70 mt-0.5 leading-relaxed">
+                    Days 1 &amp; 2 are 100% Free Public Admission. Day 3 is Paid VVIP ({DAY3_VVIP_PRICE_DISPLAY}) or by Special Invitation. Combined pass for Days 1 &amp; 2; luxury deep-gold ID-card for Day 3.
                   </p>
                 </div>
 
                 {/* Mandatory Gate Protocol Callout */}
-                <div className="rounded-xl border border-gold/60 bg-gold/10 p-2.5 text-xs text-ivory flex items-start gap-2.5">
-                  <ShieldCheck className="size-4 text-gold shrink-0 mt-0.5" />
-                  <p className="leading-snug text-[11px] text-ivory/90">
+                <div className="rounded-xl border border-gold/60 bg-gold/10 p-2 text-[10px] text-ivory flex items-start gap-2">
+                  <ShieldCheck className="size-3.5 text-gold shrink-0 mt-0.5" />
+                  <p className="leading-snug text-[10px] text-ivory/90">
                     <strong className="text-gold font-bold uppercase tracking-wider">Mandatory Gate Protocol:</strong>{" "}
                     All attendees must be duly registered to attend any of the three festival days. No turnstile admission is permitted without an official digital access card.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] pt-1">
-                  <div className="rounded bg-emerald-950/80 p-1.5 border border-emerald-500/40 text-emerald-300 min-w-0">
+                <div className="grid grid-cols-3 gap-1.5 text-center text-[9px] pt-0.5">
+                  <div className="rounded bg-emerald-950/80 p-1 border border-emerald-500/40 text-emerald-300 min-w-0">
                     <span className="block font-bold truncate">Day 1 (Fri 18)</span>
-                    <span className="text-[9px] text-ivory/80 block truncate font-bold">100% FREE</span>
+                    <span className="text-[8px] text-ivory/80 block truncate font-bold">100% FREE</span>
                   </div>
-                  <div className="rounded bg-emerald-950/80 p-1.5 border border-emerald-500/40 text-emerald-300 min-w-0">
+                  <div className="rounded bg-emerald-950/80 p-1 border border-emerald-500/40 text-emerald-300 min-w-0">
                     <span className="block font-bold truncate">Day 2 (Sat 19)</span>
-                    <span className="text-[9px] text-ivory/80 block truncate font-bold">100% FREE</span>
+                    <span className="text-[8px] text-ivory/80 block truncate font-bold">100% FREE</span>
                   </div>
-                  <div className="rounded bg-amber-950/80 p-1.5 border border-gold/40 text-amber-300 min-w-0">
+                  <div className="rounded bg-amber-950/80 p-1 border border-gold/40 text-amber-300 min-w-0">
                     <span className="block font-bold truncate">Day 3 (Sun 20)</span>
-                    <span className="text-[9px] text-gold block truncate font-bold">PAID VVIP</span>
+                    <span className="text-[8px] text-gold block truncate font-bold">PAID VVIP</span>
                   </div>
                 </div>
 
                 {/* Un-cramped side-by-side or stacked grid with min-w-0 (Zero Overflow) */}
-                <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Button
                     asChild
-                    size="lg"
-                    className="w-full min-w-0 bg-gold font-bold text-forest hover:bg-gold/90 shadow-md text-xs sm:text-sm py-4 px-2 text-center"
+                    size="sm"
+                    className="w-full min-w-0 bg-gold font-bold text-forest hover:bg-gold/90 shadow-md text-xs py-2.5 px-2 text-center"
                   >
                     <Link href="/register" className="truncate">
                       Register Pass Now →
@@ -171,9 +172,9 @@ export default function HomePage() {
                   </Button>
                   <Button
                     asChild
-                    size="lg"
+                    size="sm"
                     variant="outline"
-                    className="w-full min-w-0 border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 text-xs py-4 px-2 text-center"
+                    className="w-full min-w-0 border-ivory/30 bg-white/10 text-ivory hover:bg-white/20 text-xs py-2.5 px-2 text-center"
                   >
                     <Link href="/pass/lookup" className="truncate">Look Up Pass</Link>
                   </Button>
@@ -192,39 +193,39 @@ export default function HomePage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 2. OFFICIAL ACCREDITATION & GATE PASS MODULE (MOVED UPWARD)         */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="bg-ivory py-14 border-b border-line">
+      <section className="bg-ivory py-8 sm:py-10 border-b border-line">
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 min-w-0">
-          <div className="relative overflow-hidden rounded-3xl bg-forest-deep p-4 sm:p-8 lg:p-14 text-ivory shadow-2xl min-w-0">
+          <div className="relative overflow-hidden rounded-2xl bg-forest-deep p-4 sm:p-6 lg:p-8 text-ivory shadow-xl min-w-0">
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="absolute -right-20 -bottom-20 size-96 rounded-full bg-gold/10 blur-3xl" />
             </div>
 
-            <div className="relative z-10 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
-              <div className="max-w-2xl space-y-2">
-                <Badge variant="outline" className="border-gold/50 bg-gold/10 text-gold uppercase tracking-widest text-[11px]">
+            <div className="relative z-10 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
+              <div className="max-w-2xl space-y-1.5">
+                <Badge variant="outline" className="border-gold/50 bg-gold/10 text-gold uppercase tracking-widest text-[10px]">
                   Official Gate Accreditation · 18–20 December 2026
                 </Badge>
-                <h2 className="font-display text-3xl font-semibold text-ivory sm:text-4xl">
+                <h2 className="font-display text-xl sm:text-2xl font-semibold text-ivory">
                   Obtain Your Digital Access Card
                 </h2>
-                <p className="text-sm sm:text-base text-ivory/80 leading-relaxed">
-                  Day 1 &amp; Day 2 are 100% Free Public Admission (issued as a single combined pass). Day 3 is Paid VVIP (₦50,000) or by Special Invitation, issued as a separate classic deep-gold luxury ID-card with cryptographic security features.
+                <p className="text-xs sm:text-sm text-ivory/80 leading-relaxed">
+                  Day 1 &amp; Day 2 are 100% Free Public Admission (issued as a single combined pass). Day 3 is Paid VVIP ({DAY3_VVIP_PRICE_DISPLAY}) or by Special Invitation, issued as a separate classic deep-gold luxury ID-card with cryptographic security features.
                 </p>
 
                 {/* Mandatory Turnstile Protocol Callout */}
-                <div className="mt-4 rounded-xl border border-gold/50 bg-forest/80 p-3.5 flex items-start gap-3">
-                  <ShieldCheck className="size-5 text-gold shrink-0 mt-0.5" />
-                  <div className="text-xs text-ivory">
-                    <span className="font-bold text-gold uppercase tracking-wider text-[11px] block">
+                <div className="mt-2.5 rounded-xl border border-gold/50 bg-forest/80 p-2.5 flex items-start gap-2.5">
+                  <ShieldCheck className="size-4 text-gold shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-ivory">
+                    <span className="font-bold text-gold uppercase tracking-wider text-[10px] block">
                       Mandatory Gate Protocol
                     </span>
-                    <p className="text-ivory/90 leading-relaxed text-xs mt-0.5">
+                    <p className="text-ivory/90 leading-relaxed text-[11px] mt-0.5">
                       <strong>All attendees must be duly registered to attend any of the three festival days.</strong> No turnstile admission is permitted without an official digital access card.
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-3 flex flex-wrap items-center gap-3 sm:gap-6 text-xs text-gold">
+                <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-gold">
                   <a
                     href="tel:+2348181888884"
                     className="flex items-center gap-1.5 hover:text-gold-light hover:underline transition-colors font-semibold"

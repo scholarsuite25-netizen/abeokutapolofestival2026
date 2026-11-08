@@ -393,10 +393,10 @@ function RegisterContent() {
           >
             Abeokuta Polo Festival 2026 — The Blueprint
           </Badge>
-          <h1 className="mt-3 font-serif text-3xl font-semibold text-forest sm:text-5xl">
+          <h1 className="mt-2.5 font-serif text-2xl font-semibold text-forest sm:text-3xl lg:text-4xl">
             Event Registration &amp; ID Pass
           </h1>
-          <p className="mt-2 text-sm text-muted-brand sm:text-base">
+          <p className="mt-1.5 text-xs text-muted-brand sm:text-sm max-w-xl mx-auto">
             Select your attendance days below. All official gate ID cards are instantly issued,
             downloaded to your phone, and saved for contactless turnstile access.
           </p>
