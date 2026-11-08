@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ReadMoreSection } from "@/components/shared/read-more-section";
+import { DrivingDirectionsAndMap } from "@/components/design/public/driving-directions-and-map";
 
 export const metadata = {
   title: "Plan Your Visit — 2026 Abeokuta Polo Festival",
@@ -261,42 +262,11 @@ export default function VisitPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 3. DIRECTIONS & TRAVEL TIME MATRIX                                  */}
+      {/* 3. DIRECTIONS, EXPRESSWAY ROUTING & DRIVING MAP                     */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section id="directions" className="bg-sage/20 py-16 sm:py-20 scroll-mt-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-gold-dim">
-              Transit Matrix
-            </span>
-            <h2 className="mt-2 font-display text-3xl font-semibold text-forest">
-              Travel Times &amp; Arterial Routes
-            </h2>
-            <p className="mt-2 text-sm text-muted-brand max-w-2xl">
-              Kobape Turf is seamlessly connected to major commercial and political hubs in Southwest Nigeria.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {TRAVEL_TIMES.map((tt, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-line bg-card p-6 shadow-sm flex flex-col justify-between"
-              >
-                <div>
-                  <MapPin className="size-5 text-gold mb-2" />
-                  <h3 className="font-display text-lg font-semibold text-forest">{tt.origin}</h3>
-                  <p className="mt-2 font-display text-2xl font-bold text-forest-interactive">
-                    {tt.duration}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-brand leading-relaxed">{tt.route}</p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-line text-[11px] text-muted-brand">
-                  Smooth dual-carriage highway
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <DrivingDirectionsAndMap />
         </div>
       </section>
 

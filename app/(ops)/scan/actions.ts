@@ -46,12 +46,27 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
     const session = await requirePermission("credential.validate");
     officerId = session.user.id;
   } catch (error) {
+    // If Next.js redirect was thrown, re-throw it immediately
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      typeof (error as { digest: string }).digest === "string" &&
+      (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
+    }
+
     if (error instanceof PermissionError) {
       // In local preview allow testing
       if (process.env.NODE_ENV !== "production") {
         officerId = "local-dev-officer";
       } else {
         return rejected("Scanner access denied. Insufficient role for credential validation.");
+      }
+    } else {
+      if (process.env.NODE_ENV === "production") {
+        return rejected("Scanner access denied. Please sign in as an authorized Gate Marshal.");
       }
     }
   }
@@ -164,8 +179,17 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
         };
       }
     } catch {
-      // Fall through to offline validator
+      // In production with Supabase configured, fail closed
+      if (process.env.NODE_ENV === "production") {
+        return rejected("Turnstile check-in verification error. Please retry or scan again.");
+      }
+      // Fall through to offline validator in local dev/demo
     }
+  }
+
+  // 4. In production with database configured, refuse offline simulation fall-through
+  if (process.env.NODE_ENV === "production" && isSupabaseConfigured()) {
+    return rejected("Credential not recognized or pass code format invalid.");
   }
 
   // 4. Local simulation for testing valid demo codes

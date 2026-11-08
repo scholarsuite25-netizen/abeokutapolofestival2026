@@ -101,6 +101,10 @@ export function PublicFooter() {
               Entry requires an official digital access card for contactless turnstile admission.
             </p>
             <div className="mt-5 space-y-1.5 text-sm text-ivory/80">
+              <div className="rounded-lg border border-gold/30 bg-forest-deep/60 p-3 text-xs leading-relaxed text-ivory/85 space-y-1">
+                <p className="font-semibold text-gold">Physical Secretariat (General Enquiries):</p>
+                <p>Abeokuta Polo Club Secretariat, 4th Floor, Conference Hotel, Presidential Boulevard, Oke-Mosan, Abeokuta, Ogun State.</p>
+              </div>
               <p className="flex flex-wrap items-center gap-1">
                 <a className="underline-offset-4 hover:underline" href={CONTACT.phone1Href}>
                   {CONTACT.phone1}

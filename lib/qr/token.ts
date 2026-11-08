@@ -10,13 +10,20 @@ export interface PassPayload {
   issuedAt: number;
 }
 
+function getSigningSecret(env: ReturnType<typeof requireServerEnv>): string {
+  if (process.env.NODE_ENV === "production" && !env.QR_SIGNING_SECRET) {
+    throw new Error("FATAL: QR_SIGNING_SECRET environment variable is required in production.");
+  }
+  return env.QR_SIGNING_SECRET || "fallback-secret-for-signing-pass-tokens-32-chars";
+}
+
 /**
  * Creates a cryptographically signed QR pass token.
  * Token format: ABK26.<base64url-encoded-payload>.<signature>
  */
 export function generateSignedPassToken(payload: PassPayload): string {
   const env = requireServerEnv();
-  const secret = env.QR_SIGNING_SECRET || "fallback-secret-for-signing-pass-tokens-32-chars";
+  const secret = getSigningSecret(env);
 
   const jsonPayload = JSON.stringify(payload);
   const encodedPayload = Buffer.from(jsonPayload).toString("base64url");
@@ -46,7 +53,12 @@ export function verifyPassToken(token: string): { valid: boolean; payload?: Pass
 
   const [, encodedPayload, providedSig] = parts;
   const env = requireServerEnv();
-  const secret = env.QR_SIGNING_SECRET || "fallback-secret-for-signing-pass-tokens-32-chars";
+  let secret: string;
+  try {
+    secret = getSigningSecret(env);
+  } catch (err) {
+    return { valid: false, error: (err as Error).message };
+  }
 
   const hmac = createHmac("sha256", secret);
   hmac.update(`ABK26.${encodedPayload}`);

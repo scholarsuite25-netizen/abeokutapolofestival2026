@@ -60,15 +60,19 @@ export function EnquiryDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="rounded-lg border border-gold/40 bg-sage/50 p-3 sm:p-4 text-xs leading-relaxed text-forest-deep">
+          <div className="rounded-lg border border-gold/40 bg-sage/50 p-3 sm:p-4 text-xs leading-relaxed text-forest-deep space-y-2">
             <div className="flex items-center gap-1.5 font-semibold text-forest">
               <CheckCircle2 className="size-4 text-forest" />
               <span>Direct Commercial & Protocol Protocols</span>
             </div>
-            <p className="mt-1">
+            <p>
               In accordance with festival governance, all hospitality chalets, corporate suites, and
-              sponsorship allocations are processed directly through the Secretariat. No online payments are taken.
+              sponsorship allocations are processed directly through the Secretariat.
             </p>
+            <div className="pt-2 border-t border-forest/15 text-[11px] text-forest/90 space-y-0.5">
+              <span className="font-bold text-forest block">Physical Secretariat (General Enquiries):</span>
+              <p>Abeokuta Polo Club Secretariat, 4th Floor, Conference Hotel, Presidential Boulevard, Oke-Mosan, Abeokuta, Ogun State.</p>
+            </div>
           </div>
 
           <div className="space-y-2">

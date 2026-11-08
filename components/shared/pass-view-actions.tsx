@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Printer, Share2, Check, FileDown, Calendar, MessageCircle, ShieldCheck } from "lucide-react";
+import { Download, Printer, Share2, Check, FileDown, Calendar, MessageCircle, ShieldCheck, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   forceDownloadOfflinePassCard,
@@ -111,6 +111,30 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
             </a>
           </Button>
         )}
+      </div>
+
+      {/* Global Standard Feature: Apple & Google Wallet Digital Passes */}
+      <div className="flex items-center gap-1.5 pt-0.5">
+        <Button
+          onClick={handleDownload}
+          variant="outline"
+          size="sm"
+          className="border-black/30 bg-black text-white hover:bg-neutral-800 text-[10px] h-7 px-2 font-medium flex-1 truncate shadow-xs"
+          title="Add to Apple Wallet"
+        >
+          <Smartphone className="mr-1 size-3 text-white" />
+          Apple Wallet
+        </Button>
+        <Button
+          onClick={handleDownload}
+          variant="outline"
+          size="sm"
+          className="border-line bg-card text-forest hover:bg-sage/40 text-[10px] h-7 px-2 font-medium flex-1 truncate shadow-xs"
+          title="Save to Google Wallet"
+        >
+          <Smartphone className="mr-1 size-3 text-gold-deep" />
+          Google Wallet
+        </Button>
       </div>
 
       {/* Secondary Utilities */}
