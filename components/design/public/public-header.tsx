@@ -81,6 +81,13 @@ const NAV_CATEGORIES: NavCategory[] = [
     desc: "VIP suites & corporate hosting",
     items: [
       {
+        href: "/tables",
+        label: "VIP Tables",
+        desc: "Exclusive Day 3 tables of 10",
+        icon: Crown,
+        isPriority: true,
+      },
+      {
         href: "/hospitality",
         label: "Enclosures",
         desc: "Royal Dais, chalets & suites",
@@ -91,6 +98,12 @@ const NAV_CATEGORIES: NavCategory[] = [
         label: "Partnerships",
         desc: "Brand sponsorship tiers",
         icon: Building2,
+      },
+      {
+        href: "/affiliates",
+        label: "Affiliates (10%)",
+        desc: "Earn 10% on pass & table sales",
+        icon: Sparkles,
       },
     ],
   },
@@ -311,6 +324,18 @@ export function PublicHeader() {
               </Link>
             </Button>
           )}
+
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden md:inline-flex"
+          >
+            <Link href="/tables" className="flex items-center gap-1.5">
+              <Crown className="size-3.5 text-gold-deep" />
+              <span>VIP Tables</span>
+            </Link>
+          </Button>
 
           <Button
             asChild

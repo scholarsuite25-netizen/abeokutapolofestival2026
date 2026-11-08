@@ -24,6 +24,7 @@ const COLUMNS = [
     title: "Access",
     links: [
       { href: "/register", label: "Register for Pass (Free)" },
+      { href: "/tables", label: "VIP Table Enclosures (10 Guests)" },
       { href: "/register/poster", label: "Venue QR Standee / Poster" },
       { href: "/pass/lookup", label: "Find My Access Card" },
       { href: "/scan", label: "Gate Scanner PWA" },
@@ -35,6 +36,8 @@ const COLUMNS = [
     links: [
       { href: "/hospitality", label: "Suites & Enclosures" },
       { href: "/sponsorship", label: "Corporate Partnerships" },
+      { href: "/affiliates", label: "International Affiliate Centre (10% Comm.)" },
+      { href: "/affiliates/dashboard", label: "Affiliate Partner Dashboard" },
       { href: "/press", label: "Media & Press Access" },
     ],
   },
