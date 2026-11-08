@@ -43,6 +43,7 @@ import { CLUB_BANK_DETAILS, generateWemaTransferReference } from "@/lib/config/c
 import {
   initializeTablePayment,
   submitTableRegistration,
+  recordAffiliateClick,
   type TableBookingResult,
 } from "@/app/(public)/register/actions";
 import { persistRegisteredPass, forceDownloadOfflinePassCard, type StoredPass } from "@/lib/storage/pass-storage";
@@ -100,9 +101,11 @@ export function TablesBookingClient() {
   useEffect(() => {
     const refParam = searchParams.get("ref");
     if (refParam) {
-      setAffiliateRef(refParam.toUpperCase());
+      const code = refParam.toUpperCase();
+      setAffiliateRef(code);
+      recordAffiliateClick(code).catch(() => {});
       try {
-        document.cookie = `abk_affiliate_ref=${encodeURIComponent(refParam.toUpperCase())}; max-age=2592000; path=/; SameSite=Lax`;
+        document.cookie = `abk_affiliate_ref=${encodeURIComponent(code)}; max-age=2592000; path=/; SameSite=Lax`;
       } catch {
         // Non-blocking
       }

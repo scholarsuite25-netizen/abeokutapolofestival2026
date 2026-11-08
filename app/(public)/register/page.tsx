@@ -23,12 +23,13 @@ import {
   QrCode,
   Printer,
   AlertTriangle,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { submitRegistration, type RegisterResult } from "./actions";
+import { submitRegistration, recordAffiliateClick, type RegisterResult } from "./actions";
 import {
   persistRegisteredPass,
   useStoredPasses,
@@ -43,6 +44,8 @@ import {
   generateWemaTransferReference,
   DAY3_VVIP_PRICE_NGN,
   DAY3_VVIP_PRICE_DISPLAY,
+  DAY3_VVIP_OFFICIAL_PRICE_DISPLAY,
+  DAY3_VVIP_TESTING_PRICE_DISPLAY,
 } from "@/lib/config/checkout-config";
 import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
 import {
@@ -94,6 +97,29 @@ function RegisterContent() {
   const [wemaRef, setWemaRef] = useState<string>(() => generateWemaTransferReference());
   const [hasInviteCode, setHasInviteCode] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
+  const [affiliateCode, setAffiliateCode] = useState<string>("");
+
+  // Track affiliate referral code from URL search param e.g. /register?ref=AFF-...
+  useEffect(() => {
+    const refParam = searchParams.get("ref");
+    if (refParam && refParam !== "venue_poster") {
+      const code = refParam.toUpperCase().trim();
+      setAffiliateCode(code);
+      recordAffiliateClick(code).catch(() => {});
+      try {
+        localStorage.setItem("abk_affiliate_ref", code);
+      } catch {
+        // Non-blocking
+      }
+    } else {
+      try {
+        const stored = localStorage.getItem("abk_affiliate_ref");
+        if (stored) setAffiliateCode(stored);
+      } catch {
+        // Non-blocking
+      }
+    }
+  }, [searchParams]);
 
   // Listen for deep-linked query parameters (e.g. ?day=3 or ?tier=vvip or ?day=1 or ?day=2)
   useEffect(() => {
@@ -237,6 +263,7 @@ function RegisterContent() {
         day3: true,
         day3TicketCount: day3TicketCountParsed,
         day3PaymentRef: paymentRef,
+        affiliateCode: searchParams.get("ref") || affiliateCode || undefined,
         attendees: parsedAttendees,
       });
 
@@ -315,6 +342,7 @@ function RegisterContent() {
         affiliationType: formData.affiliationType,
         hostName: formData.hostName,
         organization: formData.organization,
+        affiliateCode: affiliateCode || undefined,
         attendees: attendeesToSubmit,
       });
 
@@ -359,6 +387,7 @@ function RegisterContent() {
             day2,
             day3: true,
             quantity: day3TicketCount,
+            affiliateCode: affiliateCode || undefined,
             attendees: attendeesToSubmit,
           }),
         });
@@ -401,6 +430,7 @@ function RegisterContent() {
       affiliationType: formData.affiliationType,
       hostName: formData.hostName,
       organization: formData.organization,
+      affiliateCode: affiliateCode || undefined,
       attendees: attendeesToSubmit,
     });
 
@@ -1168,6 +1198,37 @@ function RegisterContent() {
                           </Badge>
                         </div>
 
+                        {/* Prestige Value & Pilot Testing Fee Banner */}
+                        <div className="rounded-xl border border-gold/40 bg-gradient-to-r from-[#1B1608] via-[#2A2007] to-[#1B1608] p-3 text-ivory space-y-1.5">
+                          <div className="flex flex-wrap items-center justify-between gap-1.5">
+                            <span className="font-display font-bold text-xs text-gold">Official Day 3 VVIP Value: {DAY3_VVIP_OFFICIAL_PRICE_DISPLAY}</span>
+                            <Badge className="bg-emerald-500 text-black font-extrabold text-[9px] uppercase px-2 py-0.5">
+                              Active Pilot Testing Fee: {DAY3_VVIP_TESTING_PRICE_DISPLAY}
+                            </Badge>
+                          </div>
+                          <p className="text-[10px] text-ivory/80 leading-tight">
+                            For pilot simulation, all Day 3 passes are charged at the test rate of {DAY3_VVIP_TESTING_PRICE_DISPLAY} per ticket while maintaining official prestige credentials.
+                          </p>
+                          <div className="pt-1 border-t border-gold/20 flex items-center justify-between">
+                            <span className="text-[10px] text-gold/90 font-medium">Looking for VIP Table Enclosures (10 Guests)?</span>
+                            <Link href="/tables" className="text-[10px] font-bold text-gold underline hover:text-white flex items-center gap-1">
+                              Explore Tables (₦10M, ₦5M, ₦3M, ₦1.5M) <ArrowRight className="size-2.5" />
+                            </Link>
+                          </div>
+                        </div>
+
+                        {affiliateCode && (
+                          <div className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-2.5 flex items-center justify-between text-xs text-emerald-900">
+                            <span className="font-semibold flex items-center gap-1.5">
+                              <Sparkles className="size-3.5 text-emerald-600" />
+                              Partner Referral: <strong className="font-mono">{affiliateCode}</strong>
+                            </span>
+                            <Badge className="bg-emerald-600 text-white text-[9px] uppercase font-bold">
+                              10% Commission Active
+                            </Badge>
+                          </div>
+                        )}
+
                         <p className="text-[11px] leading-relaxed text-amber-900">
                           Select whether you are purchasing Day 3 VVIP admission ({DAY3_VVIP_PRICE_DISPLAY} per pass) or redeeming an official single-use Special VIP Invitation Code:
                         </p>
@@ -1441,6 +1502,27 @@ function RegisterContent() {
                             </p>
                           </div>
                         )}
+
+                        {/* Optional Affiliate / Referral Code Input */}
+                        <div className="rounded-xl border border-amber-300/80 bg-white/95 p-3 space-y-1.5">
+                          <Label htmlFor="regAffiliateCode" className="text-xs font-bold text-amber-950 flex items-center justify-between">
+                            <span className="flex items-center gap-1.5">
+                              <Sparkles className="size-3 text-amber-600" />
+                              Affiliate Partner / Referral Code (Optional)
+                            </span>
+                            <span className="text-[10px] text-amber-800 font-normal">Earn 10% on confirmed tickets</span>
+                          </Label>
+                          <Input
+                            id="regAffiliateCode"
+                            value={affiliateCode}
+                            onChange={(e) => setAffiliateCode(e.target.value.toUpperCase().trim())}
+                            placeholder="e.g. AFF-POLO-8472"
+                            className="font-mono text-xs h-8 border-amber-300 bg-white uppercase placeholder:text-muted-brand/60"
+                          />
+                          <p className="text-[10px] text-amber-800">
+                            If you were referred by an authorized partner or ticketing promoter, enter their code here.
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>

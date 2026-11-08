@@ -17,8 +17,14 @@ import {
   submitTableRegistration,
   submitAffiliateRegistration,
   getAffiliateDashboardData,
+  submitRegistration,
 } from "@/app/(public)/register/actions";
 import { verifyPassToken } from "@/lib/qr/token";
+import { verifyPassDeviceBinding, isTablePassCode } from "@/lib/security/device-binding";
+import {
+  DAY3_VVIP_OFFICIAL_PRICE_NGN,
+  DAY3_VVIP_TESTING_PRICE_NGN,
+} from "@/lib/config/checkout-config";
 
 describe("Day 3 VIP Table Packages & 10 Seats Enclosures", () => {
   it("defines all 4 official Day 3 table packages from the blueprint document", () => {
@@ -241,5 +247,60 @@ describe("International Affiliate Centre (10% Commission)", () => {
 
     const liTemplate = templates.find((t) => t.channel === "LinkedIn");
     expect(liTemplate?.copyText).toContain("AFF-POLO-8472");
+  });
+
+  it("credits 10% affiliate commission when individual Day 3 VVIP passes are registered", async () => {
+    const affiliateCode = "AFF-POLO-VIP99";
+    const result = await submitRegistration({
+      firstName: "Barrister",
+      lastName: "Kayode",
+      email: `kayode.${Date.now()}@law.ng`,
+      phone: "0803 555 7788",
+      day1: false,
+      day2: false,
+      day3: true,
+      day3TicketCount: 2,
+      paymentMethod: "bank_transfer",
+      bankTransferRef: "ABK-WEMA-AFF-TEST",
+      affiliateCode,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.passes?.length).toBe(2);
+  });
+
+  it("verifies official figures and pilot testing price constants", () => {
+    expect(DAY3_VVIP_OFFICIAL_PRICE_NGN).toBe(50_000);
+    expect(DAY3_VVIP_TESTING_PRICE_NGN).toBe(100);
+  });
+
+  it("enforces device locking on guest table invitations and strictly blocks third-party forwarding", async () => {
+    const passCode = `ABK-2026-KT01-S02-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    expect(await isTablePassCode(passCode)).toBe(true);
+
+    const deviceAlice = "DEV-ALICE-PHONE-111";
+    const deviceBob = "DEV-BOB-PHONE-222";
+
+    // 1. Recipient Alice opens her invited guest ticket on her device -> binds successfully
+    const aliceClaim = await verifyPassDeviceBinding(passCode, deviceAlice, "Alice Adeyemi");
+    expect(aliceClaim.isAuthorized).toBe(true);
+    expect(aliceClaim.status).toBe("newly_bound");
+
+    // 2. Alice opens it again on her device -> authorized
+    const aliceRevisit = await verifyPassDeviceBinding(passCode, deviceAlice, "Alice Adeyemi");
+    expect(aliceRevisit.isAuthorized).toBe(true);
+    expect(aliceRevisit.status).toBe("already_bound_to_this_device");
+
+    // 3. Alice forwards the link to Bob; Bob opens it on his device -> BLOCKED!
+    const bobAttempt = await verifyPassDeviceBinding(passCode, deviceBob, "Bob Thirdparty");
+    expect(bobAttempt.isAuthorized).toBe(false);
+    expect(bobAttempt.status).toBe("forwarding_blocked");
+    expect(bobAttempt.message).toContain("claimed and bound to another recipient's mobile device");
+
+    // 4. Host pass (Seat 1: -S01-) is unrestricted
+    const hostPassCode = `ABK-2026-KT01-S01-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const hostCheck = await verifyPassDeviceBinding(hostPassCode, deviceBob, "Host Chief");
+    expect(hostCheck.isAuthorized).toBe(true);
+    expect(hostCheck.status).toBe("unrestricted");
   });
 });

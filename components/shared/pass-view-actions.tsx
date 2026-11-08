@@ -20,6 +20,7 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
   const [shared, setShared] = useState(false);
 
   const isGiftTicket = Boolean(
+    passData.isLockedToDevice ||
     passData.isSponsored ||
     (passData.ticketIndex && passData.ticketIndex > 1) ||
     passData.holderName?.toLowerCase().startsWith("sponsored invitation") ||

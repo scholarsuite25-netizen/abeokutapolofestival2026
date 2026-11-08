@@ -64,7 +64,13 @@ create table if not exists public.affiliate_referrals (
 
 create index if not exists idx_affiliate_referrals_code on public.affiliate_referrals (affiliate_code);
 
--- ── 4. RLS Configuration ────────────────────────────────────────────────────
+-- ── 4. Credentials Device-Locking Columns ────────────────────────────────────
+alter table public.credentials add column if not exists bound_device_id text;
+alter table public.credentials add column if not exists is_locked_to_device boolean default false;
+alter table public.credentials add column if not exists claimed_at timestamptz;
+create index if not exists idx_credentials_bound_device on public.credentials (bound_device_id);
+
+-- ── 5. RLS Configuration ────────────────────────────────────────────────────
 alter table public.table_bookings enable row level security;
 alter table public.affiliates enable row level security;
 alter table public.affiliate_referrals enable row level security;

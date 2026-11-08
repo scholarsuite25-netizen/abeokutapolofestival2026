@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { PassViewActions } from "@/components/shared/pass-view-actions";
+import { PassDeviceGuard } from "@/components/shared/pass-device-guard";
 import { AttendanceMilestoneWidget } from "@/components/shared/attendance-milestone-widget";
 import { generateSignedPassToken, hashPassToken, verifyPassToken } from "@/lib/qr/token";
 import type { StoredPass } from "@/lib/storage/pass-storage";
@@ -149,18 +150,46 @@ async function PassContent({ params, searchParams }: PassPageProps) {
       normalizedCode.startsWith("ABK-VVIP-") ||
       normalizedCode.startsWith("ABK-DAY3-"))
   ) {
-    const isVvip = normalizedCode.includes("VVIP") || normalizedCode.startsWith("ABK-DAY3-");
+    const isTable =
+      normalizedCode.includes("-KT") ||
+      normalizedCode.includes("-RT") ||
+      normalizedCode.includes("-QT") ||
+      normalizedCode.includes("-PT") ||
+      normalizedCode.includes("-TBL-");
+    const isVvip = isTable || normalizedCode.includes("VVIP") || normalizedCode.startsWith("ABK-DAY3-");
     const isDual = normalizedCode.includes("D12");
     const isDay2 = normalizedCode.includes("D2");
     const isPending = isPassPendingVerification(normalizedCode);
     const vvipMatch = normalizedCode.match(/VVIP(\d+)/);
-    const ticketIdx = vvipMatch ? parseInt(vvipMatch[1], 10) : 1;
+    const seatMatch = normalizedCode.match(/-S(\d+)-/);
+    const ticketIdx = seatMatch ? parseInt(seatMatch[1], 10) : (vvipMatch ? parseInt(vvipMatch[1], 10) : 1);
     const isSponsored = ticketIdx > 1 || Boolean(sp.holder && String(sp.holder).toLowerCase().startsWith("sponsored invitation"));
     const sponsorFromUrl = sp.sponsor ? String(sp.sponsor) : sp.buyer ? String(sp.buyer) : null;
-    const holderFromUrl = sp.holder ? String(sp.holder) : (isSponsored ? (sponsorFromUrl ? `Sponsored Invitation by ${sponsorFromUrl}` : "Sponsored Invitation by Event Patron") : "Accredited Guest");
+    const defaultHolder = isTable
+      ? (ticketIdx > 1 ? (sponsorFromUrl ? `Guest of ${sponsorFromUrl}` : `Table Guest (Seat ${ticketIdx})`) : (sponsorFromUrl || "VIP Table Host"))
+      : (isSponsored ? (sponsorFromUrl ? `Sponsored Invitation by ${sponsorFromUrl}` : "Sponsored Invitation by Event Patron") : "Accredited Guest");
+    const holderFromUrl = sp.holder ? String(sp.holder) : defaultHolder;
+
+    let tablePkgName = "VIP Table Package";
+    let enclosure = "VIP Pavilion";
+    if (normalizedCode.includes("-KT")) {
+      tablePkgName = "The Kings Table";
+      enclosure = "Kings Arena & Royal Dais";
+    } else if (normalizedCode.includes("-RT")) {
+      tablePkgName = "The Royal Table";
+      enclosure = "Royal Enclosure Pavilion";
+    } else if (normalizedCode.includes("-QT")) {
+      tablePkgName = "The Queens Table";
+      enclosure = "Queens Lounge & Garden Pavilion";
+    } else if (normalizedCode.includes("-PT")) {
+      tablePkgName = "The Premium Table";
+      enclosure = "Clubhouse Terrace & Grandstand";
+    }
 
     const passType = isPending
-      ? "Day 3 VVIP Provisional Claim (Pending Bursary Verification)"
+      ? (isTable ? `${tablePkgName} Provisional Table Slip` : "Day 3 VVIP Provisional Claim (Pending Bursary Verification)")
+      : isTable
+      ? `${tablePkgName} VIP Access`
       : isVvip
       ? "Day 3 VVIP Grand Finale Pass"
       : isDual
@@ -175,9 +204,11 @@ async function PassContent({ params, searchParams }: PassPageProps) {
       pass_type: passType,
       holder_name: holderFromUrl,
       affiliation_type: isSponsored ? "guest_of" : "individual",
-      host_name: sponsorFromUrl || (isSponsored ? "Event Patron" : null),
-      organization: null,
-      zone_access: isVvip && !isPending
+      host_name: sponsorFromUrl || (isSponsored ? (isTable ? "Table Host" : "Event Patron") : null),
+      organization: isTable ? enclosure : null,
+      zone_access: isTable
+        ? [enclosure, "VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
+        : isVvip && !isPending
         ? ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"]
         : isPending
         ? ["Accreditation Desk Verification Only"]
@@ -229,7 +260,21 @@ async function PassContent({ params, searchParams }: PassPageProps) {
     cred.status === "pending_bank_verification" ||
     cred.status === "pending_approval";
   const vvipMatch = cred.pass_code.match(/VVIP(\d+)/);
-  const ticketIdx = vvipMatch ? parseInt(vvipMatch[1], 10) : 1;
+  const seatMatch = cred.pass_code.match(/-S(\d+)-/);
+  const ticketIdx = seatMatch ? parseInt(seatMatch[1], 10) : (vvipMatch ? parseInt(vvipMatch[1], 10) : 1);
+  const isTable =
+    cred.pass_code.includes("-KT") ||
+    cred.pass_code.includes("-RT") ||
+    cred.pass_code.includes("-QT") ||
+    cred.pass_code.includes("-PT") ||
+    cred.pass_code.includes("-TBL-") ||
+    cred.pass_type.toLowerCase().includes("table") ||
+    cred.pass_type.toLowerCase().includes("kings") ||
+    cred.pass_type.toLowerCase().includes("royal") ||
+    cred.pass_type.toLowerCase().includes("queens") ||
+    cred.pass_type.toLowerCase().includes("premium");
+  const isTableGuest = isTable && ticketIdx > 1;
+
   const isSponsored =
     ticketIdx > 1 ||
     cred.holder_name.toLowerCase().startsWith("sponsored invitation") ||
@@ -237,14 +282,16 @@ async function PassContent({ params, searchParams }: PassPageProps) {
     cred.affiliation_type === "guest_of";
   const affiliationLabel =
     cred.affiliation_type === "guest_of" && cred.host_name
-      ? `Guest of: ${cred.host_name}`
+      ? (isTable ? `Guest of: ${cred.host_name}` : `Guest of: ${cred.host_name}`)
       : isSponsored && cred.host_name
       ? `Sponsored by: ${cred.host_name}`
       : cred.affiliation_type === "corporate" && cred.organization
       ? `Corporate: ${cred.organization}`
+      : isTable
+      ? "Table Host"
       : "Individual Attendee";
 
-  const isGold = cred.pass_code.includes("VVIP") || cred.pass_type.toLowerCase().includes("vvip") || cred.pass_type.toLowerCase().includes("day 3");
+  const isGold = isTable || cred.pass_code.includes("VVIP") || cred.pass_type.toLowerCase().includes("vvip") || cred.pass_type.toLowerCase().includes("day 3");
 
   const passStorageData: StoredPass = {
     passCode: cred.pass_code,
@@ -267,12 +314,17 @@ async function PassContent({ params, searchParams }: PassPageProps) {
     ticketIndex: ticketIdx,
     isSponsored,
     sponsorName: cred.host_name,
-    isLockedToDevice: isSponsored,
-    isBuyer: false,
+    isLockedToDevice: isTableGuest || isSponsored,
+    isBuyer: isTable ? ticketIdx === 1 : false,
   };
 
   return (
-    <div className="flex w-full max-w-full flex-col bg-ivory text-ink py-6 sm:py-10 print:py-0 print:bg-white overflow-x-clip min-w-0">
+    <PassDeviceGuard
+      passCode={cred.pass_code}
+      holderName={cred.holder_name}
+      isTableGuest={isTableGuest}
+    >
+      <div className="flex w-full max-w-full flex-col bg-ivory text-ink py-6 sm:py-10 print:py-0 print:bg-white overflow-x-clip min-w-0">
       <div className="mx-auto w-full max-w-md px-3 sm:px-4 space-y-4 min-w-0">
         {/* Navigation & Print Actions */}
         <div className="flex items-center justify-between print:hidden">
@@ -654,5 +706,6 @@ async function PassContent({ params, searchParams }: PassPageProps) {
         </div>
       </div>
     </div>
+    </PassDeviceGuard>
   );
 }

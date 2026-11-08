@@ -20,6 +20,7 @@ const bodySchema = z.object({
   day2: z.boolean().optional(),
   quantity: z.coerce.number().int().min(1).max(DAY3_VVIP_MAX_TICKETS).default(1),
   attendees: z.array(attendeeSchema).optional(),
+  affiliateCode: z.string().trim().optional(),
 });
 
 function newReference(simulatedQuantity?: number): string {
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email, firstName, lastName, phone, day1, day2, quantity, attendees } = parsed.data;
+  const { email, firstName, lastName, phone, day1, day2, quantity, attendees, affiliateCode } = parsed.data;
   const amountNgn = quantity * DAY3_VVIP_PRICE_NGN;
   const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
   const secret = process.env.PAYSTACK_SECRET_KEY;
@@ -65,6 +66,9 @@ export async function POST(req: Request) {
   callback.searchParams.set("em", email);
   callback.searchParams.set("ph", phone ?? "");
   callback.searchParams.set("qty", String(quantity));
+  if (affiliateCode) {
+    callback.searchParams.set("ref", affiliateCode);
+  }
   if (attendees && attendees.length > 0) {
     callback.searchParams.set("attendees", JSON.stringify(attendees));
   }
@@ -109,6 +113,9 @@ export async function POST(req: Request) {
             { display_name: "Event", variable_name: "event", value: "Abeokuta Polo Festival 2026" },
             { display_name: "Pass Type", variable_name: "pass_type", value: "Day 3 VVIP Grand Finale" },
             { display_name: "Ticket Quantity", variable_name: "ticket_quantity", value: String(quantity) },
+            ...(affiliateCode
+              ? [{ display_name: "Affiliate Referral", variable_name: "affiliate_code", value: affiliateCode }]
+              : []),
             ...(attendees && attendees.length > 0
               ? [{ display_name: "Attendees", variable_name: "attendees", value: JSON.stringify(attendees) }]
               : []),

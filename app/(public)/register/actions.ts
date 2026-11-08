@@ -63,6 +63,7 @@ const registrationSchema = z.object({
   sendEmailReminders: z.boolean().default(true),
   sendWhatsappReminders: z.boolean().default(true),
   reminderCadence: z.enum(["weekly_and_daily", "weekly_only", "event_week_only"]).default("weekly_and_daily"),
+  affiliateCode: z.string().trim().optional(),
   attendees: z
     .array(
       z.object({
@@ -194,6 +195,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     affiliationType,
     hostName,
     organization,
+    affiliateCode,
   } = parsed.data;
   const phoneValidation = validateWhatsAppPhone(rawPhone);
   const phone = phoneValidation.isValid ? phoneValidation.formatted : rawPhone;
@@ -509,6 +511,30 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
             },
             "id",
           );
+        }
+
+        // Record 10% Affiliate Commission on confirmed Day 3 VVIP tickets
+        if (affiliateCode && day3) {
+          const count = day3TicketCount || 1;
+          const officialVal = count * 50_000;
+          const commissionVal = officialVal * AFFILIATE_COMMISSION_RATE; // ₦5,000 per ticket
+          const testingAmount = count * 100;
+          try {
+            await adaptiveInsert(supabase, "affiliate_referrals", {
+              affiliate_code: affiliateCode.trim().toUpperCase(),
+              item_type: "ticket",
+              category: `Day 3 Individual VVIP (${count} ticket${count > 1 ? "s" : ""})`,
+              order_ref: verifiedPaymentRef || bankTransferRef || usedInvitationCode || `REG-${Date.now()}`,
+              buyer_name: holderName,
+              sale_amount_ngn: testingAmount,
+              official_value_ngn: officialVal,
+              commission_rate: AFFILIATE_COMMISSION_RATE,
+              commission_amount_ngn: commissionVal,
+              status: isBankTransfer ? "pending_verification" : "confirmed",
+            });
+          } catch {
+            // Non-blocking
+          }
         }
 
         if (isBankTransfer && bankTransferRef) {
