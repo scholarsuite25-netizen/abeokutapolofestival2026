@@ -7,15 +7,19 @@ import {
   QrCode, 
   FileSpreadsheet,
   ExternalLink,
-  Printer
+  Printer,
+  UserCog,
+  BadgeCheck
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
-    { label: "Command Centre", href: "/admin", icon: LayoutDashboard },
-    { label: "Participants", href: "/admin/registrations", icon: Users2 },
-    { label: "Offline Finance", href: "/admin/finance", icon: Landmark },
-    { label: "Reports & Export", href: "/admin/reports", icon: FileSpreadsheet },
+    { label: "Command Centre", href: "/abawole", icon: LayoutDashboard },
+    { label: "Participants", href: "/abawole/registrations", icon: Users2 },
+    { label: "Offline Finance", href: "/abawole/finance", icon: Landmark },
+    { label: "Verification Queue", href: "/abawole/members", icon: BadgeCheck },
+    { label: "Reports & Export", href: "/abawole/reports", icon: FileSpreadsheet },
+    { label: "Admin Hierarchy", href: "/abawole/admins", icon: UserCog },
     { label: "Turnstile Scanner", href: "/scan", icon: QrCode },
     { label: "Venue QR Poster", href: "/register/poster", icon: Printer },
   ];
@@ -31,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div>
               <p className="font-display text-sm font-semibold tracking-wide text-ivory">
-                Abeokuta Polo Festival 2026 · Operations Console
+                Abeokuta Polo Festival 2026 · Operations Console (/abawole)
               </p>
               <div className="flex items-center gap-2">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -64,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium text-muted-brand transition-colors hover:bg-sage/50 hover:text-forest"
+                  className="flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium text-muted-brand transition-colors hover:bg-sage/50 hover:text-forest shrink-0"
                 >
                   <Icon className="h-3.5 w-3.5 text-gold" />
                   <span>{item.label}</span>
@@ -75,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <div className="hidden items-center gap-2 text-xs sm:flex">
             <span className="rounded-md border border-line bg-sage/40 px-2.5 py-1 font-mono text-[11px] text-muted-brand">
-              Festival Edition: 2026-ABK-01
+              Edition: 2026-ABK-01
             </span>
           </div>
         </div>
@@ -91,8 +95,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
           <p>© 2026 Abeokuta Polo Club. Authorized Executive Personnel Only.</p>
           <div className="flex items-center gap-4">
-            <Link href="/admin/registrations" className="transition-colors hover:text-forest">
+            <Link href="/abawole/registrations" className="transition-colors hover:text-forest">
               Participant Registry
+            </Link>
+            <span>·</span>
+            <Link href="/abawole/admins" className="transition-colors hover:text-forest">
+              Admin Console
             </Link>
             <span>·</span>
             <Link href="/scan" className="transition-colors hover:text-forest">

@@ -14,6 +14,8 @@ export const ROLES = [
   "media_officer",
   "sponsorship_officer",
   "security_checkin_officer",
+  "general_secretary",
+  "president",
   "super_admin",
 ] as const;
 
@@ -36,6 +38,7 @@ export const PERMISSIONS = [
   "cms.publish",
   "grants.manage",
   "export.bulk",
+  "admin.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -66,6 +69,40 @@ const ROLE_GRANTS: Record<Role, readonly Permission[]> = {
     "credential.validate",
     "credential.override",
     "directory.read_own",
+  ],
+  general_secretary: [
+    "content.read",
+    "content.manage",
+    "registration.read_own",
+    "registration.manage",
+    "roster.read",
+    "roster.read_all",
+    "finance.read",
+    "sponsorship.read_public",
+    "sponsorship.manage",
+    "directory.read_own",
+    "credential.issue",
+    "credential.validate",
+    "credential.override",
+    "cms.publish",
+    "export.bulk",
+  ],
+  president: [
+    "content.read",
+    "content.manage",
+    "registration.read_own",
+    "registration.manage",
+    "roster.read",
+    "roster.read_all",
+    "finance.read",
+    "sponsorship.read_public",
+    "sponsorship.manage",
+    "directory.read_own",
+    "credential.issue",
+    "credential.validate",
+    "credential.override",
+    "cms.publish",
+    "export.bulk",
   ],
   super_admin: [...PERMISSIONS],
 } as const;

@@ -6,12 +6,19 @@ import { sendEmail } from "@/lib/email/client";
 import { isSupabaseConfigured } from "@/lib/env";
 import { generateSignedPassToken, hashPassToken } from "@/lib/qr/token";
 import { writeAudit } from "@/lib/supabase/audit";
-import { DAY3_INVITATION_MAX_TICKETS } from "@/lib/config/checkout-config";
+import {
+  DAY3_INVITATION_MAX_TICKETS,
+  DAY3_VVIP_PRICE_NGN,
+  CLUB_BANK_DETAILS,
+  generateWemaTransferReference,
+} from "@/lib/config/checkout-config";
 import { isValidSpecialInvitation } from "@/lib/invitations/validate";
 import { attachClaimToRegistration, claimPaymentReference } from "@/lib/paystack/claims";
 import { verifyDay3Payment } from "@/lib/paystack/verify";
 import type { StoredPass } from "@/lib/storage/pass-storage";
 import { validateWhatsAppPhone } from "@/lib/utils/phone";
+import { notifySecretariatOfBankPayment } from "@/lib/notifications/secretariat";
+import { registerUnverifiedPasses } from "@/lib/storage/unverified-passes";
 
 const registrationSchema = z.object({
   firstName: z.string().trim().min(2, "First name must be at least 2 characters."),
@@ -31,6 +38,8 @@ const registrationSchema = z.object({
   day3TicketCount: z.coerce.number().int().min(1).max(20).default(1),
   day3InvitationCode: z.string().trim().optional(),
   day3PaymentRef: z.string().trim().optional(),
+  paymentMethod: z.enum(["paystack", "bank_transfer", "invitation", "free"]).optional(),
+  bankTransferRef: z.string().trim().optional(),
   affiliationType: z.enum(["individual", "guest_of", "corporate"]).default("individual"),
   hostName: z.string().trim().optional(),
   organization: z.string().trim().optional(),
@@ -55,7 +64,14 @@ const registrationSchema = z.object({
 
 export interface RegisterResult {
   success: boolean;
-  status?: "confirmed" | "pending_approval";
+  status?: "confirmed" | "pending_approval" | "pending_verification" | "pending_bank_verification";
+  bankTransferRef?: string;
+  paymentMethod?: "paystack" | "bank_transfer" | "invitation" | "free";
+  secretariatNotification?: {
+    message: string;
+    verificationLink: string;
+    whatsappUrl: string;
+  };
   message?: string;
   error?: string;
   passes?: StoredPass[];
@@ -69,7 +85,7 @@ export interface RegisterResult {
   zoneAccess?: string[];
   day1Status?: "free_admitted" | "registered" | "not_selected";
   day2Status?: "free_admitted" | "registered" | "not_selected" | "ticket_required" | "ticket_verified";
-  day3Status?: "vvip_admitted" | "payment_verified" | "ticket_required" | "ticket_verified" | "not_selected";
+  day3Status?: "vvip_admitted" | "payment_verified" | "ticket_required" | "ticket_verified" | "not_selected" | "pending_verification" | "pending_bank_verification";
   ticketRefDay2?: string;
   ticketRefDay3?: string;
 }
@@ -146,16 +162,24 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     day1 = true;
   }
 
-  // Day 3 VVIP admission: a Special Invitation Code from the server allow-list, or a
-  // Paystack payment verified server-side and claimed exactly once. Nothing the
-  // browser sends (reference text, "paid" flags, ticket count) is trusted on its own.
+  // Day 3 VVIP admission: a Special Invitation Code from the server allow-list, a
+  // Paystack payment verified server-side and claimed exactly once, OR a Direct Bank
+  // Wire Transfer to the official Abeokuta Polo Club Wema Bank account (pending verification).
   let verifiedPaymentRef: string | null = null;
   let usedInvitationCode: string | null = null;
+  let isBankTransfer = false;
+  let bankTransferRef: string | null = null;
 
   if (day3) {
     if (isValidSpecialInvitation(day3InvitationCode)) {
       usedInvitationCode = day3InvitationCode!.trim();
       day3TicketCount = Math.min(day3TicketCount, DAY3_INVITATION_MAX_TICKETS);
+    } else if (
+      parsed.data.paymentMethod === "bank_transfer" ||
+      (parsed.data.bankTransferRef && parsed.data.bankTransferRef.toUpperCase().startsWith("ABK-WEMA-"))
+    ) {
+      isBankTransfer = true;
+      bankTransferRef = (parsed.data.bankTransferRef || generateWemaTransferReference()).trim().toUpperCase();
     } else if (day3PaymentRef) {
       const payment = await verifyDay3Payment(day3PaymentRef, { expectedEmail: email });
       if (!payment.ok) {
@@ -178,7 +202,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     } else {
       return {
         success: false,
-        error: "Day 3 requires Paystack VVIP payment or an authorized Special Invitation Code.",
+        error: "Day 3 requires Paystack VVIP payment or an authorized Special Invitation Code (or Abeokuta Polo Club Bank Transfer).",
       };
     }
   }
@@ -339,12 +363,14 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         passTier: "vvip_day3",
         isVvip: true,
         designTheme: "gold",
-        paymentRef: verifiedPaymentRef,
+        paymentRef: verifiedPaymentRef || (isBankTransfer ? bankTransferRef : null),
+        bankTransferRef: isBankTransfer ? bankTransferRef : null,
+        status: isBankTransfer ? "pending_verification" : "active",
         invitationCode: usedInvitationCode,
         day1Status: "not_selected",
         day2Status: "not_selected",
-        day3Status: "vvip_admitted",
-        ticketRefDay3: verifiedPaymentRef || usedInvitationCode || "VVIP-CONFIRMED",
+        day3Status: isBankTransfer ? "pending_verification" : "vvip_admitted",
+        ticketRefDay3: verifiedPaymentRef || usedInvitationCode || (isBankTransfer ? bankTransferRef : "VVIP-CONFIRMED"),
         securityHash: hashPassToken(qrToken),
         ticketIndex: i,
         totalTickets: ticketCount,
@@ -369,6 +395,15 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         .eq("slug", "2026")
         .maybeSingle();
 
+      const regStatus = isBankTransfer ? "pending_bank_verification" : "confirmed";
+      const paymentMethod = isBankTransfer
+        ? "bank_transfer"
+        : verifiedPaymentRef
+        ? "paystack"
+        : usedInvitationCode
+        ? "invitation"
+        : "free";
+
       const { data: reg } = await supabase
         .from("registrations")
         .insert({
@@ -379,10 +414,14 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
           phone,
           category: primaryPass.category,
           group_size: day3 ? Math.max(day3TicketCount, parsed.data.groupSize || 1) : (parsed.data.groupSize || 1),
-          status: "confirmed",
+          status: regStatus,
           affiliation_type: affiliationType,
           host_name: hostName || null,
           organization: organization || null,
+          bank_transfer_ref: isBankTransfer ? bankTransferRef : null,
+          payment_method: paymentMethod,
+          has_day3_ticket: day3,
+          day3_ticket_ref: bankTransferRef || verifiedPaymentRef || usedInvitationCode || null,
         })
         .select("id")
         .single();
@@ -408,9 +447,29 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
             affiliation_type: pass.affiliationType,
             host_name: pass.hostName,
             organization: pass.organization,
-            status: "active",
+            status: isBankTransfer ? "pending_verification" : "active",
+            bank_transfer_ref: isBankTransfer ? bankTransferRef : null,
+            day3_ticket_ref: bankTransferRef || verifiedPaymentRef || null,
             issued_at: issuedAt,
           });
+        }
+
+        if (isBankTransfer && bankTransferRef) {
+          const totalNgn = (day3TicketCount || 1) * DAY3_VVIP_PRICE_NGN;
+          try {
+            await supabase.from("offline_commitments").insert({
+              edition_id: edition?.id ?? null,
+              sponsor_name: holderName,
+              tier: `Day 3 VVIP Ticket (${day3TicketCount} Pass${day3TicketCount > 1 ? "es" : ""})`,
+              proposed_amount: totalNgn,
+              confirmed_amount: 0,
+              status: "pledged",
+              channel: "Bank Wire Transfer (WEMA BANK 0126769779)",
+              reference_code: bankTransferRef,
+            });
+          } catch {
+            // Ignore non-blocking offline ledger insert error
+          }
         }
 
         await writeAudit({
@@ -426,6 +485,8 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
             day3_ticket_count: day3 ? day3TicketCount : 0,
             is_vvip: day3,
             payment_ref: verifiedPaymentRef,
+            bank_transfer_ref: bankTransferRef,
+            payment_method: paymentMethod,
             invitation_used: Boolean(usedInvitationCode),
             sponsored_passes_count: passes.filter((p) => p.isSponsored).length,
           },
@@ -436,22 +497,43 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     }
   }
 
+  // Automated Secretariat Notification & In-Memory Gate Registration for Bank Transfers
+  let secretariatNotification: { message: string; verificationLink: string; whatsappUrl: string } | undefined;
+  if (isBankTransfer && bankTransferRef) {
+    const totalNgn = (day3TicketCount || 1) * DAY3_VVIP_PRICE_NGN;
+    registerUnverifiedPasses(passes.map((p) => p.passCode));
+    try {
+      secretariatNotification = await notifySecretariatOfBankPayment({
+        amountNgn: totalNgn,
+        buyerName: holderName,
+        phone,
+        email,
+        ref: bankTransferRef,
+        ticketCount: day3TicketCount,
+        flow: "vvip_pass",
+      });
+    } catch {
+      // Non-blocking
+    }
+  }
+
   // Send confirmation email
   try {
     const passesHtml = passes
       .map(
         (p) => `
-        <div style="background-color: ${p.isVvip ? "#1A1500" : "#FFFFFF"}; border: 2px solid ${p.isVvip ? "#D4AF37" : "#002F1A"}; border-radius: 12px; padding: 18px; margin: 16px 0; text-align: center; color: ${p.isVvip ? "#FCF9F8" : "#1B1C1C"};">
-          <p style="color: ${p.isVvip ? "#F5D77F" : "#C9A84C"}; font-size: 11px; text-transform: uppercase; font-weight: 700; margin: 0; letter-spacing: 0.1em;">
-            ${p.isVvip ? (p.isSponsored ? `👑 VVIP GUEST PASS (${p.serialLabel || "SPONSORED INVITATION"})` : `👑 VVIP OFFICIAL GATE CREDENTIAL ${p.serialLabel ? `(${p.serialLabel})` : ""}`) : "COMPLIMENTARY ACCESS PASS"}
+        <div style="background-color: ${p.isVvip ? "#1A1500" : "#FFFFFF"}; border: 2px solid ${isBankTransfer ? "#F59E0B" : p.isVvip ? "#D4AF37" : "#002F1A"}; border-radius: 12px; padding: 18px; margin: 16px 0; text-align: center; color: ${p.isVvip ? "#FCF9F8" : "#1B1C1C"};">
+          <p style="color: ${isBankTransfer ? "#F59E0B" : p.isVvip ? "#F5D77F" : "#C9A84C"}; font-size: 11px; text-transform: uppercase; font-weight: 700; margin: 0; letter-spacing: 0.1em;">
+            ${isBankTransfer ? "⚠️ PENDING VERIFICATION · VVIP TICKET" : p.isVvip ? (p.isSponsored ? `👑 VVIP GUEST PASS (${p.serialLabel || "SPONSORED INVITATION"})` : `👑 VVIP OFFICIAL GATE CREDENTIAL ${p.serialLabel ? `(${p.serialLabel})` : ""}`) : "COMPLIMENTARY ACCESS PASS"}
           </p>
           <h2 style="font-size: 26px; color: ${p.isVvip ? "#F5D77F" : "#002F1A"}; margin: 6px 0; letter-spacing: 0.12em; font-family: monospace; font-weight: 800;">
             ${p.passCode}
           </h2>
           <p style="font-size: 14px; font-weight: bold; margin: 4px 0;">${escapeHtml(p.holderName)}</p>
           <p style="font-size: 12px; color: ${p.isVvip ? "#D4AF37" : "#55635A"}; margin: 2px 0;">
-            ${p.daysCovered?.length === 2 ? "Valid for Day 1 (Fri 18) & Day 2 (Sat 19 Dec)" : p.daysCovered?.includes(3) ? "Valid for Day 3 Grand Finale (Sun 20 Dec)" : p.daysCovered?.includes(2) ? "Valid for Day 2 (Sat 19 Dec)" : "Valid for Day 1 (Fri 18 Dec)"}
+            ${p.daysCovered?.length === 2 ? "Valid for Day 1 (Fri 18) & Day 2 (Sat 19 Dec)" : p.daysCovered?.includes(3) ? "Day 3 Grand Finale (Sun 20 Dec)" : p.daysCovered?.includes(2) ? "Valid for Day 2 (Sat 19 Dec)" : "Valid for Day 1 (Fri 18 Dec)"}
           </p>
+          ${isBankTransfer ? `<p style="font-size: 11px; color: #F59E0B; margin-top: 8px; font-weight: bold;">Status: PENDING BURSARY VERIFICATION (Ref: ${bankTransferRef})</p>` : ""}
           ${p.isSponsored ? `<p style="font-size: 11px; color: #E5C768; margin-top: 8px;">Guest Forwarding Link: <a href="https://abeokuta-polo-festival-2026.vercel.app/pass/${p.passCode}" style="color: #F5D77F; text-decoration: underline;">https://abeokuta-polo-festival-2026.vercel.app/pass/${p.passCode}</a></p>` : ""}
         </div>
       `,
@@ -460,7 +542,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
 
     await sendEmail({
       to: email,
-      subject: `Your Gate Access Pass: 2026 Abeokuta Polo Festival (${primaryPass.passCode})`,
+      subject: isBankTransfer
+        ? `Pending Verification: Day 3 VVIP Bank Transfer Claim (${bankTransferRef})`
+        : `Your Gate Access Pass: 2026 Abeokuta Polo Festival (${primaryPass.passCode})`,
       html: `
         <div style="font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #1B1C1C; background-color: #FCF9F8; border-radius: 16px; border: 1px solid #C1C9BF;">
           <div style="background-color: #002F1A; padding: 24px; border-radius: 12px; text-align: center; color: #FCF9F8;">
@@ -471,9 +555,17 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
           </div>
           <div style="padding: 24px 0;">
             <p style="font-size: 15px; margin: 0 0 12px 0;">Dear <strong>${escapeHtml(holderName)}</strong>,</p>
-            <p style="font-size: 14px; line-height: 1.6; color: #55635A;">
-              Your digital gate access card(s) for the <strong>2026 Abeokuta Polo Festival</strong> have been successfully issued. Keep this email or download your offline card for contactless gate turnstile entry.
-            </p>
+            ${isBankTransfer ? `
+              <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin-bottom: 18px; color: #92400E; font-size: 13px; line-height: 1.5;">
+                <strong>⚠️ Immediate Action Required to Release Your Day 3 VVIP Passes:</strong><br />
+                We have registered your bank wire transfer claim for <strong>${day3TicketCount} Day 3 VVIP ticket(s)</strong> with unique reference <strong>${bankTransferRef}</strong>.<br /><br />
+                In accordance with festival gate security, passes remain in <strong>PENDING_VERIFICATION</strong> status and will deny turnstile admission until confirmed by the Bursary. Please send your bank payment debit slip to the Secretariat via WhatsApp (<a href="https://wa.me/2348181888884?text=Payment+Receipt+Ref+${bankTransferRef}" style="color: #92400E; font-weight: bold; text-decoration: underline;">+234 818 188 8884</a>) to verify and activate your passes.
+              </div>
+            ` : `
+              <p style="font-size: 14px; line-height: 1.6; color: #55635A;">
+                Your digital gate access card(s) for the <strong>2026 Abeokuta Polo Festival</strong> have been successfully issued. Keep this email or download your offline card for contactless gate turnstile entry.
+              </p>
+            `}
 
             ${passesHtml}
 
@@ -508,7 +600,10 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
 
   return {
     success: true,
-    status: "confirmed",
+    status: isBankTransfer ? "pending_verification" : "confirmed",
+    bankTransferRef: isBankTransfer ? bankTransferRef || undefined : undefined,
+    paymentMethod: isBankTransfer ? "bank_transfer" : verifiedPaymentRef ? "paystack" : usedInvitationCode ? "invitation" : "free",
+    secretariatNotification,
     passes,
     passCode: primaryPass.passCode,
     qrToken: primaryPass.qrToken,
@@ -522,7 +617,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       : ["Festival Grounds & Grandstand"],
     day1Status: day1 ? "free_admitted" : "not_selected",
     day2Status: day2 ? "free_admitted" : "not_selected",
-    day3Status: day3 ? "vvip_admitted" : "not_selected",
-    message: "Registration confirmed and access card(s) issued successfully!",
+    day3Status: day3 ? (isBankTransfer ? "pending_verification" : "vvip_admitted") : "not_selected",
+    message: isBankTransfer
+      ? "Bank transfer registered! Please submit your payment receipt to the Secretariat via WhatsApp to activate your Day 3 VVIP access credentials."
+      : "Registration confirmed and access card(s) issued successfully!",
   };
 }

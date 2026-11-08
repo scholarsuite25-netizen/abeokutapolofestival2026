@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Super Admin Command Centre | 2026 Abeokuta Polo Festival",
+  title: "Executive Command Centre (/abawole) | 2026 Abeokuta Polo Festival",
   description: "Executive command centre for festival operations, registrations, and gate accreditation.",
 };
 
@@ -49,6 +49,7 @@ async function CommandCentreContent() {
     { count: credentialsCount },
     { count: scansCount },
     { count: pendingApprovals },
+    { count: pendingBankVerificationsCount },
     { data: recentScans },
     { data: commitments },
     { data: recentRegistrations },
@@ -63,6 +64,12 @@ async function CommandCentreContent() {
       .from("registrations")
       .select("*", { count: "exact", head: true })
       .eq("status", "pending_approval"),
+    supabase
+      .from("registrations")
+      .select("*", { count: "exact", head: true })
+      .or("status.eq.pending_verification,status.eq.pending_bank_verification,bank_transfer_ref.not.is.null")
+      .neq("status", "confirmed")
+      .neq("status", "cancelled"),
     supabase
       .from("check_in_events")
       .select("id, result, scanned_at, gate, credentials(pass_code, pass_type)")
@@ -91,6 +98,7 @@ async function CommandCentreContent() {
   );
   const patronPasses =
     (commitments ?? []).filter((c) => c.status === "bank_wire_confirmed").length ?? 0;
+  const pendingBankCount = pendingBankVerificationsCount ?? 0;
 
   return (
     <div className="space-y-8">
@@ -109,7 +117,7 @@ async function CommandCentreContent() {
             </span>
           </div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-forest sm:text-3xl">
-            Super Admin Command Centre
+            Executive Command Centre (/abawole)
           </h1>
           <p className="mt-1 text-sm text-muted-brand">
             Real-time oversight of attendee registrations, guest affiliations, 3-day gate turnstiles, and offline finance.
@@ -118,7 +126,7 @@ async function CommandCentreContent() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href="/admin/registrations"
+            href="/abawole/registrations"
             className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-card px-3.5 py-2 text-xs font-semibold text-forest shadow-xs transition-colors hover:bg-sage/40"
           >
             <Users className="h-3.5 w-3.5 text-gold-deep" />
@@ -142,7 +150,7 @@ async function CommandCentreContent() {
           </Link>
 
           <Link
-            href="/admin/finance"
+            href="/abawole/finance"
             className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3.5 py-2 text-xs font-semibold text-ink shadow-xs transition-colors hover:bg-sage/40"
           >
             <Landmark className="h-3.5 w-3.5 text-gold-deep" />
@@ -150,6 +158,35 @@ async function CommandCentreContent() {
           </Link>
         </div>
       </div>
+
+      {/* Prominent Pulsing Alert Banner for Pending Bank Transfer Verifications (Requirement 2) */}
+      {pendingBankCount > 0 && (
+        <div className="relative overflow-hidden rounded-2xl border-2 border-red-500/90 bg-gradient-to-r from-red-950 via-rose-950 to-red-900 p-5 text-white shadow-xl animate-pulse">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <span className="relative flex h-4 w-4 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+              </span>
+              <div>
+                <h3 className="font-display text-base sm:text-lg font-bold text-white tracking-wide">
+                  🔴 Action Required: {pendingBankCount} Bank Transfer Verification{pendingBankCount > 1 ? "s" : ""} Awaiting Bursary Confirmation
+                </h3>
+                <p className="text-xs sm:text-sm text-red-200 mt-0.5 leading-relaxed">
+                  Attendees have submitted direct Wema Bank wire payments. Turnstile gates will deny admission until an administrator inspects and verifies bank credit.
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/abawole/registrations?filter=bank_transfers"
+              className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-xs sm:text-sm font-extrabold text-red-900 shadow-md transition-all hover:bg-red-50 shrink-0"
+            >
+              Inspect &amp; Approve in 1 Click →
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-line bg-card p-5 shadow-xs">
@@ -247,7 +284,7 @@ async function CommandCentreContent() {
 
       {(pendingApprovals ?? 0) > 0 ? (
         <Link
-          href="/admin/registrations"
+          href="/abawole/registrations"
           className="flex items-center justify-between rounded-xl border border-gold/50 bg-gold/10 p-4 transition-colors hover:bg-gold/15"
         >
           <div className="flex items-center gap-3">
@@ -278,7 +315,7 @@ async function CommandCentreContent() {
               </p>
             </div>
             <Link
-              href="/admin/registrations"
+              href="/abawole/registrations"
               className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:underline"
             >
               <span>View All Participants</span>
@@ -347,7 +384,7 @@ async function CommandCentreContent() {
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <Link
-                href="/admin/registrations"
+                href="/abawole/registrations"
                 className="flex flex-col items-start gap-1 rounded-lg border border-line bg-sage/30 p-3 text-left transition-colors hover:border-forest/40 hover:bg-sage/60"
               >
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-forest">

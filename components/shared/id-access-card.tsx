@@ -16,6 +16,8 @@ import {
   MessageCircle,
   Copy,
   Check,
+  AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { forceDownloadOfflinePassCard, type StoredPass } from "@/lib/storage/pass-storage";
@@ -34,6 +36,11 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
   const [copiedLink, setCopiedLink] = useState(false);
 
   const isGold = pass.isVvip || pass.designTheme === "gold" || pass.passTier === "vvip_day3";
+  const isPendingVerification =
+    pass.status === "pending_verification" ||
+    pass.status === "pending_bank_verification" ||
+    pass.day3Status === "pending_verification" ||
+    pass.day3Status === "pending_bank_verification";
   const isSponsored = Boolean(pass.isSponsored || pass.holderName.toLowerCase().startsWith("sponsored invitation") || (pass.ticketIndex && pass.ticketIndex > 1));
   const serialText = pass.serialLabel || (pass.totalTickets && pass.totalTickets > 1 && pass.ticketIndex ? `Ticket ${pass.ticketIndex} of ${pass.totalTickets}` : "");
 
@@ -84,7 +91,9 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
     ? "Day 2 Gate Access Pass"
     : "Day 1 Gate Access Pass";
 
-  const admissionBadge = isGold
+  const admissionBadge = isPendingVerification
+    ? "⚠️ PENDING BURSARY VERIFICATION"
+    : isGold
     ? isSponsored
       ? (serialText ? `SPONSORED GUEST · ${serialText}` : "SPONSORED GUEST")
       : (serialText ? `VVIP ADMISSION · ${serialText}` : "VVIP ROYAL ADMISSION")
@@ -174,8 +183,16 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
             }`}
           >
             <QrCode className={`size-20 ${isGold ? "text-black" : "text-[#002F1A]"}`} />
-            <div className="absolute -top-1.5 -right-1.5 rounded-full bg-emerald-600 text-white p-0.5 shadow">
-              <CheckCircle2 className="size-3" />
+            <div
+              className={`absolute -top-1.5 -right-1.5 rounded-full text-white p-0.5 shadow ${
+                isPendingVerification ? "bg-amber-600" : "bg-emerald-600"
+              }`}
+            >
+              {isPendingVerification ? (
+                <AlertTriangle className="size-3" />
+              ) : (
+                <CheckCircle2 className="size-3" />
+              )}
             </div>
           </div>
 
@@ -188,7 +205,14 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
           </div>
 
           <div className="mt-0.5">
-            {isGold ? (
+            {isPendingVerification ? (
+              <div className="flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500 text-amber-300 shadow-xs">
+                <AlertTriangle className="size-2.5 text-amber-400" />
+                <span className="text-[8px] font-bold tracking-wider uppercase text-amber-300">
+                  Pending Verification · Amber Warning
+                </span>
+              </div>
+            ) : isGold ? (
               <div className="flex items-center justify-center gap-1 px-2 py-0.5 rounded-full bg-[#2C2106] border border-[#C9A84C]/50">
                 <Crown className="size-2.5 text-[#E5C768]" />
                 <span className="text-[8px] font-bold tracking-wider uppercase text-[#F3E5AB]">
@@ -332,12 +356,16 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
         {/* Card Footer & Security Footnote */}
         <div
           className={`px-2.5 py-1 text-center text-[8px] leading-tight border-t ${
-            isGold
+            isPendingVerification
+              ? "bg-amber-950/80 border-amber-500/40 text-amber-300 font-bold"
+              : isGold
               ? "bg-[#0E0A02] border-[#3D2E08] text-[#C9A84C]"
               : "bg-[#002F1A]/5 border-[#002F1A]/15 text-[#002F1A] font-medium"
           }`}
         >
-          {isGold ? (
+          {isPendingVerification ? (
+            <span>⚠️ ADMISSION PENDING BURSARY VERIFICATION · ACCREDITATION DESK ACTION REQUIRED</span>
+          ) : isGold ? (
             <span>Turnstile accreditation required. Royal Gate Marshals on duty.</span>
           ) : (
             <span>Turnstile accreditation required. Complimentary Heritage Entry.</span>

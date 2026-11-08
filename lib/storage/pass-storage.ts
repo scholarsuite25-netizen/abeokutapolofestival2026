@@ -18,10 +18,12 @@ export interface StoredPass {
   isVvip?: boolean;
   designTheme?: "standard" | "gold";
   paymentRef?: string | null;
+  bankTransferRef?: string | null;
+  status?: "active" | "pending_verification" | "pending_bank_verification" | "pending_approval" | "revoked" | string;
   invitationCode?: string | null;
   day1Status?: "free_admitted" | "registered" | "not_selected";
   day2Status?: "free_admitted" | "registered" | "not_selected" | "ticket_required" | "ticket_verified";
-  day3Status?: "vvip_admitted" | "payment_verified" | "ticket_required" | "ticket_verified" | "not_selected";
+  day3Status?: "vvip_admitted" | "payment_verified" | "ticket_required" | "ticket_verified" | "not_selected" | "pending_verification" | "pending_bank_verification";
   ticketRefDay2?: string | null;
   ticketRefDay3?: string | null;
   securityHash?: string;

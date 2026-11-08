@@ -71,8 +71,12 @@ describe("Venue Registration Poster & Strategic QR Signage", () => {
   });
 
   it("verifies admin console and visit page link to the venue poster page", () => {
-    const adminLayoutPath = path.join(process.cwd(), "app", "(admin)", "admin", "layout.tsx");
-    const adminPagePath = path.join(process.cwd(), "app", "(admin)", "admin", "page.tsx");
+    const adminLayoutPath = fs.existsSync(path.join(process.cwd(), "app", "(admin)", "abawole", "layout.tsx"))
+      ? path.join(process.cwd(), "app", "(admin)", "abawole", "layout.tsx")
+      : path.join(process.cwd(), "app", "(admin)", "admin", "layout.tsx");
+    const adminPagePath = fs.existsSync(path.join(process.cwd(), "app", "(admin)", "abawole", "page.tsx"))
+      ? path.join(process.cwd(), "app", "(admin)", "abawole", "page.tsx")
+      : path.join(process.cwd(), "app", "(admin)", "admin", "page.tsx");
     const visitPagePath = path.join(process.cwd(), "app", "(public)", "visit", "page.tsx");
 
     const adminLayoutContent = fs.readFileSync(adminLayoutPath, "utf-8");

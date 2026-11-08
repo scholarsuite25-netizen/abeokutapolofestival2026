@@ -5,6 +5,7 @@ import { PermissionError, requirePermission } from "@/lib/auth/require";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { verifyPassToken, hashPassToken } from "@/lib/qr/token";
+import { isPassPendingVerification } from "@/lib/storage/unverified-passes";
 
 const scanInputSchema = z.object({
   passIdentifier: z.string().trim().min(3, "Please enter or scan a pass code."),
@@ -79,10 +80,43 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
     identifier = passIdentifier.toUpperCase().trim();
   }
 
+  // 2b. Check in-memory unverified pass registry (Anti-Fraud Gate Guard)
+  if (isPassPendingVerification(identifier)) {
+    return rejected("PAYMENT UNVERIFIED — ADMISSION DENIED. Please proceed to Secretariat accreditation desk.");
+  }
+
   // 3. Database check via process_gate_scan RPC
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
+
+      // Check credentials status directly first to catch pending_verification
+      const { data: directCred } = await supabase
+        .from("credentials")
+        .select("id, status, holder_name, pass_type, affiliation_type, host_name, organization")
+        .or(`token_hash.eq.${identifier},pass_code.eq.${identifier}`)
+        .maybeSingle();
+
+      if (
+        directCred &&
+        (directCred.status === "pending_verification" ||
+          directCred.status === "pending_bank_verification" ||
+          directCred.status === "pending_approval")
+      ) {
+        return {
+          status: "invalid",
+          result: "rejected",
+          holderName: directCred.holder_name,
+          passType: directCred.pass_type,
+          affiliationType: directCred.affiliation_type,
+          hostName: directCred.host_name,
+          organization: directCred.organization,
+          eventDay,
+          gate,
+          message: "PAYMENT UNVERIFIED — ADMISSION DENIED. Please proceed to Secretariat accreditation desk.",
+        };
+      }
+
       const { data, error } = await supabase.rpc("process_gate_scan", {
         p_pass_identifier: identifier,
         p_gate: gate,
@@ -91,6 +125,25 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
       });
 
       if (!error && data) {
+        if (
+          data.status === "unverified" ||
+          data.status === "pending_verification" ||
+          (data.message && data.message.includes("PAYMENT UNVERIFIED"))
+        ) {
+          return {
+            status: "invalid",
+            result: "rejected",
+            holderName: data.holder_name,
+            passType: data.pass_type,
+            affiliationType: data.affiliation_type,
+            hostName: data.host_name,
+            organization: data.organization,
+            eventDay: data.event_day || eventDay,
+            gate: data.gate || gate,
+            message: "PAYMENT UNVERIFIED — ADMISSION DENIED. Please proceed to Secretariat accreditation desk.",
+          };
+        }
+
         return {
           status: data.status || "invalid",
           result: data.result || "rejected",

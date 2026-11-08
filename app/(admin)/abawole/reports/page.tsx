@@ -93,7 +93,7 @@ async function ReportsContent() {
         </div>
         <div>
           <Link
-            href="/admin"
+            href="/abawole"
             className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3.5 py-2 text-xs font-medium text-forest shadow-xs transition-colors hover:bg-sage/40"
           >
             ← Command Centre

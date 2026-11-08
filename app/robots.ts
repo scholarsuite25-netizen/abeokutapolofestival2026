@@ -25,6 +25,8 @@ export default function robots(): MetadataRoute.Robots {
           "/register",
         ],
         disallow: [
+          "/abawole",
+          "/abawole/*",
           "/admin",
           "/admin/*",
           "/scan",

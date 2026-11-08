@@ -23,6 +23,28 @@ export const DAY3_VVIP_MAX_TICKETS = 20;
 export const DAY3_INVITATION_MAX_TICKETS = 1;
 
 /**
+ * Official Abeokuta Polo Club Bank Account for Direct Wire Transfers.
+ * Alternate payment channel to Paystack.
+ */
+export const CLUB_BANK_DETAILS = {
+  bankName: "WEMA BANK",
+  accountName: "ABEOKUTA POLO CLUB",
+  accountNumber: "0126769779",
+  feePerTicketNgn: 50000,
+  secretariatWhatsApp: "2348181888884",
+  secretariatPhoneFormatted: "+234 818 188 8884",
+  referencePrefix: "ABK-WEMA-",
+} as const;
+
+/**
+ * Generates a distinct reference code e.g. ABK-WEMA-4B1C for bank transfer narration.
+ */
+export function generateWemaTransferReference(): string {
+  const hex = Math.random().toString(16).substring(2, 6).toUpperCase();
+  return `${CLUB_BANK_DETAILS.referencePrefix}${hex}`;
+}
+
+/**
  * Every Paystack reference created by `/api/paystack/initialize` starts with this
  * prefix. Verification rejects any other reference, so an unrelated transaction on
  * the same Paystack account (for example a sponsorship payment) cannot be reused

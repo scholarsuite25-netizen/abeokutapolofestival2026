@@ -170,3 +170,77 @@ export function buildAttendeePassWhatsAppMessage(params: {
     `_Abeokuta Polo Club (Est. 2025) · Under the Royal Patronage of HRM Oba Dr. Michael Aremu Gbadebo CFR_`
   );
 }
+
+/**
+ * Pre-filled WhatsApp message sent by the buyer to the Secretariat
+ * to confirm their Wema Bank wire transfer and attach debit receipt.
+ */
+export function buildBankTransferConfirmationWhatsAppMessage(params: {
+  transferRef: string;
+  buyerName: string;
+  phone: string;
+  email: string;
+  quantity: number;
+  totalAmount: number;
+  attendees?: Array<{ firstName: string; lastName: string }>;
+}): string {
+  const { transferRef, buyerName, phone, email, quantity, totalAmount, attendees } = params;
+
+  let guestNamesFormatted = "";
+  if (attendees && attendees.length > 0) {
+    const list = attendees
+      .map((a, i) => {
+        const full = `${a.firstName || ""} ${a.lastName || ""}`.trim();
+        return `  ${i + 1}. ${full || (i === 0 ? buyerName : `Guest ${i + 1}`)}`;
+      })
+      .slice(0, quantity);
+    guestNamesFormatted = list.join("\n");
+  } else {
+    guestNamesFormatted = `  1. ${buyerName}`;
+  }
+
+  return (
+    `🏇 *ABEOKUTA POLO FESTIVAL 2026 — BANK TRANSFER CONFIRMATION*\n\n` +
+    `Hello Secretariat, I have initiated a direct bank wire transfer to the club WEMA Bank account for Day 3 VVIP admission:\n\n` +
+    `• *Total Amount Transferred:* ₦${totalAmount.toLocaleString()}\n` +
+    `• *Number of Tickets:* ${quantity} ticket${quantity > 1 ? "s" : ""}\n` +
+    `• *Unique Reference / Narration:* ${transferRef}\n` +
+    `• *Primary Buyer Name:* ${buyerName}\n` +
+    `• *WhatsApp Phone:* ${phone}\n` +
+    `• *Email:* ${email}\n` +
+    `• *Attendee & Guest Names:*\n${guestNamesFormatted}\n\n` +
+    `• *Club Bank Paid To:* WEMA BANK / 0126769779 / ABEOKUTA POLO CLUB\n\n` +
+    `📎 *Attached:* My bank debit payment receipt. Please verify narration and release my Day 3 VVIP passes.\n\n` +
+    `_Abeokuta Polo Festival 2026 · Secretariat Desk_`
+  );
+}
+
+/**
+ * Pre-filled WhatsApp message dispatched by Secretariat/Admin to the buyer
+ * releasing their Day 3 VVIP digital access credentials upon bank verification.
+ */
+export function buildVvipPassReleaseWhatsAppMessage(params: {
+  holderName: string;
+  passCodes: string[];
+  quantity: number;
+  totalAmount: number;
+  transferRef: string;
+  passUrl: string;
+}): string {
+  const { holderName, passCodes, quantity, totalAmount, transferRef, passUrl } = params;
+  const passesList = passCodes
+    .map((c, i) => `• Pass ${i + 1}: *${c}*`)
+    .join("\n");
+
+  return (
+    `🏇 *ABEOKUTA POLO FESTIVAL 2026 — VVIP PASS RELEASED*\n\n` +
+    `Hello *${holderName}*,\n\n` +
+    `Your direct bank transfer of *₦${totalAmount.toLocaleString()}* (Ref: *${transferRef}*) to Abeokuta Polo Club (WEMA BANK) has been *verified and approved* by the Secretariat!\n\n` +
+    `👑 *Your Official Day 3 VVIP Gate Pass Code${passCodes.length > 1 ? "s" : ""}:*\n${passesList}\n\n` +
+    `👉 *Click here to open and save your digital pass${passCodes.length > 1 ? "es" : ""}:*\n${passUrl}\n\n` +
+    `📍 *Venue:* Abeokuta Polo Club & Country Resort, Kobape Expressway\n` +
+    `📅 *Day 3 Royal Cup Grand Finale:* Sunday 20 December 2026\n\n` +
+    `🛡️ *Gate Instructions:* Present this pass on your phone screen at the VVIP Royal Turnstiles for instant contactless access. Welcome to the Grand Finale!\n\n` +
+    `_Abeokuta Polo Club Secretariat · Under Royal Patronage of HRM Oba Dr. Michael Aremu Gbadebo CFR_`
+  );
+}

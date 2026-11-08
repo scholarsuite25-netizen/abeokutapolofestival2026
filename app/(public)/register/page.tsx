@@ -22,6 +22,7 @@ import {
   Share2,
   QrCode,
   Printer,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,8 @@ import {
 import { downloadProgrammePDF } from "@/lib/pdf/programme-pdf";
 import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
 import { IdAccessCard } from "@/components/shared/id-access-card";
+import { WemaBankPaymentCard } from "@/components/shared/wema-bank-payment-card";
+import { generateWemaTransferReference } from "@/lib/config/checkout-config";
 import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
 import {
   validateWhatsAppPhone,
@@ -82,7 +85,9 @@ function RegisterContent() {
     organization: "",
   });
 
-  // Day 3 VVIP Options: Special Invite or Paystack Payment
+  // Day 3 VVIP Options: Paystack, Direct Bank Transfer (Wema), or Special Invitation Code
+  const [day3PaymentMethod, setDay3PaymentMethod] = useState<"paystack" | "bank_transfer" | "invitation">("paystack");
+  const [wemaRef, setWemaRef] = useState<string>(() => generateWemaTransferReference());
   const [hasInviteCode, setHasInviteCode] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
 
@@ -258,8 +263,43 @@ function RegisterContent() {
       }
     }
 
-    // If Day 3 is ticked without an invitation code, redirect directly to Paystack payment gateway
-    if (day3 && (!hasInviteCode || !invitationCode.trim())) {
+    // If Day 3 is chosen with Direct Bank Transfer (Wema Bank), submit directly for Bursary verification
+    if (day3 && day3PaymentMethod === "bank_transfer") {
+      setLoading(true);
+      const res = await submitRegistration({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        day1,
+        day2,
+        day3,
+        day3TicketCount,
+        paymentMethod: "bank_transfer",
+        bankTransferRef: wemaRef,
+        affiliationType: formData.affiliationType,
+        hostName: formData.hostName,
+        organization: formData.organization,
+        attendees: attendeesToSubmit,
+      });
+
+      if (!res.success) {
+        setErrorMsg(res.error || "Failed to register bank transfer. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setResult(res);
+      if (res.passes && res.passes.length > 0) {
+        persistRegisteredPass(res.passes);
+      }
+      setLoading(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    // If Day 3 is ticked with Paystack payment gateway
+    if (day3 && day3PaymentMethod === "paystack" && (!hasInviteCode || !invitationCode.trim())) {
       setLoading(true);
       try {
         if (attendeesToSubmit && attendeesToSubmit.length > 0) {
@@ -498,18 +538,48 @@ function RegisterContent() {
         {result?.success && issuedPasses.length > 0 ? (
           <div className="space-y-8 py-4">
             <div className="text-center space-y-3 max-w-xl mx-auto">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-                <CheckCircle2 className="size-8" />
+              <div
+                className={`mx-auto flex size-14 items-center justify-center rounded-full ${
+                  result.paymentMethod === "bank_transfer"
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-emerald-100 text-emerald-800"
+                }`}
+              >
+                {result.paymentMethod === "bank_transfer" ? (
+                  <AlertTriangle className="size-8" />
+                ) : (
+                  <CheckCircle2 className="size-8" />
+                )}
               </div>
-              <Badge className="bg-emerald-800 text-ivory text-xs">
-                {issuedPasses.length === 1 ? "ID Pass Issued & Saved" : `${issuedPasses.length} ID Passes Issued & Saved`}
+              <Badge
+                className={
+                  result.paymentMethod === "bank_transfer"
+                    ? "bg-amber-600 text-white text-xs"
+                    : "bg-emerald-800 text-ivory text-xs"
+                }
+              >
+                {result.paymentMethod === "bank_transfer"
+                  ? "⚠️ Pending Bursary Verification"
+                  : issuedPasses.length === 1
+                  ? "ID Pass Issued & Saved"
+                  : `${issuedPasses.length} ID Passes Issued & Saved`}
               </Badge>
               <h2 className="font-serif text-3xl font-semibold text-forest">
-                Your Gate Passes Are Ready!
+                {result.paymentMethod === "bank_transfer"
+                  ? "Bank Transfer Claim Registered"
+                  : "Your Gate Passes Are Ready!"}
               </h2>
               <p className="text-sm text-muted-brand">
-                Welcome, <strong className="text-forest">{result.holderName}</strong>. Your ID card passes have
-                been generated with full security credentials and downloaded to your device for gate turnstile entry.
+                {result.paymentMethod === "bank_transfer" ? (
+                  <>
+                    Welcome, <strong className="text-forest">{result.holderName}</strong>. Your bank wire payment claim (Ref: <strong className="font-mono text-amber-900">{result.bankTransferRef}</strong>) has been registered. Passes remain in <strong className="text-amber-900">pending_verification</strong> status until reconciled by Bursary.
+                  </>
+                ) : (
+                  <>
+                    Welcome, <strong className="text-forest">{result.holderName}</strong>. Your ID card passes have
+                    been generated with full security credentials and downloaded to your device for gate turnstile entry.
+                  </>
+                )}
               </p>
 
               {downloadTriggered && (
@@ -523,6 +593,59 @@ function RegisterContent() {
 
               {/* ── OPTION 1 PRIMARY ACTION: OPEN & SAVE PASS ON WHATSAPP ── */}
               {(() => {
+                if (result.paymentMethod === "bank_transfer") {
+                  const waReceiptText =
+                    `🏇 *ABEOKUTA POLO FESTIVAL 2026 — BANK TRANSFER RECEIPT*\n\n` +
+                    `Hello Secretariat Desk, I have completed a direct bank wire transfer to Abeokuta Polo Club (Wema Bank):\n\n` +
+                    `• *Reference Code / Narration:* ${result.bankTransferRef}\n` +
+                    `• *Buyer Name:* ${result.holderName}\n` +
+                    `• *Phone:* ${formData.phone}\n` +
+                    `• *Email:* ${formData.email}\n` +
+                    `• *Quantity Claimed:* ${issuedPasses.length} Day 3 VVIP Ticket(s)\n` +
+                    `• *Amount Transferred:* ₦${((issuedPasses.length || 1) * 50000).toLocaleString()}\n\n` +
+                    `📎 *Attached:* My bank debit payment advice/slip. Please verify and release my Day 3 VVIP passes.\n\n` +
+                    `_Abeokuta Polo Club Secretariat_`;
+                  const waReceiptUrl = formatWhatsAppUrl("2348181888884", waReceiptText);
+
+                  return (
+                    <div className="rounded-2xl border-2 border-amber-500 bg-amber-50/80 p-5 shadow-sm text-center space-y-3">
+                      <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 text-white px-3 py-1 text-[11px] font-bold tracking-wide uppercase shadow-xs">
+                        <AlertTriangle className="size-3.5 text-white" />
+                        <span>Action Required · Submit Transfer Receipt</span>
+                      </div>
+
+                      <h3 className="font-serif text-xl sm:text-2xl font-bold text-amber-950">
+                        Verify Your Wema Bank Transfer
+                      </h3>
+
+                      <p className="text-xs sm:text-sm text-amber-900 max-w-md mx-auto leading-relaxed">
+                        In accordance with Anti-Fraud protocol, passes strictly remain in <strong className="font-mono">pending_verification</strong> status and turnstiles will deny gate admission until confirmed by the Secretariat. Send your debit payment slip via WhatsApp to activate your credentials immediately.
+                      </p>
+
+                      <div className="pt-1 flex justify-center">
+                        <Button
+                          asChild
+                          size="lg"
+                          className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-sm sm:text-base px-6 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer w-full sm:w-auto"
+                        >
+                          <a href={waReceiptUrl} target="_blank" rel="noopener noreferrer">
+                            <WhatsAppIcon className="mr-2 size-5" />
+                            Send Receipt to Secretariat via WhatsApp
+                          </a>
+                        </Button>
+                      </div>
+
+                      <div className="text-[11px] text-amber-800 flex items-center justify-center gap-1.5 pt-1">
+                        <Mail className="size-3 text-amber-700" />
+                        <span>
+                          Debit instructions and reconciliation link dispatched to{" "}
+                          <strong>{formData.email}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
                 const appOrigin =
                   typeof window !== "undefined"
                     ? window.location.origin
@@ -1004,41 +1127,80 @@ function RegisterContent() {
                           Select whether you are purchasing Day 3 VVIP admission (₦50,000 per pass) or redeeming an official single-use Special VIP Invitation Code:
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <button
                             type="button"
-                            onClick={() => setHasInviteCode(false)}
-                            className={`flex-1 rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
-                              !hasInviteCode
+                            onClick={() => {
+                              setDay3PaymentMethod("paystack");
+                              setHasInviteCode(false);
+                            }}
+                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
+                              day3PaymentMethod === "paystack"
                                 ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
                                 : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
                             }`}
                           >
                             <div className="flex items-center gap-1.5 font-semibold text-xs">
-                              <CreditCard className="size-3.5" /> Paystack Gateway (₦50,000)
+                              <CreditCard className="size-3.5" /> Paystack Gateway
                             </div>
                             <span className="text-[10px] opacity-90 block mt-0.5">
-                              Buy 1 or multiple tickets with instant issuance
+                              Instant Card / USSD Payment
                             </span>
                           </button>
 
                           <button
                             type="button"
-                            onClick={() => setHasInviteCode(true)}
-                            className={`flex-1 rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
-                              hasInviteCode
+                            onClick={() => {
+                              setDay3PaymentMethod("bank_transfer");
+                              setHasInviteCode(false);
+                            }}
+                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
+                              day3PaymentMethod === "bank_transfer"
                                 ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
                                 : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
                             }`}
                           >
                             <div className="flex items-center gap-1.5 font-semibold text-xs">
-                              <KeyRound className="size-3.5" /> Special Invitation Code
+                              <ShieldCheck className="size-3.5" /> Wema Bank Wire
                             </div>
                             <span className="text-[10px] opacity-90 block mt-0.5">
-                              Claim complimentary VIP guest accreditation
+                              0126769779 · Abeokuta Polo Club
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDay3PaymentMethod("invitation");
+                              setHasInviteCode(true);
+                            }}
+                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
+                              day3PaymentMethod === "invitation"
+                                ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
+                                : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 font-semibold text-xs">
+                              <KeyRound className="size-3.5" /> Special Invitation
+                            </div>
+                            <span className="text-[10px] opacity-90 block mt-0.5">
+                              Redeem VIP Guest Pass Code
                             </span>
                           </button>
                         </div>
+
+                        {/* Wema Bank Details Card when Bank Wire is selected */}
+                        {day3PaymentMethod === "bank_transfer" && (
+                          <WemaBankPaymentCard
+                            flow="vvip"
+                            referenceCode={wemaRef}
+                            amountNgn={day3TicketCount * 50000}
+                            itemName={`Day 3 VVIP Admission (${day3TicketCount} Ticket${day3TicketCount > 1 ? "s" : ""})`}
+                            buyerName={`${formData.firstName} ${formData.lastName}`.trim() || "VVIP Buyer"}
+                            phone={formData.phone}
+                            email={formData.email}
+                          />
+                        )}
 
                         {/* Multi-Ticket Quantity Selector (for Paid Tickets) */}
                         {!hasInviteCode && (
@@ -1240,6 +1402,14 @@ function RegisterContent() {
                   >
                     {loading ? (
                       "Processing Pass Issuance..."
+                    ) : day3 && day3PaymentMethod === "bank_transfer" ? (
+                      <span className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                        <ShieldCheck className="size-4 sm:size-5 shrink-0 text-amber-200" />
+                        <span>Register &amp; Submit Bank Transfer</span>
+                        <span className="text-xs sm:text-sm opacity-95">
+                          (Ref: {wemaRef}) →
+                        </span>
+                      </span>
                     ) : day3 && (!hasInviteCode || !invitationCode.trim()) ? (
                       <span className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                         <CreditCard className="size-4 sm:size-5 shrink-0" />

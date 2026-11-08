@@ -11,6 +11,7 @@ import {
   CalendarCheck,
   Ticket,
   Crown,
+  AlertTriangle,
 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -175,6 +176,10 @@ async function PassContent({ params, searchParams }: PassPageProps) {
   }
 
   const isActive = cred.status === "active";
+  const isPendingVerification =
+    cred.status === "pending_verification" ||
+    cred.status === "pending_bank_verification" ||
+    cred.status === "pending_approval";
   const vvipMatch = cred.pass_code.match(/VVIP(\d+)/);
   const ticketIdx = vvipMatch ? parseInt(vvipMatch[1], 10) : 1;
   const isSponsored =
@@ -205,9 +210,10 @@ async function PassContent({ params, searchParams }: PassPageProps) {
     daysCovered: isGold ? [3] : cred.pass_code.includes("D12") ? [1, 2] : cred.pass_code.includes("D2") ? [2] : [1],
     isVvip: isGold,
     designTheme: isGold ? "gold" : "standard",
+    status: cred.status,
     day1Status: "free_admitted",
     day2Status: "free_admitted",
-    day3Status: isGold ? "vvip_admitted" : "not_selected",
+    day3Status: isGold ? (isPendingVerification ? "pending_verification" : "vvip_admitted") : "not_selected",
     ticketRefDay2: cred.day2_ticket_ref,
     ticketRefDay3: cred.day3_ticket_ref,
     ticketIndex: ticketIdx,
@@ -299,18 +305,25 @@ async function PassContent({ params, searchParams }: PassPageProps) {
               </p>
             )}
             <div className="mt-1 flex justify-center">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                  isActive
-                    ? isGold
-                      ? "bg-[#2C2106] border border-[#C9A84C]/50 text-[#F3E5AB]"
-                      : "bg-emerald-50 border border-emerald-300 text-emerald-800"
-                    : "bg-red-800 text-ivory"
-                }`}
-              >
-                <CheckCircle2 className={`size-2.5 ${isGold ? "text-[#E5C768]" : "text-emerald-700"}`} />
-                {isActive ? (isGold ? "VVIP Active Status" : "Emerald Active Status") : cred.status.toUpperCase()}
-              </span>
+              {isPendingVerification ? (
+                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-500/25 border border-amber-400 text-amber-300">
+                  <AlertTriangle className="size-2.5 text-amber-400" />
+                  Pending Verification · Amber Warning
+                </span>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                    isActive
+                      ? isGold
+                        ? "bg-[#2C2106] border border-[#C9A84C]/50 text-[#F3E5AB]"
+                        : "bg-emerald-50 border border-emerald-300 text-emerald-800"
+                      : "bg-red-800 text-ivory"
+                  }`}
+                >
+                  <CheckCircle2 className={`size-2.5 ${isGold ? "text-[#E5C768]" : "text-emerald-700"}`} />
+                  {isActive ? (isGold ? "VVIP Active Status" : "Emerald Active Status") : cred.status.toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
 
@@ -458,15 +471,32 @@ async function PassContent({ params, searchParams }: PassPageProps) {
           {/* Gate Scanning Instructions & Mandatory Protocol */}
           <div
             className={`p-2 text-center border-t text-[8px] space-y-0.5 ${
-              isGold ? "bg-[#0E0A02] border-[#3D2E08] text-[#C9A84C]" : "bg-[#002F1A]/5 border-[#002F1A]/15 text-[#002F1A]"
+              isPendingVerification
+                ? "bg-amber-950 border-amber-500 text-amber-300"
+                : isGold
+                ? "bg-[#0E0A02] border-[#3D2E08] text-[#C9A84C]"
+                : "bg-[#002F1A]/5 border-[#002F1A]/15 text-[#002F1A]"
             }`}
           >
-            <p className="font-bold uppercase tracking-wider text-[7.5px] flex items-center justify-center gap-1">
-              <ShieldCheck className="size-2.5 inline" /> Turnstile accreditation required.
-            </p>
-            <p className="opacity-90 leading-relaxed text-[7.5px]">
-              {isGold ? "Royal Gate Marshals on duty · Royal Pavilion access." : "Complimentary Heritage Entry · ID Card Format."}
-            </p>
+            {isPendingVerification ? (
+              <div className="space-y-0.5">
+                <p className="font-bold uppercase tracking-wider text-[8px] flex items-center justify-center gap-1 text-amber-300">
+                  <AlertTriangle className="size-2.5 text-amber-400 inline" /> PAYMENT UNVERIFIED — ADMISSION DENIED
+                </p>
+                <p className="opacity-95 leading-relaxed text-[7.5px] text-amber-200">
+                  Please proceed to Secretariat accreditation desk.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="font-bold uppercase tracking-wider text-[7.5px] flex items-center justify-center gap-1">
+                  <ShieldCheck className="size-2.5 inline" /> Turnstile accreditation required.
+                </p>
+                <p className="opacity-90 leading-relaxed text-[7.5px]">
+                  {isGold ? "Royal Gate Marshals on duty · Royal Pavilion access." : "Complimentary Heritage Entry · ID Card Format."}
+                </p>
+              </>
+            )}
           </div>
         </div>
 

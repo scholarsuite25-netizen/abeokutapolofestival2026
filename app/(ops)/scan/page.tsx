@@ -204,6 +204,14 @@ export default function GateScanPage() {
               >
                 VIP Guest Pass
               </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => simulateSampleScan("ABK-2026-UNVERIFIED-PASS")}
+                className="underline text-amber-400 hover:text-amber-300 font-semibold"
+              >
+                Unverified Bank Pass
+              </button>
             </div>
           </div>
 
@@ -220,13 +228,15 @@ export default function GateScanPage() {
                     ? "bg-emerald-950/60 border-emerald-500 text-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
                     : lastResult.result === "already_admitted"
                     ? "bg-amber-950/60 border-amber-500 text-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+                    : lastResult.message.includes("PAYMENT UNVERIFIED")
+                    ? "bg-amber-950/80 border-2 border-amber-500 text-amber-100 shadow-[0_0_25px_rgba(245,158,11,0.3)]"
                     : "bg-red-950/60 border-red-500 text-red-100 shadow-[0_0_20px_rgba(239,68,68,0.2)]"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   {lastResult.result === "admitted" ? (
                     <CheckCircle2 className="size-8 text-emerald-400 shrink-0" />
-                  ) : lastResult.result === "already_admitted" ? (
+                  ) : lastResult.result === "already_admitted" || lastResult.message.includes("PAYMENT UNVERIFIED") ? (
                     <AlertTriangle className="size-8 text-amber-400 shrink-0" />
                   ) : (
                     <XCircle className="size-8 text-red-400 shrink-0" />
@@ -237,6 +247,8 @@ export default function GateScanPage() {
                         ? `DAY ${eventDay} ADMISSION GRANTED`
                         : lastResult.result === "already_admitted"
                         ? `ALREADY ADMITTED (DAY ${eventDay})`
+                        : lastResult.message.includes("PAYMENT UNVERIFIED")
+                        ? "PAYMENT UNVERIFIED — ADMISSION DENIED"
                         : "ACCESS DENIED"}
                     </h3>
                     <p className="text-xs opacity-90">{lastResult.message}</p>

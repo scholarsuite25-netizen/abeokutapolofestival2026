@@ -8,6 +8,12 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { generateSignedPassToken, hashPassToken } from "@/lib/qr/token";
 import { sendEmail } from "@/lib/email/client";
 import { writeAudit } from "@/lib/supabase/audit";
+import { DAY3_VVIP_PRICE_NGN } from "@/lib/config/checkout-config";
+import { markPassVerified } from "@/lib/storage/unverified-passes";
+import {
+  buildVvipPassReleaseWhatsAppMessage,
+  formatWhatsAppUrl,
+} from "@/lib/utils/phone";
 
 export type ActionResult = { ok: boolean; error?: string };
 
@@ -146,8 +152,9 @@ export async function createParticipantAction(rawInput: unknown): Promise<Action
       metadata: { pass_code: passCode, category: resolvedCategory, affiliationType },
     }).catch(() => undefined);
 
-    revalidatePath("/admin/registrations");
-    revalidatePath("/admin/members");
+    revalidatePath("/abawole/registrations");
+    revalidatePath("/abawole/members");
+    revalidatePath("/abawole");
     return { ok: true, passCode };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to create participant.";
@@ -226,8 +233,9 @@ export async function updateParticipantAction(
       metadata: updateData,
     }).catch(() => undefined);
 
-    revalidatePath("/admin/registrations");
-    revalidatePath("/admin/members");
+    revalidatePath("/abawole/registrations");
+    revalidatePath("/abawole/members");
+    revalidatePath("/abawole");
     return { ok: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update participant.";
@@ -272,8 +280,9 @@ export async function deleteParticipantAction(registrationId: string): Promise<A
       entityId: registrationId,
     }).catch(() => undefined);
 
-    revalidatePath("/admin/registrations");
-    revalidatePath("/admin/members");
+    revalidatePath("/abawole/registrations");
+    revalidatePath("/abawole/members");
+    revalidatePath("/abawole");
     return { ok: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to delete participant.";
@@ -393,8 +402,9 @@ export async function approveRegistrationAction(registrationId: string): Promise
     // Non-blocking
   }
 
-  revalidatePath("/admin/registrations");
-  revalidatePath("/admin/members");
+  revalidatePath("/abawole/registrations");
+  revalidatePath("/abawole/members");
+  revalidatePath("/abawole");
   return { ok: true };
 }
 
@@ -438,7 +448,296 @@ export async function denyRegistrationAction(registrationId: string): Promise<Ac
     entityId: registrationId,
   }).catch(() => undefined);
 
-  revalidatePath("/admin/registrations");
-  revalidatePath("/admin/members");
+  revalidatePath("/abawole/registrations");
+  revalidatePath("/abawole/members");
+  revalidatePath("/abawole");
   return { ok: true };
+}
+
+/**
+ * 1-Click Approve & Release VVIP Pass for Direct Bank Wire Transfers (Wema Bank).
+ * Can be called with either registrationId (UUID) or paymentReference (e.g. ABK-WEMA-XXXX).
+ * Marks credentials active, updates offline finance ledger, logs audit,
+ * sends confirmation email, and triggers direct WhatsApp delivery to buyer.
+ */
+export async function approveBankTransferAction(identifier: string): Promise<{
+  ok: boolean;
+  error?: string;
+  passCodes?: string[];
+  holderName?: string;
+  phone?: string;
+  amountNgn?: number;
+  transferRef?: string;
+  whatsappUrl?: string;
+}> {
+  try {
+    await requirePermission("registration.manage");
+  } catch (error) {
+    try {
+      await requirePermission("finance.read");
+    } catch {
+      if (error instanceof PermissionError) return { ok: false, error: error.message };
+      throw error;
+    }
+  }
+
+  const cleanId = (identifier || "").trim();
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createAdminClient();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+
+      let query = supabase
+        .from("registrations")
+        .select(`
+          id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          category,
+          group_size,
+          status,
+          day3_ticket_ref,
+          bank_transfer_ref,
+          credentials (id, pass_code, status, pass_type, holder_name)
+        `);
+
+      if (isUuid) {
+        query = query.eq("id", cleanId);
+      } else {
+        query = query.or(`bank_transfer_ref.eq.${cleanId},day3_ticket_ref.eq.${cleanId}`);
+      }
+
+      const { data: reg, error: fetchError } = await query.maybeSingle();
+
+      if (fetchError || !reg) {
+        // If not found in registrations, check offline_commitments table
+        const { data: commitment } = await supabase
+          .from("offline_commitments")
+          .select("id, sponsor_name, reference_code, proposed_amount")
+          .eq("reference_code", cleanId)
+          .maybeSingle();
+
+        if (commitment) {
+          await supabase
+            .from("offline_commitments")
+            .update({
+              status: "bank_wire_confirmed",
+              confirmed_amount: commitment.proposed_amount,
+            })
+            .eq("id", commitment.id);
+
+          revalidatePath("/abawole/finance");
+          revalidatePath("/abawole/registrations");
+          revalidatePath("/abawole");
+
+          return {
+            ok: true,
+            holderName: commitment.sponsor_name,
+            amountNgn: commitment.proposed_amount,
+            transferRef: cleanId,
+            passCodes: [`ABK-2026-VVIP-${cleanId.replace("ABK-WEMA-", "")}`],
+          };
+        }
+
+        return { ok: false, error: "Registration record or payment reference not found." };
+      }
+
+      const holderName = `${reg.first_name} ${reg.last_name}`.trim();
+      const transferRef = reg.bank_transfer_ref || reg.day3_ticket_ref || cleanId || "WEMA-TRANSFER";
+      const quantity = Math.max(1, reg.group_size || 1);
+      const amountNgn = quantity * DAY3_VVIP_PRICE_NGN;
+      const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://abeokuta-polo-festival-2026.vercel.app";
+
+      // 1. Mark registration confirmed
+      await supabase
+        .from("registrations")
+        .update({ status: "confirmed" })
+        .eq("id", reg.id);
+
+      // 2. Activate or generate credentials
+      let passCodes: string[] = [];
+      const creds = (reg.credentials || []) as Array<{
+        id: string;
+        pass_code: string;
+        status: string;
+        pass_type?: string;
+        holder_name?: string;
+      }>;
+
+      if (creds.length > 0) {
+        await supabase
+          .from("credentials")
+          .update({ status: "active" })
+          .eq("registration_id", reg.id);
+        passCodes = creds.map((c) => c.pass_code);
+      } else {
+        const issuedAt = new Date().toISOString();
+        for (let i = 1; i <= quantity; i++) {
+          const credId = crypto.randomUUID();
+          const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+          const pCode = quantity > 1 ? `ABK-2026-VVIP${i}${randomSuffix}` : `ABK-2026-VVIP${randomSuffix}`;
+          passCodes.push(pCode);
+
+          const passHolder = quantity > 1 && i > 1 ? `${holderName} (Guest ${i})` : holderName;
+          const qrToken = generateSignedPassToken({
+            credentialId: credId,
+            holderName: passHolder,
+            passType: "Day 3 VVIP Grand Finale Pass",
+            editionYear: 2026,
+            issuedAt: Date.parse(issuedAt),
+          });
+
+          await supabase.from("credentials").insert({
+            id: credId,
+            registration_id: reg.id,
+            holder_name: passHolder,
+            token_hash: hashPassToken(qrToken),
+            pass_code: pCode,
+            pass_type: "Day 3 VVIP Grand Finale Pass",
+            zone_access: ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"],
+            status: "active",
+            day3_ticket_ref: transferRef,
+            bank_transfer_ref: transferRef,
+            issued_at: issuedAt,
+          });
+        }
+      }
+
+      // 3. Update or insert in offline commitments ledger
+      const { data: existingCommitment } = await supabase
+        .from("offline_commitments")
+        .select("id")
+        .eq("reference_code", transferRef)
+        .maybeSingle();
+
+      if (existingCommitment) {
+        await supabase
+          .from("offline_commitments")
+          .update({
+            status: "bank_wire_confirmed",
+            confirmed_amount: amountNgn,
+          })
+          .eq("id", existingCommitment.id);
+      } else {
+        await supabase.from("offline_commitments").insert({
+          sponsor_name: holderName,
+          tier: `Day 3 VVIP Ticket (${quantity} Pass${quantity > 1 ? "es" : ""})`,
+          proposed_amount: amountNgn,
+          confirmed_amount: amountNgn,
+          status: "bank_wire_confirmed",
+          channel: "Bank Wire Transfer (WEMA BANK 0126769779)",
+          reference_code: transferRef,
+        });
+      }
+
+      // 4. Audit Log
+      await writeAudit({
+        action: "registration.approve_bank_transfer",
+        entityType: "registration",
+        entityId: reg.id,
+        metadata: {
+          transfer_ref: transferRef,
+          quantity,
+          amount_ngn: amountNgn,
+          pass_codes: passCodes,
+        },
+      }).catch(() => undefined);
+
+      // 5. Confirmation Email
+      try {
+        await sendEmail({
+          to: reg.email,
+          subject: `Payment Confirmed: Day 3 VVIP Gate Pass Released (${passCodes[0]})`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #111827; background-color: #FAF9F5; border-radius: 12px; border: 1px solid #DCD5C2;">
+              <div style="background-color: #1A1500; padding: 20px; border-radius: 8px; text-align: center; color: #FAF9F5; border: 2px solid #D4AF37;">
+                <p style="color: #F5D77F; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 6px 0; font-weight: bold;">👑 VVIP Official Gate Credential</p>
+                <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #F5D77F;">Abeokuta Polo Festival 2026</h1>
+                <p style="margin: 6px 0 0 0; font-size: 13px; color: #DCD5C2;">Bank Transfer Verified · Wema Bank Ref: ${transferRef}</p>
+              </div>
+              <div style="padding: 24px 0;">
+                <p style="font-size: 16px; margin: 0 0 12px 0;">Dear <strong>${holderName}</strong>,</p>
+                <p style="font-size: 14px; line-height: 1.6; color: #414843;">
+                  Your direct bank transfer of <strong>₦${amountNgn.toLocaleString()}</strong> to Abeokuta Polo Club has been verified by the Secretariat. Your Day 3 VVIP Grand Finale access credentials have been officially released:
+                </p>
+                ${passCodes.map((c) => `
+                  <div style="background-color: #1A1500; border: 2px solid #D4AF37; border-radius: 8px; padding: 18px; margin: 16px 0; text-align: center; color: #FCF9F8;">
+                    <p style="color: #F5D77F; font-size: 11px; text-transform: uppercase; font-weight: 700; margin: 0;">VVIP PASS CODE</p>
+                    <h2 style="font-size: 26px; color: #F5D77F; margin: 6px 0; letter-spacing: 0.12em; font-family: monospace;">${c}</h2>
+                    <p style="font-size: 13px; color: #DCD5C2; margin: 4px 0;">Day 3 VVIP Royal Pavilion Admission</p>
+                    <p style="font-size: 11px; margin-top: 8px;"><a href="${siteOrigin}/pass/${c}" style="color: #F5D77F; text-decoration: underline;">Open Pass Online: ${siteOrigin}/pass/${c}</a></p>
+                  </div>
+                `).join("")}
+              </div>
+              <div style="border-top: 1px solid #DCD5C2; padding-top: 16px; font-size: 11px; color: #727973; text-align: center;">
+                <p style="margin: 0;">Abeokuta Polo Club · Kobape Expressway, Abeokuta, Ogun State</p>
+              </div>
+            </div>
+          `,
+        });
+      } catch {
+        // Non-blocking
+      }
+
+      revalidatePath("/abawole/registrations");
+      revalidatePath("/abawole/finance");
+      revalidatePath("/abawole");
+
+      // Mark passes verified in runtime memory
+      passCodes.forEach(markPassVerified);
+
+      const primaryPassCode = passCodes[0] || "ABK-2026-VVIP";
+      const passUrl = `${siteOrigin}/pass/${primaryPassCode}`;
+      const waMsg = buildVvipPassReleaseWhatsAppMessage({
+        holderName,
+        passCodes,
+        quantity,
+        totalAmount: amountNgn,
+        transferRef,
+        passUrl,
+      });
+      const whatsappUrl = formatWhatsAppUrl(reg.phone, waMsg);
+
+      return {
+        ok: true,
+        passCodes,
+        holderName,
+        phone: reg.phone,
+        amountNgn,
+        transferRef,
+        whatsappUrl,
+      };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to approve bank transfer.";
+      return { ok: false, error: message };
+    }
+  }
+
+  // Graceful offline fallback (for testing or dev without Supabase)
+  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const mockCode = `ABK-2026-VVIP${randomSuffix}`;
+  const siteOrigin = "https://abeokuta-polo-festival-2026.vercel.app";
+  const passUrl = `${siteOrigin}/pass/${mockCode}`;
+  const waMsg = buildVvipPassReleaseWhatsAppMessage({
+    holderName: "VVIP Attendee",
+    passCodes: [mockCode],
+    quantity: 1,
+    totalAmount: DAY3_VVIP_PRICE_NGN,
+    transferRef: cleanId || "ABK-WEMA-SAMPLE",
+    passUrl,
+  });
+  const whatsappUrl = formatWhatsAppUrl("+2348031234567", waMsg);
+
+  return {
+    ok: true,
+    passCodes: [mockCode],
+    holderName: "VVIP Attendee",
+    phone: "+2348031234567",
+    amountNgn: DAY3_VVIP_PRICE_NGN,
+    transferRef: cleanId || "ABK-WEMA-SAMPLE",
+    whatsappUrl,
+  };
 }

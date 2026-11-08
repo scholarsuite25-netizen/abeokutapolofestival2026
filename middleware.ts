@@ -8,9 +8,24 @@ import { createServerClient } from "@supabase/ssr";
  *  Authoritative permission checks still run in layouts/actions + RLS.
  */
 
-const PRIVATE_PREFIXES = ["/dashboard", "/admin", "/committee", "/scan"];
+const PRIVATE_PREFIXES = ["/dashboard", "/abawole", "/admin", "/committee", "/scan"];
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Security route migration: rewrite/redirect legacy /admin to obfuscated /abawole
+  if (pathname === "/admin") {
+    const abawoleUrl = new URL("/abawole", request.url);
+    abawoleUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(abawoleUrl);
+  }
+  if (pathname.startsWith("/admin/")) {
+    const subPath = pathname.slice("/admin".length);
+    const abawoleUrl = new URL(`/abawole${subPath}`, request.url);
+    abawoleUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(abawoleUrl);
+  }
+
   let response = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,7 +66,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
   const isPrivate = PRIVATE_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );

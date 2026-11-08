@@ -105,7 +105,7 @@ async function MembersQueue() {
 
       <div>
         <Button asChild variant="outline">
-          <Link href="/admin/registrations">Open Participant Console</Link>
+          <Link href="/abawole/registrations">Open Participant Console</Link>
         </Button>
       </div>
     </div>
