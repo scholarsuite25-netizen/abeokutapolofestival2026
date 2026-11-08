@@ -71,9 +71,50 @@ async function DashboardContent() {
   const pending = reg?.status === "pending_approval";
   const declined = reg?.status === "declined";
 
+  const isExecutive = session.actor.roles.some((r) =>
+    ["super_admin", "president", "general_secretary", "finance_officer", "accreditation_officer"].includes(r)
+  );
+  const isGateMarshal = session.actor.roles.includes("security_checkin_officer");
+
   return (
     <div className="flex w-full flex-col bg-ivory text-ink py-10 sm:py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-10">
+        {isExecutive ? (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border-2 border-gold/40 bg-forest p-4 text-ivory shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold/20 text-gold border border-gold/30">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="font-display font-semibold text-ivory">Executive Officer Clearance Active</h2>
+                <p className="text-xs text-ivory/80">
+                  You are signed in as <span className="font-semibold text-gold">{session.actor.roles.join(", ")}</span>. You have privileged access to the Festival Command Centre.
+                </p>
+              </div>
+            </div>
+            <Button asChild className="bg-gold font-bold text-forest-deep hover:bg-gold/90 shrink-0">
+              <Link href="/abawole">
+                Command Centre (/abawole) &rarr;
+              </Link>
+            </Button>
+          </div>
+        ) : isGateMarshal ? (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-forest/30 bg-forest p-4 text-ivory shadow-md">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-6 w-6 text-emerald-400" />
+              <div>
+                <h2 className="font-display font-semibold text-ivory">Security & Gate Marshal Clearance Active</h2>
+                <p className="text-xs text-ivory/80">Launch the Turnstile Scanner PWA for gate pass validation.</p>
+              </div>
+            </div>
+            <Button asChild className="bg-emerald-500 font-bold text-white hover:bg-emerald-600 shrink-0">
+              <Link href="/scan">
+                Open Scanner (/scan) &rarr;
+              </Link>
+            </Button>
+          </div>
+        ) : null}
+
         <div className="flex flex-col justify-between gap-4 border-b border-line pb-6 sm:flex-row sm:items-end">
           <div>
             <div className="flex items-center gap-2">

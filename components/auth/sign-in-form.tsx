@@ -22,7 +22,7 @@ export function SignInForm() {
 
     try {
       const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -33,7 +33,45 @@ export function SignInForm() {
       }
 
       const next = searchParams.get("next");
-      router.push(next && next.startsWith("/") ? next : "/dashboard");
+      if (next && next.startsWith("/")) {
+        router.push(next);
+      } else {
+        try {
+          const { data: roleRows } = await supabase
+            .from("user_role_assignments")
+            .select("role_key, expires_at, revoked_at")
+            .eq("user_id", authData.user?.id);
+
+          const now = Date.now();
+          const activeRoles = (roleRows || [])
+            .filter((r) => !r.revoked_at && (!r.expires_at || new Date(r.expires_at).getTime() > now))
+            .map((r) => r.role_key);
+
+          const normalizedEmail = (authData.user?.email || email).toLowerCase().trim();
+          const isAbawoleRole =
+            activeRoles.some((r) =>
+              ["super_admin", "president", "general_secretary", "finance_officer", "accreditation_officer"].includes(r)
+            ) ||
+            normalizedEmail === "secretary@abeokutapolo2026.ng" ||
+            normalizedEmail === "president@abeokutapolo2026.ng" ||
+            normalizedEmail === "superadmin@abeokutapolo2026.ng" ||
+            normalizedEmail === "admin@abeokutapolo2026.ng";
+
+          const isScanRole =
+            activeRoles.includes("security_checkin_officer") ||
+            normalizedEmail === "gate@abeokutapolo2026.ng";
+
+          if (isAbawoleRole) {
+            router.push("/abawole");
+          } else if (isScanRole) {
+            router.push("/scan");
+          } else {
+            router.push("/dashboard");
+          }
+        } catch {
+          router.push("/dashboard");
+        }
+      }
       router.refresh();
     } catch (err) {
       console.error("Sign-in error:", err);

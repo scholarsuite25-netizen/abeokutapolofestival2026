@@ -38,7 +38,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   return {
     user,
     profile,
-    actor: await buildActor(user.id, profile?.role ?? null),
+    actor: await buildActor(user.id, profile?.role ?? null, user.email ?? profile?.email ?? null),
   };
 }
 
@@ -49,6 +49,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 export async function buildActor(
   userId: string,
   fallbackRole: Role | null = null,
+  userEmail: string | null = null,
 ): Promise<Actor> {
   const supabase = await createClient();
 
@@ -67,6 +68,20 @@ export async function buildActor(
   }
 
   if (fallbackRole) roles.add(fallbackRole);
+
+  // Authoritative executive accounts emergency bootstrap fallback
+  if (userEmail) {
+    const normalized = userEmail.toLowerCase().trim();
+    if (normalized === "secretary@abeokutapolo2026.ng") {
+      roles.add("general_secretary");
+    } else if (normalized === "president@abeokutapolo2026.ng") {
+      roles.add("president");
+    } else if (normalized === "superadmin@abeokutapolo2026.ng" || normalized === "admin@abeokutapolo2026.ng") {
+      roles.add("super_admin");
+    } else if (normalized === "gate@abeokutapolo2026.ng") {
+      roles.add("security_checkin_officer");
+    }
+  }
 
   return { userId, roles: [...roles] };
 }
