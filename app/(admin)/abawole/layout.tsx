@@ -14,23 +14,9 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
-import { getSessionUser } from "@/lib/auth/session";
+import { AdminTopBadge } from "@/components/admin/admin-top-badge";
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSessionUser();
-  const primaryRole = session?.actor.roles[0];
-  const roleDisplayName = 
-    primaryRole === "super_admin"
-      ? "Super Administrator"
-      : primaryRole === "president"
-      ? "Club President"
-      : primaryRole === "general_secretary"
-      ? "General Secretary"
-      : primaryRole === "finance_officer"
-      ? "Festival Bursar"
-      : primaryRole === "security_checkin_officer"
-      ? "Gate Marshal"
-      : "Executive Officer";
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { label: "Command Centre", href: "/abawole", icon: LayoutDashboard },
@@ -53,22 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/20 text-gold border border-gold/40 shadow-xs">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-display text-sm sm:text-base font-bold tracking-wide text-ivory">
-                  Abeokuta Polo 2026 · Operations Console
-                </p>
-                <span className="rounded-full bg-gold/25 border border-gold/50 px-2.5 py-0.5 text-[10px] font-bold text-gold uppercase tracking-wider">
-                  {roleDisplayName}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-[10px] tracking-wider uppercase text-ivory/70 truncate">
-                  {session?.user.email || "Executive Console"} · Level 4 Royal Clearance
-                </p>
-              </div>
-            </div>
+            <AdminTopBadge />
           </div>
 
           {/* Action Controls: Back to Site, Change Password, and Log Out */}
