@@ -358,6 +358,12 @@ export async function approveRegistrationAction(registrationId: string): Promise
     if (credError) return { ok: false, error: "Could not issue the credential." };
   }
 
+  if (passCode) {
+    markPassVerified(passCode);
+  }
+  if (existingCreds) {
+    existingCreds.forEach((c) => markPassVerified(c.pass_code));
+  }
   if ((reg as any).bank_transfer_ref) {
     markPassVerified((reg as any).bank_transfer_ref);
   }

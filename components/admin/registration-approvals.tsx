@@ -56,7 +56,7 @@ export function RegistrationApprovals({ pending }: { pending: PendingRegistratio
         <StatusBadge tone="warning">{items.length} pending review</StatusBadge>
       </div>
       <p className="mt-1 text-xs text-muted-brand">
-        Approving releases the accredited QR credentials and confirms attendance. For Day 3 direct bank wires, verify that the funds have cleared at Secretariat Bursary before approving.
+        Approving releases the accredited QR credentials and confirms attendance. For Day 3 direct bank wires, verify that the funds have cleared with the Financial Secretary / Secretariat before approving.
       </p>
 
       <ul className="mt-4 space-y-3">

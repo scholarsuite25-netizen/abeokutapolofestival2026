@@ -191,7 +191,7 @@ async function CommandCentreContent() {
               </span>
               <div>
                 <h3 className="font-display text-base sm:text-lg font-bold text-white tracking-wide">
-                  🔴 Action Required: {pendingBankCount} Bank Transfer Verification{pendingBankCount > 1 ? "s" : ""} Awaiting Bursary Confirmation
+                  🔴 Action Required: {pendingBankCount} Bank Transfer Verification{pendingBankCount > 1 ? "s" : ""} Awaiting Financial Secretary / Secretariat Confirmation
                 </h3>
                 <p className="text-xs sm:text-sm text-red-200 mt-0.5 leading-relaxed">
                   Attendees have submitted direct Wema Bank wire payments. Turnstile gates will deny admission until an administrator inspects and verifies bank credit.

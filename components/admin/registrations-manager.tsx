@@ -759,7 +759,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                             </div>
                             {p.status === "pending_bank_verification" || p.status === "pending_verification" ? (
                               <span className="inline-block text-[9px] font-semibold text-amber-700">
-                                Pending Bursary Review
+                                Pending Treasury Review
                               </span>
                             ) : (
                               <span className="inline-block text-[9px] font-semibold text-emerald-700">

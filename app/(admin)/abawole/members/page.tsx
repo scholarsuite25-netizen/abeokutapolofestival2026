@@ -58,7 +58,7 @@ async function MembersQueue() {
           Verification &amp; Treasury Reconciliation Queue
         </h1>
         <p className="mt-1 text-sm text-muted-brand">
-          Registration approvals and Day 3 direct bank wire payment reconciliations. Bursary and Secretariat staff review bank transfers and activate accredited passes.
+          Registration approvals and Day 3 direct bank wire payment reconciliations. The Financial Secretary, General Secretary, President, and Super Admin review bank transfers and activate accredited passes.
         </p>
       </div>
 

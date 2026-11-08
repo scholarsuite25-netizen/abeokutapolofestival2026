@@ -73,15 +73,15 @@ const PRESET_CREDENTIALS = [
     icon: FileText,
   },
   {
-    title: "Admin 3: Festival Bursar",
-    designation: "Finance & Treasury Operations",
+    title: "Admin 3: Financial Secretary",
+    designation: "Financial Secretary & Treasury Operations",
     email: "bursar@abeokutapolo2026.ng",
     password: "PoloBursar2026!Treasury",
     url: "/abawole",
     role: "finance_officer",
-    badge: "Bursar & Finance",
+    badge: "Financial Secretary",
     badgeColor: "bg-amber-100 text-amber-900 border-amber-300",
-    scope: "Finance & Treasury: Registrations, Bank Wire Reconciliations, Gate Fees, Reports",
+    scope: "Finance & Treasury: Full access to Registrations, Bank Wire Reconciliations, Gate Fees, and Offline Commitments Ledger",
     icon: Landmark,
   },
   {
@@ -354,6 +354,7 @@ export function AdminManagementClient({
                 const isSuper = adm.roles.includes("super_admin");
                 const isPres = adm.roles.includes("president");
                 const isSec = adm.roles.includes("general_secretary");
+                const isFinSec = adm.roles.includes("finance_officer");
                 const isGate = adm.roles.includes("security_checkin_officer");
                 const isCurrentSelf = adm.id === currentUserId;
 
@@ -375,10 +376,22 @@ export function AdminManagementClient({
                                 ? "bg-emerald-100 text-emerald-900 border-emerald-300"
                                 : r === "general_secretary"
                                 ? "bg-blue-100 text-blue-900 border-blue-300"
+                                : r === "finance_officer"
+                                ? "bg-amber-100 text-amber-900 border-amber-300"
                                 : "bg-purple-100 text-purple-900 border-purple-300"
                             }`}
                           >
-                            {r}
+                            {r === "finance_officer"
+                              ? "Financial Secretary"
+                              : r === "general_secretary"
+                              ? "General Secretary"
+                              : r === "super_admin"
+                              ? "Super Admin"
+                              : r === "president"
+                              ? "President"
+                              : r === "security_checkin_officer"
+                              ? "Gate Marshal"
+                              : r}
                           </span>
                         ))}
                       </div>
@@ -393,6 +406,8 @@ export function AdminManagementClient({
                         ? "President: Full Operations (Registrations, Finance, Gates)"
                         : isSec
                         ? "General Secretary: Full Operations (Registrations, Protocol, Gates)"
+                        : isFinSec
+                        ? "Financial Secretary: Full Treasury, Bank Wire Reconciliation & Offline Finance"
                         : isGate
                         ? "Gate Turnstile Ingress Scanner (/scan only)"
                         : "Operational Administrator"}
@@ -481,7 +496,7 @@ export function AdminManagementClient({
                   <option value="president">President (Executive Operations)</option>
                   <option value="general_secretary">General Secretary (Secretariat Operations)</option>
                   <option value="security_checkin_officer">Gate Marshal (Turnstile Ingress Only)</option>
-                  <option value="finance_officer">Finance Officer</option>
+                  <option value="finance_officer">Financial Secretary (Finance & Treasury Operations)</option>
                   <option value="accreditation_officer">Accreditation Officer</option>
                   <option value="super_admin">Super Admin (Platform Governance)</option>
                 </select>
@@ -607,7 +622,7 @@ export function AdminManagementClient({
                   <option value="president">President (Executive Operations)</option>
                   <option value="general_secretary">General Secretary (Secretariat Operations)</option>
                   <option value="security_checkin_officer">Gate Marshal (Turnstile Ingress Only)</option>
-                  <option value="finance_officer">Finance Officer</option>
+                  <option value="finance_officer">Financial Secretary (Finance & Treasury Operations)</option>
                   <option value="accreditation_officer">Accreditation Officer</option>
                   <option value="media_officer">Media Officer</option>
                   <option value="sponsorship_officer">Sponsorship Officer</option>

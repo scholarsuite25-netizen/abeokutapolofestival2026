@@ -56,11 +56,16 @@ export function SignInForm() {
             normalizedEmail === "president@abeokutapolo2026.ng" ||
             normalizedEmail === "superadmin@abeokutapolo2026.ng" ||
             normalizedEmail === "bursar@abeokutapolo2026.ng" ||
+            normalizedEmail === "finsec@abeokutapolo2026.ng" ||
+            normalizedEmail === "finance@abeokutapolo2026.ng" ||
             normalizedEmail === "admin@abeokutapolo2026.ng";
 
           const isScanRole =
             activeRoles.includes("security_checkin_officer") ||
-            normalizedEmail === "gate@abeokutapolo2026.ng";
+            normalizedEmail.startsWith("gate@") ||
+            normalizedEmail.startsWith("gate1@") ||
+            normalizedEmail.startsWith("gate2@") ||
+            normalizedEmail.startsWith("gate3@");
 
           if (isAbawoleRole) {
             router.push("/abawole");

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { PermissionError, requirePermission } from "@/lib/auth/require";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { NotConfigured, PermissionDenied } from "@/components/shared/guards";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -46,7 +46,7 @@ async function FinanceContent() {
     throw error;
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: commitments } = await supabase
     .from("offline_commitments")
@@ -71,7 +71,7 @@ async function FinanceContent() {
               Offline Finance &amp; Endowments Ledger
             </h1>
             <span className="rounded-full bg-forest/10 px-2.5 py-0.5 text-xs font-semibold text-forest">
-              Finance Role
+              Financial Secretary &amp; Executive Console
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-brand">

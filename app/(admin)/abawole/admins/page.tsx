@@ -135,12 +135,13 @@ async function AdminsContent() {
     }
   }
 
-  // Sort: Super Admin first, then President, then General Secretary, then Gate Marshal
+  // Sort: Super Admin first, then President, then General Secretary, then Financial Secretary, then Gate Marshal
   const ROLE_PRIORITY: Record<string, number> = {
     super_admin: 1,
     president: 2,
     general_secretary: 3,
-    security_checkin_officer: 4,
+    finance_officer: 4,
+    security_checkin_officer: 5,
   };
 
   adminList.sort((a, b) => {
