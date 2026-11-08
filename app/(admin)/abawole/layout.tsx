@@ -10,10 +10,28 @@ import {
   Printer,
   UserCog,
   BadgeCheck,
-  KeyRound
+  KeyRound,
+  ArrowLeft
 } from "lucide-react";
+import { SignOutButton } from "@/components/auth/sign-out-button";
+import { getSessionUser } from "@/lib/auth/session";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSessionUser();
+  const primaryRole = session?.actor.roles[0];
+  const roleDisplayName = 
+    primaryRole === "super_admin"
+      ? "Super Administrator"
+      : primaryRole === "president"
+      ? "Club President"
+      : primaryRole === "general_secretary"
+      ? "General Secretary"
+      : primaryRole === "finance_officer"
+      ? "Festival Bursar"
+      : primaryRole === "security_checkin_officer"
+      ? "Gate Marshal"
+      : "Executive Officer";
+
   const navItems = [
     { label: "Command Centre", href: "/abawole", icon: LayoutDashboard },
     { label: "Participants", href: "/abawole/registrations", icon: Users2 },
@@ -27,68 +45,80 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-sage/30 text-ink">
+    <div className="min-h-screen bg-sage/30 text-ink flex flex-col">
       {/* Top Banner: Clearance & Security */}
-      <div className="border-b border-forest/20 bg-forest text-ivory">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/20 text-gold border border-gold/30">
-              <ShieldCheck className="h-4 w-4" />
+      <div className="border-b border-forest/30 bg-forest text-ivory shadow-sm">
+        <div className="mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3 sm:px-6 max-w-7xl">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/20 text-gold border border-gold/40 shadow-xs">
+              <ShieldCheck className="h-5 w-5" />
             </div>
-            <div>
-              <p className="font-display text-sm font-semibold tracking-wide text-ivory">
-                Abeokuta Polo Festival 2026 · Operations Console (/abawole)
-              </p>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-display text-sm sm:text-base font-bold tracking-wide text-ivory">
+                  Abeokuta Polo 2026 · Operations Console
+                </p>
+                <span className="rounded-full bg-gold/25 border border-gold/50 px-2.5 py-0.5 text-[10px] font-bold text-gold uppercase tracking-wider">
+                  {roleDisplayName}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-[10px] tracking-wider uppercase text-ivory/70">
-                  Level 4 Royal Clearance · Live Security Mesh
+                <p className="text-[10px] tracking-wider uppercase text-ivory/70 truncate">
+                  {session?.user.email || "Executive Console"} · Level 4 Royal Clearance
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Action Controls: Back to Site, Change Password, and Log Out */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0 self-start md:self-auto pt-1 md:pt-0">
             <Link
-              href="/abawole/change-password"
-              className="inline-flex items-center gap-1.5 rounded-md border border-ivory/20 bg-ivory/10 px-2.5 py-1 text-xs text-ivory transition-colors hover:bg-gold hover:text-forest"
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-ivory/20 bg-ivory/10 px-3 py-1.5 text-xs font-semibold text-ivory transition-colors hover:bg-gold hover:text-black shadow-xs"
+              title="Return to the public festival website"
             >
-              <KeyRound className="h-3 w-3" />
-              <span>Change Password</span>
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back to Site</span>
             </Link>
 
             <Link
-              href="/"
-              className="inline-flex items-center gap-1 text-xs text-ivory/80 transition-colors hover:text-gold"
+              href="/abawole/change-password"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-ivory/20 bg-ivory/10 px-3 py-1.5 text-xs font-semibold text-ivory transition-colors hover:bg-gold hover:text-black shadow-xs"
+              title="Change Account Password"
             >
-              <span>Public Showcase</span>
-              <ExternalLink className="h-3 w-3" />
+              <KeyRound className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Password</span>
             </Link>
+
+            <SignOutButton
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-600/90 hover:bg-red-600 text-white px-3 py-1.5 text-xs font-semibold shadow-xs cursor-pointer"
+            />
           </div>
         </div>
       </div>
 
       {/* Primary Sub-navigation Bar */}
-      <div className="border-b border-line bg-card shadow-xs">
-        <div className="mx-auto flex max-w-7xl items-center justify-between overflow-x-auto px-4 py-2 sm:px-6">
-          <nav className="flex items-center gap-1 text-xs sm:gap-2">
+      <div className="border-b border-line bg-card shadow-xs sticky top-0 z-30">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6">
+          <nav className="flex items-center gap-1.5 text-xs overflow-x-auto py-1 w-full sm:w-auto scrollbar-thin">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium text-muted-brand transition-colors hover:bg-sage/50 hover:text-forest shrink-0"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-muted-brand transition-colors hover:bg-sage/50 hover:text-forest shrink-0 whitespace-nowrap border border-transparent hover:border-line/60"
                 >
-                  <Icon className="h-3.5 w-3.5 text-gold" />
+                  <Icon className="h-3.5 w-3.5 text-gold-deep" />
                   <span>{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className="hidden items-center gap-2 text-xs sm:flex">
-            <span className="rounded-md border border-line bg-sage/40 px-2.5 py-1 font-mono text-[11px] text-muted-brand">
+          <div className="hidden items-center gap-2 text-xs lg:flex shrink-0 ml-4">
+            <span className="rounded-md border border-line bg-sage/40 px-2.5 py-1 font-mono text-[11px] text-muted-brand whitespace-nowrap">
               Edition: 2026-ABK-01
             </span>
           </div>

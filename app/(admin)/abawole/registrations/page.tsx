@@ -48,11 +48,17 @@ async function RegistrationsContent() {
           affiliation_type,
           host_name,
           organization,
+          payment_method,
+          bank_transfer_ref,
+          day3_ticket_ref,
           created_at,
           credentials (
             id,
             pass_code,
+            pass_type,
             status,
+            bank_transfer_ref,
+            day3_ticket_ref,
             day1_checked_in_at,
             day2_checked_in_at,
             day3_checked_in_at

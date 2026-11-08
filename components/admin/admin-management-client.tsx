@@ -14,7 +14,8 @@ import {
   Crown, 
   QrCode, 
   FileText,
-  Lock
+  Lock,
+  Landmark
 } from "lucide-react";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import { 
@@ -70,6 +71,18 @@ const PRESET_CREDENTIALS = [
     badgeColor: "bg-blue-100 text-blue-900 border-blue-300",
     scope: "Full Operations: Registrations, Protocol, Guest Lists, Reports (No admin manage)",
     icon: FileText,
+  },
+  {
+    title: "Admin 3: Festival Bursar",
+    designation: "Finance & Treasury Operations",
+    email: "bursar@abeokutapolo2026.ng",
+    password: "PoloBursar2026!Treasury",
+    url: "/abawole",
+    role: "finance_officer",
+    badge: "Bursar & Finance",
+    badgeColor: "bg-amber-100 text-amber-900 border-amber-300",
+    scope: "Finance & Treasury: Registrations, Bank Wire Reconciliations, Gate Fees, Reports",
+    icon: Landmark,
   },
   {
     title: "Gate Marshal (Turnstile)",
@@ -211,7 +224,7 @@ export function AdminManagementClient({
             className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-forest px-3.5 py-2 text-xs font-semibold text-ivory hover:bg-forest-light transition-colors self-start sm:self-auto shrink-0 shadow-xs"
           >
             {copiedKey === "all" ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5 text-gold" />}
-            <span>{copiedKey === "all" ? "All Credentials Copied!" : "Copy All 4 Accounts"}</span>
+            <span>{copiedKey === "all" ? "All Credentials Copied!" : "Copy All 5 Accounts"}</span>
           </button>
         </div>
 

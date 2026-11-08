@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Radio,
+  Landmark,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
 import { formatWhatsAppUrl } from "@/lib/utils/phone";
@@ -50,6 +51,9 @@ export interface ParticipantRecord {
   day1?: boolean;
   day2?: boolean;
   day3?: boolean;
+  payment_method?: string | null;
+  bank_transfer_ref?: string | null;
+  day3_ticket_ref?: string | null;
   day3_payment_ref?: string | null;
   day3_invitation_code?: string | null;
   credentials?: Array<{
@@ -57,6 +61,8 @@ export interface ParticipantRecord {
     pass_code: string;
     pass_type?: string;
     status: string;
+    bank_transfer_ref?: string | null;
+    day3_ticket_ref?: string | null;
     day1_checked_in_at?: string | null;
     day2_checked_in_at?: string | null;
     day3_checked_in_at?: string | null;
@@ -635,11 +641,8 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                 <th className="px-4 py-3">Attendee</th>
                 <th className="px-4 py-3">Category &amp; Affiliation</th>
                 <th className="px-4 py-3">Issued ID Pass(es)</th>
-                {activeDayTab === "day3" ? (
-                  <th className="px-4 py-3">VVIP Verification / Paystack</th>
-                ) : (
-                  <th className="px-4 py-3">Daily Attendance</th>
-                )}
+                <th className="px-4 py-3">Gate Fee &amp; Payment</th>
+                <th className="px-4 py-3">Turnstile Attendance</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -647,7 +650,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
             <tbody className="divide-y divide-line/60">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-brand">
+                  <td colSpan={7} className="px-4 py-12 text-center text-muted-brand">
                     No attendees found for this view matching your criteria.
                   </td>
                 </tr>
@@ -658,6 +661,16 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                   const hasVvipCred = creds.some(
                     (c) => c.pass_code.includes("VVIP") || c.pass_type?.includes("VVIP"),
                   );
+                  const isBankWire = 
+                    p.payment_method === "bank_transfer" || 
+                    Boolean(p.bank_transfer_ref) ||
+                    Boolean(primaryCred?.bank_transfer_ref);
+                  const bankRef = p.bank_transfer_ref || primaryCred?.bank_transfer_ref;
+                  const isPaystack = 
+                    p.payment_method === "paystack" || 
+                    Boolean(p.day3_payment_ref) || 
+                    Boolean(p.day3_ticket_ref && p.day3_ticket_ref.startsWith("PSTK-"));
+                  const paystackRef = p.day3_payment_ref || p.day3_ticket_ref;
 
                   return (
                     <tr key={p.id} className="hover:bg-sage/10 transition-colors">
@@ -734,75 +747,89 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                         )}
                       </td>
 
-                      {/* Attendance / Payment Column */}
-                      {activeDayTab === "day3" ? (
-                        <td className="px-4 py-3">
-                          {p.day3_payment_ref ? (
-                            <div className="text-xs">
-                              <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                                <CreditCard className="size-3" /> Paid via Paystack
-                              </span>
-                              <span className="font-mono text-[10px] text-muted-brand">
-                                {p.day3_payment_ref}
-                              </span>
-                            </div>
-                          ) : p.day3_invitation_code ? (
-                            <div className="text-xs">
-                              <span className="text-amber-700 font-semibold flex items-center gap-1">
-                                <KeyRound className="size-3" /> Special VIP Invite
-                              </span>
-                              <span className="font-mono text-[10px] text-muted-brand">
-                                Code: {p.day3_invitation_code}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="text-xs">
-                              <span className="text-amber-800 font-semibold flex items-center gap-1">
-                                <Crown className="size-3" /> VVIP Accreditation
-                              </span>
-                              <span className="text-[10px] text-muted-brand">
-                                Turnstile check-in: {primaryCred?.day3_checked_in_at ? "Checked In" : "Pending"}
-                              </span>
-                            </div>
-                          )}
-                        </td>
-                      ) : (
-                        /* Daily Attendance Indicators */
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1 text-[10px]">
-                            <span
-                              title="Day 1: Fri 18 Dec (Free)"
-                              className={`rounded px-1.5 py-0.5 font-semibold ${
-                                primaryCred?.day1_checked_in_at
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-gray-100 text-gray-500"
-                              }`}
-                            >
-                              D1: {primaryCred?.day1_checked_in_at ? "In" : "—"}
+                      {/* Gate Fee & Payment Column (Always Visible) */}
+                      <td className="px-4 py-3">
+                        {isBankWire ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300">
+                              <Landmark className="size-3 text-gold-deep" /> Bank Wire (WEMA)
                             </span>
-                            <span
-                              title="Day 2: Sat 19 Dec (Free)"
-                              className={`rounded px-1.5 py-0.5 font-semibold ${
-                                primaryCred?.day2_checked_in_at
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-gray-100 text-gray-500"
-                              }`}
-                            >
-                              D2: {primaryCred?.day2_checked_in_at ? "In" : "—"}
-                            </span>
-                            <span
-                              title="Day 3: Sun 20 Dec (VVIP)"
-                              className={`rounded px-1.5 py-0.5 font-semibold ${
-                                primaryCred?.day3_checked_in_at
-                                  ? "bg-amber-100 text-amber-900"
-                                  : "bg-gray-100 text-gray-500"
-                              }`}
-                            >
-                              D3: {primaryCred?.day3_checked_in_at ? "In" : "—"}
-                            </span>
+                            <div className="font-mono text-[10px] text-muted-brand font-bold">
+                              Ref: {bankRef || "ABK-WEMA"}
+                            </div>
+                            {p.status === "pending_bank_verification" || p.status === "pending_verification" ? (
+                              <span className="inline-block text-[9px] font-semibold text-amber-700">
+                                Pending Bursary Review
+                              </span>
+                            ) : (
+                              <span className="inline-block text-[9px] font-semibold text-emerald-700">
+                                Wire Reconciled
+                              </span>
+                            )}
                           </div>
-                        </td>
-                      )}
+                        ) : isPaystack ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300">
+                              <CreditCard className="size-3 text-emerald-600" /> Paystack Online
+                            </span>
+                            <div className="font-mono text-[10px] text-muted-brand font-bold">
+                              Ref: {paystackRef}
+                            </div>
+                          </div>
+                        ) : p.day3_invitation_code ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold text-purple-900 border border-purple-300">
+                              <KeyRound className="size-3 text-purple-700" /> VIP Special Invite
+                            </span>
+                            <div className="font-mono text-[10px] text-muted-brand">
+                              Code: {p.day3_invitation_code}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-800">
+                              100% Free Public Entry
+                            </span>
+                            <div className="text-[10px] text-muted-brand">Days 1 &amp; 2 Admitted</div>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Daily Attendance Column */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 text-[10px]">
+                          <span
+                            title="Day 1: Fri 18 Dec (Free)"
+                            className={`rounded px-1.5 py-0.5 font-semibold ${
+                              primaryCred?.day1_checked_in_at
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-gray-100 text-gray-500"
+                            }`}
+                          >
+                            D1: {primaryCred?.day1_checked_in_at ? "In" : "—"}
+                          </span>
+                          <span
+                            title="Day 2: Sat 19 Dec (Free)"
+                            className={`rounded px-1.5 py-0.5 font-semibold ${
+                              primaryCred?.day2_checked_in_at
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-gray-100 text-gray-500"
+                            }`}
+                          >
+                            D2: {primaryCred?.day2_checked_in_at ? "In" : "—"}
+                          </span>
+                          <span
+                            title="Day 3: Sun 20 Dec (VVIP)"
+                            className={`rounded px-1.5 py-0.5 font-semibold ${
+                              primaryCred?.day3_checked_in_at
+                                ? "bg-amber-100 text-amber-900"
+                                : "bg-gray-100 text-gray-500"
+                            }`}
+                          >
+                            D3: {primaryCred?.day3_checked_in_at ? "In" : "—"}
+                          </span>
+                        </div>
+                      </td>
 
                       {/* Status */}
                       <td className="px-4 py-3">

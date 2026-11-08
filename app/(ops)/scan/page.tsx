@@ -11,7 +11,9 @@ import {
   Camera,
   CalendarCheck,
   KeyRound,
+  ArrowLeft,
 } from "lucide-react";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +63,29 @@ export default function GateScanPage() {
   return (
     <div className="flex w-full min-h-[calc(100vh-80px)] flex-col bg-forest-deep text-ivory p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-4xl w-full space-y-6">
+        {/* Navigation & Session Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ivory/15 pb-3">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-ivory/20 bg-ivory/10 px-3 py-1.5 text-xs font-semibold text-ivory hover:bg-gold hover:text-black transition-colors"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back to Site</span>
+            </Link>
+            <Link
+              href="/abawole"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-semibold text-gold hover:bg-gold hover:text-black transition-colors"
+            >
+              <span>Command Centre (/abawole)</span>
+            </Link>
+          </div>
+
+          <SignOutButton
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-600/80 hover:bg-red-600 text-white px-3 py-1.5 text-xs font-semibold shadow-xs"
+          />
+        </div>
+
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-ivory/20 pb-4">
           <div>

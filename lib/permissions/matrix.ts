@@ -55,7 +55,14 @@ const ROLE_GRANTS: Record<Role, readonly Permission[]> = {
     "credential.override",
     "export.bulk",
   ],
-  finance_officer: ["content.read", "finance.read", "export.bulk"],
+  finance_officer: [
+    "content.read",
+    "registration.manage",
+    "roster.read",
+    "roster.read_all",
+    "finance.read",
+    "export.bulk",
+  ],
   media_officer: ["content.read", "content.manage", "cms.publish", "export.bulk"],
   sponsorship_officer: [
     "content.read",

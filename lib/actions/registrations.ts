@@ -308,45 +308,70 @@ export async function approveRegistrationAction(registrationId: string): Promise
 
   const { data: reg, error: fetchError } = await supabase
     .from("registrations")
-    .select("id, first_name, last_name, email, phone, category, status, affiliation_type, host_name, organization")
+    .select("id, first_name, last_name, email, phone, category, status, affiliation_type, host_name, organization, bank_transfer_ref")
     .eq("id", registrationId)
     .maybeSingle();
 
   if (fetchError || !reg) return { ok: false, error: "Registration not found." };
-  if (reg.status !== "pending_approval") {
-    return { ok: false, error: "This registration is not awaiting approval." };
+  
+  const pendingStatuses = ["pending_approval", "pending_bank_verification", "pending_verification"];
+  if (!pendingStatuses.includes(reg.status)) {
+    return { ok: false, error: "This registration is not awaiting approval or bank verification." };
   }
 
   const holderName = `${reg.first_name} ${reg.last_name}`.trim();
-  const credentialId = crypto.randomUUID();
-  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const passCode = `ABK-2026-${randomSuffix}`;
+  let passCode = "";
   const issuedAt = new Date().toISOString();
 
-  const qrToken = generateSignedPassToken({
-    credentialId,
-    holderName,
-    passType: reg.category,
-    editionYear: 2026,
-    issuedAt: Date.parse(issuedAt),
-  });
+  // Check if credentials already exist (e.g. Day 3 bank transfer provisional slip)
+  const { data: existingCreds } = await supabase
+    .from("credentials")
+    .select("id, pass_code")
+    .eq("registration_id", reg.id);
 
-  const { error: credError } = await supabase.from("credentials").insert({
-    id: credentialId,
-    registration_id: reg.id,
-    holder_name: holderName,
-    token_hash: hashPassToken(qrToken),
-    pass_code: passCode,
-    pass_type: reg.category,
-    zone_access: zoneAccessFor(),
-    affiliation_type: reg.affiliation_type || "individual",
-    host_name: reg.host_name,
-    organization: reg.organization,
-    status: "active",
-    issued_at: issuedAt,
-  });
+  if (existingCreds && existingCreds.length > 0) {
+    await supabase
+      .from("credentials")
+      .update({
+        status: "active",
+        zone_access: ["VVIP Royal Pavilion", "Grandstand", "Festival Grounds"],
+      })
+      .eq("registration_id", reg.id);
+    passCode = existingCreds[0].pass_code;
+  } else {
+    const credentialId = crypto.randomUUID();
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    passCode = `ABK-2026-${randomSuffix}`;
 
-  if (credError) return { ok: false, error: "Could not issue the credential." };
+    const qrToken = generateSignedPassToken({
+      credentialId,
+      holderName,
+      passType: reg.category,
+      editionYear: 2026,
+      issuedAt: Date.parse(issuedAt),
+    });
+
+    const { error: credError } = await supabase.from("credentials").insert({
+      id: credentialId,
+      registration_id: reg.id,
+      holder_name: holderName,
+      token_hash: hashPassToken(qrToken),
+      pass_code: passCode,
+      pass_type: reg.category,
+      zone_access: zoneAccessFor(),
+      affiliation_type: reg.affiliation_type || "individual",
+      host_name: reg.host_name,
+      organization: reg.organization,
+      status: "active",
+      issued_at: issuedAt,
+    });
+
+    if (credError) return { ok: false, error: "Could not issue the credential." };
+  }
+
+  if (reg.bank_transfer_ref) {
+    markPassVerified(reg.bank_transfer_ref);
+  }
 
   const { error: regError } = await supabase
     .from("registrations")

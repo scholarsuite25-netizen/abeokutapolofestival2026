@@ -37,8 +37,8 @@ async function MembersQueue() {
       .order("created_at", { ascending: false }),
     supabase
       .from("registrations")
-      .select("id, first_name, last_name, email, phone, category, group_size, created_at")
-      .eq("status", "pending_approval")
+      .select("id, first_name, last_name, email, phone, category, group_size, status, bank_transfer_ref, payment_method, created_at")
+      .in("status", ["pending_approval", "pending_bank_verification", "pending_verification"])
       .order("created_at", { ascending: false }),
   ]);
 
@@ -46,11 +46,10 @@ async function MembersQueue() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-forest">
-          Verification queue
+          Verification &amp; Treasury Reconciliation Queue
         </h1>
         <p className="mt-1 text-sm text-muted-brand">
-          Registration approvals and provisional roster entries awaiting review. Identity is
-          linked manually — name variants are never auto-merged.
+          Registration approvals and Day 3 direct bank wire payment reconciliations. Bursary and Secretariat staff review bank transfers and activate accredited passes.
         </p>
       </div>
 
@@ -63,6 +62,9 @@ async function MembersQueue() {
           phone: string;
           category: string;
           group_size: number;
+          status: string;
+          bank_transfer_ref?: string | null;
+          payment_method?: string | null;
           created_at: string;
         }>}
       />
