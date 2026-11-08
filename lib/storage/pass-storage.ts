@@ -45,6 +45,7 @@ const PASS_COOKIE_NAME = "abk_pass_code";
 let cachedRaw: string | null = null;
 let cachedPasses: StoredPass[] = [];
 let cachedPrimary: StoredPass | null = null;
+const EMPTY_PASSES: StoredPass[] = [];
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -96,18 +97,23 @@ function loadFromStorage(): StoredPass[] {
 }
 
 export function getPassesSnapshot(): StoredPass[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return EMPTY_PASSES;
   try {
     const raw = localStorage.getItem(PASSES_STORAGE_KEY) || localStorage.getItem(PASS_STORAGE_KEY);
-    if (raw === cachedRaw && cachedPasses.length > 0) {
+    if (raw === cachedRaw) {
       return cachedPasses;
     }
     cachedRaw = raw;
+    if (!raw) {
+      cachedPasses = EMPTY_PASSES;
+      cachedPrimary = null;
+      return EMPTY_PASSES;
+    }
     cachedPasses = loadFromStorage();
     cachedPrimary = cachedPasses[0] || null;
     return cachedPasses;
   } catch {
-    return [];
+    return EMPTY_PASSES;
   }
 }
 
@@ -121,7 +127,7 @@ export function getPassServerSnapshot(): StoredPass | null {
 }
 
 export function getPassesServerSnapshot(): StoredPass[] {
-  return [];
+  return EMPTY_PASSES;
 }
 
 /**
