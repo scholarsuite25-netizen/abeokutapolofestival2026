@@ -12,9 +12,9 @@
 
 export const DAY3_CHECKOUT_PROVIDER = "Paystack";
 
-/** Price of one Day 3 VVIP pass, in naira. Set to 50 for live payment testing. */
-export const DAY3_VVIP_PRICE_NGN = 50;
-export const DAY3_VVIP_PRICE_DISPLAY = "₦50.00";
+/** Price of one Day 3 VVIP pass, in naira. Set to 100 for live payment testing. */
+export const DAY3_VVIP_PRICE_NGN = 100;
+export const DAY3_VVIP_PRICE_DISPLAY = "₦100.00";
 
 /** Most Day 3 VVIP passes one payment can cover. */
 export const DAY3_VVIP_MAX_TICKETS = 20;
@@ -30,7 +30,7 @@ export const CLUB_BANK_DETAILS = {
   bankName: "WEMA BANK",
   accountName: "ABEOKUTA POLO CLUB",
   accountNumber: "0126769779",
-  feePerTicketNgn: 50,
+  feePerTicketNgn: 100,
   secretariatWhatsApp: "2348181888884",
   secretariatPhoneFormatted: "+234 818 188 8884",
   referencePrefix: "ABK-WEMA-",

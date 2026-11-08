@@ -89,8 +89,8 @@ function RegisterContent() {
     organization: "",
   });
 
-  // Day 3 VVIP Options: Paystack, Direct Bank Transfer (Wema), or Special Invitation Code
-  const [day3PaymentMethod, setDay3PaymentMethod] = useState<"paystack" | "bank_transfer" | "invitation">("paystack");
+  // Day 3 VVIP Options: Direct Bank Transfer (Option A / Primary Default), Paystack, or Special Invitation Code
+  const [day3PaymentMethod, setDay3PaymentMethod] = useState<"paystack" | "bank_transfer" | "invitation">("bank_transfer");
   const [wemaRef, setWemaRef] = useState<string>(() => generateWemaTransferReference());
   const [hasInviteCode, setHasInviteCode] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
@@ -1139,38 +1139,22 @@ function RegisterContent() {
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDay3PaymentMethod("paystack");
-                              setHasInviteCode(false);
-                            }}
-                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
-                              day3PaymentMethod === "paystack"
-                                ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
-                                : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
-                            }`}
-                          >
-                            <div className="flex items-center gap-1.5 font-semibold text-xs">
-                              <CreditCard className="size-3.5" /> Paystack Gateway
-                            </div>
-                            <span className="text-[10px] opacity-90 block mt-0.5">
-                              Instant Card / USSD Payment
-                            </span>
-                          </button>
-
+                          {/* Option A: Direct Club Wire (Primary Default) */}
                           <button
                             type="button"
                             onClick={() => {
                               setDay3PaymentMethod("bank_transfer");
                               setHasInviteCode(false);
                             }}
-                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
+                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer relative ${
                               day3PaymentMethod === "bank_transfer"
                                 ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
                                 : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
                             }`}
                           >
+                            <span className="absolute top-1.5 right-1.5 rounded bg-amber-900/80 px-1 py-0.2 text-[8px] font-black uppercase text-amber-100">
+                              Option A
+                            </span>
                             <div className="flex items-center gap-1.5 font-semibold text-xs">
                               <ShieldCheck className="size-3.5" /> Wema Bank Wire
                             </div>
@@ -1179,18 +1163,46 @@ function RegisterContent() {
                             </span>
                           </button>
 
+                          {/* Option B: Paystack Gateway */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDay3PaymentMethod("paystack");
+                              setHasInviteCode(false);
+                            }}
+                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer relative ${
+                              day3PaymentMethod === "paystack"
+                                ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
+                                : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
+                            }`}
+                          >
+                            <span className="absolute top-1.5 right-1.5 rounded bg-black/30 px-1 py-0.2 text-[8px] font-bold uppercase text-amber-100">
+                              Option B
+                            </span>
+                            <div className="flex items-center gap-1.5 font-semibold text-xs">
+                              <CreditCard className="size-3.5" /> Paystack Gateway
+                            </div>
+                            <span className="text-[10px] opacity-90 block mt-0.5">
+                              Instant Card / USSD Payment
+                            </span>
+                          </button>
+
+                          {/* Option C: Special VIP Invitation */}
                           <button
                             type="button"
                             onClick={() => {
                               setDay3PaymentMethod("invitation");
                               setHasInviteCode(true);
                             }}
-                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer ${
+                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer relative ${
                               day3PaymentMethod === "invitation"
                                 ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
                                 : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
                             }`}
                           >
+                            <span className="absolute top-1.5 right-1.5 rounded bg-black/30 px-1 py-0.2 text-[8px] font-bold uppercase text-amber-100">
+                              Option C
+                            </span>
                             <div className="flex items-center gap-1.5 font-semibold text-xs">
                               <KeyRound className="size-3.5" /> Special Invitation
                             </div>
