@@ -15,19 +15,72 @@ export interface SendEmailResult {
 }
 
 /**
- * Dispatches transactional email through the EmailBump API.
- * API Endpoint: https://emailbump.com/api/v1/emails
+ * Dispatches transactional email through Resend or EmailBump API.
  */
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   const env = requireServerEnv();
-  const apiKey = env.EMAILBUMP_API_KEY;
+  const resendApiKey = env.RESEND_API_KEY;
+  const emailBumpApiKey = env.EMAILBUMP_API_KEY;
   const defaultFrom = env.EMAIL_FROM || "tickets@abeokutapolofestival.com";
 
-  if (!apiKey) {
-    console.warn("[EmailBump] No EMAILBUMP_API_KEY configured. Email dispatch skipped in dev.");
+  // 1. Try Resend if configured
+  if (resendApiKey) {
+    try {
+      const recipients = Array.isArray(options.to) ? options.to : [options.to];
+      const fromSender = options.from || defaultFrom;
+
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: fromSender.includes("@") && !fromSender.includes("<")
+            ? `Abeokuta Polo Festival 2026 <${fromSender}>`
+            : fromSender,
+          to: recipients,
+          subject: options.subject,
+          html: options.html,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return {
+          success: true,
+          messageId: data.id || "resend_sent",
+        };
+      }
+
+      const errorText = await response.text();
+      console.warn("[Resend] Dispatch notice:", response.status, errorText);
+      // If Resend failed and EmailBump is not configured, return error
+      if (!emailBumpApiKey) {
+        return {
+          success: false,
+          error: `Resend HTTP ${response.status}: ${errorText}`,
+        };
+      }
+    } catch (resendErr) {
+      console.warn("[Resend] Exception, falling back if available:", resendErr);
+      if (!emailBumpApiKey) {
+        return {
+          success: false,
+          error: resendErr instanceof Error ? resendErr.message : String(resendErr),
+        };
+      }
+    }
+  }
+
+  // 2. Fallback to EmailBump if configured
+  if (!emailBumpApiKey) {
+    if (!resendApiKey) {
+      console.warn("[Email] Neither RESEND_API_KEY nor EMAILBUMP_API_KEY configured. Email skipped.");
+    }
     return {
       success: false,
-      error: "EMAILBUMP_API_KEY is not configured",
+      error: "No email gateway API key configured",
     };
   }
 
@@ -37,7 +90,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     const response = await fetch("https://emailbump.com/api/v1/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${emailBumpApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
