@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Camera,
   FileText,
-  Download,
   ShieldCheck,
   Tv,
-  Wifi,
   Video,
   Clock,
   ArrowRight,
@@ -17,6 +14,8 @@ import {
   Mail,
   AlertTriangle,
   FolderArchive,
+  Calendar,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,32 +35,30 @@ const MEDIA_CATEGORIES: MediaCategory[] = [
   {
     id: "broadcast",
     title: "Live Broadcast & Television Syndicate",
-    badge: "OB Van / Commentary",
+    badge: "Commentary / Broadcast",
     icon: Tv,
     description:
-      "Licensed national and international broadcast networks, OB van crews, elevated commentary booth personnel, and live transmission engineers.",
+      "Accredited national and regional broadcast crews, camera operators, commentary personnel, and transmission engineers.",
     privileges: [
-      "Access to Elevated Central Commentary Gantry",
-      "Dedicated 1 Gbps symmetrical fiber feed & SDI patching",
-      "Mixed zone post-match interview rights",
-      "Power tap-in at Paddock TV compound",
+      "Access to Elevated Commentary and Media Area",
+      "Designated mixed-zone post-match player interviews",
+      "Power tap-in access at Media Compound",
     ],
-    equipmentAllowed: "Broadcast cameras, boom mics, OB mobile unit, microwave link",
+    equipmentAllowed: "Broadcast cameras, boom mics, mobile transmission units",
   },
   {
     id: "photo",
     title: "Pitch-Side Photojournalists",
-    badge: "Pitch Boards / Royal Dais",
+    badge: "Pitch Boards / Ceremony",
     icon: Camera,
     description:
-      "Accredited photojournalists representing international wire agencies, national dailies, and equestrian sporting magazines.",
+      "Accredited photojournalists representing international wire agencies, national dailies, and equestrian sporting publications.",
     privileges: [
-      "Western Safety Board Photo Pits (Chukkers 1–4)",
-      "Royal Trophy Presentation Court access",
-      "Pony lines & warm-up chukker access",
-      "Access to High-Speed Media Workroom & Wi-Fi",
+      "Designated fieldboard photo pits during match play",
+      "Royal Trophy presentation court access",
+      "Pony lines and ceremonial procession access",
     ],
-    equipmentAllowed: "Telephoto primes (300mm/400mm+), monopod, official hi-vis safety vest",
+    equipmentAllowed: "Telephoto lenses, monopod, official hi-vis safety vest",
   },
   {
     id: "print",
@@ -69,14 +66,13 @@ const MEDIA_CATEGORIES: MediaCategory[] = [
     badge: "Press Box",
     icon: FileText,
     description:
-      "Sports reporters, feature writers, and royal correspondents documenting match reports, tournament culture, and high-goal strategy.",
+      "Sports reporters, feature writers, and correspondents documenting match reports, tournament culture, and festival proceedings.",
     privileges: [
-      "Reserved seating in the Air-Conditioned Press Box",
-      "Instant chukker-by-chukker scoresheet delivery",
-      "Official Press Conference Q&A with Team Captains",
-      "Daily Tournament Gazette embargo releases",
+      "Seating in the designated Media Enclosure",
+      "Chukker-by-chukker scoresheet delivery",
+      "Official post-match Q&A with Team Captains",
     ],
-    equipmentAllowed: "Laptops, audio recorders, mobile broadcast kits",
+    equipmentAllowed: "Laptops, audio recorders, mobile reporting kits",
   },
   {
     id: "digital",
@@ -84,83 +80,62 @@ const MEDIA_CATEGORIES: MediaCategory[] = [
     badge: "Lifestyle & Culture",
     icon: Video,
     description:
-      "Accredited documentary film crews, lifestyle video producers, and equestrian culture storytellers capturing the pageantry.",
+      "Accredited documentary film crews, lifestyle video producers, and cultural storytellers documenting the festival pageantry.",
     privileges: [
-      "Kings Procession & Durbar ceremonial access",
-      "Adire fashion & pavilion lifestyle filming rights",
-      "Post-match sunset light-up & trophy gala coverage",
-      "Access to official festival B-roll vault",
+      "Kings Procession and ceremonial opening access",
+      "Adire fashion and pavilion lifestyle documentation",
+      "Post-match trophy gala coverage",
     ],
     equipmentAllowed: "Gimbal rigs, mirrorless cinema bodies, lapel audio",
   },
 ];
 
 export function PressHub() {
-  const [downloadingPack, setDownloadingPack] = useState(false);
-  const [packDownloaded, setPackDownloaded] = useState(false);
-
-  function handleDownloadPack() {
-    setDownloadingPack(true);
-    try {
-      const link = document.createElement("a");
-      link.href = "/api/press/pack";
-      link.setAttribute("download", "Abeokuta_Polo_Festival_2026_Press_Kit.pdf");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setPackDownloaded(true);
-    } catch (err) {
-      console.error("Failed to download press pack:", err);
-    } finally {
-      setDownloadingPack(false);
-    }
-  }
-
   return (
     <div className="flex flex-col gap-12 sm:gap-16">
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 1. MEDIA ASSETS & METRICS BAND                                      */}
+      {/* 1. OFFICIAL FESTIVAL MEDIA OVERVIEW                                 */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-xl border border-line bg-card p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex size-10 items-center justify-center rounded-lg bg-forest/10 text-forest">
-            <Camera className="size-5" />
+            <Calendar className="size-5" />
           </div>
-          <p className="mt-3 font-display text-2xl font-bold text-forest">2,400+</p>
-          <p className="text-xs text-muted-brand font-medium uppercase tracking-wide">High-Res Assets</p>
-          <p className="mt-1 text-[11px] text-muted-brand">Photographic archive &amp; raw match frames</p>
+          <p className="mt-3 font-display text-2xl font-bold text-forest">18–20 Dec</p>
+          <p className="text-xs text-muted-brand font-medium uppercase tracking-wide">Festival Dates</p>
+          <p className="mt-1 text-[11px] text-muted-brand">3 ceremonial days of polo &amp; culture</p>
         </div>
 
         <div className="rounded-xl border border-line bg-card p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex size-10 items-center justify-center rounded-lg bg-gold/15 text-gold-dim">
-            <Video className="size-5" />
+            <MapPin className="size-5" />
           </div>
-          <p className="mt-3 font-display text-2xl font-bold text-forest">4K 60fps</p>
-          <p className="text-xs text-muted-brand font-medium uppercase tracking-wide">Broadcast Syndicate</p>
-          <p className="mt-1 text-[11px] text-muted-brand">Licensed ProRes feeds &amp; highlight reels</p>
+          <p className="mt-3 font-display text-2xl font-bold text-forest">Kobape Turf</p>
+          <p className="text-xs text-muted-brand font-medium uppercase tracking-wide">Host Grounds</p>
+          <p className="mt-1 text-[11px] text-muted-brand">Abeokuta–Sagamu Expressway, Ogun State</p>
         </div>
 
         <div className="rounded-xl border border-line bg-card p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex size-10 items-center justify-center rounded-lg bg-forest/10 text-forest">
-            <Wifi className="size-5" />
+            <Mail className="size-5" />
           </div>
-          <p className="mt-3 font-display text-2xl font-bold text-forest">1 Gbps</p>
-          <p className="text-xs text-muted-brand font-medium uppercase tracking-wide">Fiber Uplink</p>
-          <p className="mt-1 text-[11px] text-muted-brand">Dedicated pitch-side press media center</p>
+          <p className="mt-3 font-display text-xl font-bold text-forest truncate">Email Desk</p>
+          <p className="text-xs text-muted-brand font-medium uppercase tracking-wide">Press Inquiries</p>
+          <p className="mt-1 text-[11px] text-muted-brand truncate">abeokutapolo@gmail.com</p>
         </div>
 
         <div className="rounded-xl border border-line bg-card p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex size-10 items-center justify-center rounded-lg bg-gold/15 text-gold-dim">
             <ShieldCheck className="size-5" />
           </div>
-          <p className="mt-3 font-display text-2xl font-bold text-forest">Fast-Track</p>
-          <p className="text-xs text-muted-brand font-medium uppercase tracking-wide">Gate Accreditation</p>
-          <p className="mt-1 text-[11px] text-muted-brand">Turnstile Gate 1 VIP &amp; media ingress</p>
+          <p className="mt-3 font-display text-2xl font-bold text-forest">Gate 1 VIP</p>
+          <p className="text-xs text-muted-brand font-medium uppercase tracking-wide">Accreditation Access</p>
+          <p className="mt-1 text-[11px] text-muted-brand">Dedicated media &amp; VIP turnstile ingress</p>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 2. PRESS ASSET PACK & BRAND KIT CALLOUT                             */}
+      {/* 2. OFFICIAL SECRETARIAT MEDIA DESK STATEMENT                        */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl border border-gold/30 bg-forest text-ivory p-4 sm:p-8 min-w-0 max-w-full">
         <div
@@ -172,43 +147,37 @@ export function PressHub() {
           <div className="space-y-2 max-w-2xl min-w-0">
             <div className="flex items-center gap-2">
               <Badge className="bg-gold text-forest-deep text-[10px] font-bold uppercase tracking-wider">
-                Official Press Kit
+                Media &amp; Public Relations
               </Badge>
-              <span className="text-xs text-ivory/70">Updated November 2026</span>
+              <span className="text-xs text-ivory/70">Abeokuta Polo Club</span>
             </div>
             <h2 className="font-display text-2xl font-bold sm:text-3xl text-ivory">
-              Official Media Asset Pack &amp; Brand Guidelines
+              Secretariat Media Inquiries & Accreditation Desk
             </h2>
             <p className="text-xs sm:text-sm text-ivory/85 leading-relaxed">
-              Download high-resolution vector crests of Abeokuta Polo Club, official tournament brand color tokens,
-              patron bios, high-goal team rosters, and media guidelines in one consolidated dossier.
+              Official press bulletins, match notices, photography access credentials, and tournament releases
+              are issued directly by the Secretariat Media Committee. Qualified journalists and media organizations
+              may apply for accreditation to receive official credentials.
             </p>
           </div>
 
           <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full sm:w-auto min-w-0">
             <Button
-              type="button"
-              onClick={handleDownloadPack}
-              disabled={downloadingPack}
+              asChild
               className="h-auto py-2.5 px-4 bg-gold font-semibold text-forest-deep hover:bg-gold/90 shadow text-xs sm:text-sm whitespace-normal w-full sm:w-auto text-center"
             >
-              <Download className="mr-2 size-4 text-forest-deep shrink-0" />
-              <span>
-                {downloadingPack
-                  ? "Preparing Press Pack..."
-                  : packDownloaded
-                  ? "Press Pack Downloaded ✓"
-                  : "Download Press Pack (PDF Dossier)"}
-              </span>
+              <Link href="/register">
+                <span>Apply for Media Accreditation →</span>
+              </Link>
             </Button>
             <Button
               asChild
               variant="outline"
               className="h-auto py-2.5 px-4 border-gold/40 bg-white/10 text-ivory hover:bg-white/20 text-xs sm:text-sm whitespace-normal w-full sm:w-auto text-center"
             >
-              <Link href="/publications">
+              <Link href="/news">
                 <FileText className="mr-2 size-4 text-gold shrink-0" />
-                <span>Tournament Gazette</span>
+                <span>Secretariat Notices</span>
               </Link>
             </Button>
           </div>
@@ -222,7 +191,7 @@ export function PressHub() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-line pb-4">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-widest text-gold-dim">
-              Credential Matrix
+              Credential Guidelines
             </span>
             <h2
               id="accreditation-categories-title"
@@ -382,7 +351,7 @@ export function PressHub() {
               Direct Media Protocol Liaison
             </h2>
             <p className="text-xs text-muted-brand mt-1">
-              For urgent broadcast feeds, captain interviews, or royal dais clearance coordination.
+              For broadcast arrangements, captain interviews, or royal dais clearance coordination.
             </p>
           </div>
 
@@ -417,4 +386,3 @@ export function PressHub() {
     </div>
   );
 }
-

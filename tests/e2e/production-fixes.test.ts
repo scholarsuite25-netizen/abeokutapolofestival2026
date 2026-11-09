@@ -214,56 +214,53 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
     });
 
     // -------------------------------------------------------------------------
-    // 1.2 R2: Media Gallery Assets & Layout
+    // 1.2 R2: Media Gallery Assets & Curatorial State
     // -------------------------------------------------------------------------
-    describe("Feature 1.2: R2 Media Gallery Assets & Layout", () => {
-      it("1.2.1: Gallery items contain 0 Unsplash stock URLs (images.unsplash.com)", () => {
-        expect(GALLERY_DATA.length, "Gallery must contain at least 12 items").toBeGreaterThanOrEqual(12);
-
-        const unsplashItems = GALLERY_DATA.filter((item) => item.imageUrl.includes("unsplash.com"));
-        expect(
-          unsplashItems.length,
-          `Found ${unsplashItems.length} items using Unsplash stock URLs: ${unsplashItems.map((i) => `${i.id}: ${i.imageUrl}`).join(", ")}`
-        ).toBe(0);
+    describe("Feature 1.2: R2 Media Gallery Assets & Curatorial State", () => {
+      it("1.2.1: Gallery items contain 0 Unsplash stock URLs and 0 AI mock URLs", () => {
+        const unsplashItems = GALLERY_DATA.filter(
+          (item) => item.imageUrl.includes("unsplash.com") || item.imageUrl.includes("googleusercontent.com")
+        );
+        expect(unsplashItems.length).toBe(0);
       });
 
       it("1.2.2: 100% uniqueness of image URLs across all gallery items (0 duplicates)", () => {
         const urls = GALLERY_DATA.map((i) => i.imageUrl.trim());
         const uniqueUrls = new Set(urls);
-
-        const duplicates = urls.filter((url, index) => urls.indexOf(url) !== index);
-        expect(
-          uniqueUrls.size,
-          `Duplicate image URLs detected (${duplicates.length} duplicates): ${Array.from(new Set(duplicates)).join(", ")}`
-        ).toBe(urls.length);
+        expect(uniqueUrls.size).toBe(urls.length);
       });
 
-      it("1.2.3: Explicit representation of HRM The Alake Landmark Groundbreaking", () => {
-        const text = GALLERY_DATA.map((i) => `${i.title} ${i.description}`).join(" ");
-        expect(text).toMatch(/Alake/i);
-        expect(text).toMatch(/Groundbreaking/i);
+      it("1.2.3: Zero unoriginal AI-generated image files exist in public/images/gallery", () => {
+        const galleryDir = path.resolve(process.cwd(), "public/images/gallery");
+        if (fs.existsSync(galleryDir)) {
+          const files = fs.readdirSync(galleryDir).filter((f) => f.endsWith(".jpg") || f.endsWith(".png"));
+          expect(files.length).toBe(0);
+        }
       });
 
-      it("1.2.4: Explicit representation of Conferment of Aare Elesin Chieftaincy on Club President", () => {
-        const text = GALLERY_DATA.map((i) => `${i.title} ${i.description}`).join(" ");
-        expect(text).toMatch(/Aare Elesin|Chieftaincy/i);
+      it("1.2.4: Gallery page displays official Secretariat curatorial notice in place of unverified assets", () => {
+        const galleryPage = readWorkspaceFile("app/(public)/gallery/page.tsx");
+        expect(galleryPage).toContain("Official Photographic Archives in Curation");
+        expect(galleryPage).toContain("Abeokuta Polo Club");
       });
 
-      it("1.2.5: Explicit representation of Kobape Turf matches & Inaugural Chukka", () => {
-        const text = GALLERY_DATA.map((i) => `${i.title} ${i.description}`).join(" ");
-        expect(text).toMatch(/Kobape/i);
-        expect(text).toMatch(/Chukka/i);
+      it("1.2.5: Header and Footer navigation cleanly remove uncurated /gallery route links", () => {
+        const headerContent = readWorkspaceFile("components/design/public/public-header.tsx");
+        const footerContent = readWorkspaceFile("components/design/public/public-footer.tsx");
+        expect(headerContent).not.toContain('href="/gallery"');
+        expect(footerContent).not.toContain('href="/gallery"');
       });
 
-      it("1.2.6: Explicit representation of Patrons Gala & Twilight Celebration", () => {
-        const text = GALLERY_DATA.map((i) => `${i.title} ${i.description}`).join(" ");
-        expect(text).toMatch(/Patrons Gala|Gala/i);
+      it("1.2.6: Homepage removes placeholder video and unverified gallery redirects", () => {
+        const homePage = readWorkspaceFile("app/(public)/page.tsx");
+        expect(homePage).not.toContain("abeokuta-polo-trailer.mp4");
+        expect(homePage).not.toContain('href="/gallery"');
       });
 
-      it("1.2.7: Gallery card images enforce object-cover containment and aspect-[16/10] card ratio", () => {
+      it("1.2.7: Gallery showcase component handles empty state with dignified curatorial guidance", () => {
         const content = readWorkspaceFile("components/design/public/gallery-showcase.tsx");
-        expect(content).toContain("object-cover");
-        expect(content).toContain("aspect-[16/10]");
+        expect(content).toContain("Curatorial Inquiries & Photo Submissions");
+        expect(content).toContain("abeokutapolo@gmail.com");
       });
     });
 
@@ -380,26 +377,23 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
         expect(pressPageContent).not.toContain("getServerSession");
       });
 
-      it("1.4.3: Press kit media pack download action is immediately accessible without credentials", () => {
+      it("1.4.3: Press desk media accreditation guidelines are immediately accessible without credentials", () => {
         const pressHubContent = readWorkspaceFile("components/design/public/press-hub.tsx");
-        expect(pressHubContent).toContain("Download Press Pack");
+        expect(pressHubContent).toContain("Secretariat Media Inquiries & Accreditation Desk");
         expect(pressHubContent).not.toContain("requireAuth");
         expect(pressHubContent).not.toContain("SignInModal");
       });
 
-      it("1.4.4: Authentic downloadable media pack asset or API route /api/press/pack exists or is served", () => {
+      it("1.4.4: Unverified simulated press pack route and fake download buttons are completely eliminated", () => {
         const apiRouteExists = fs.existsSync(path.resolve(process.cwd(), "app/api/press/pack/route.ts"));
+        const pdfFileExists = fs.existsSync(path.resolve(process.cwd(), "public/docs/Abeokuta_Polo_Festival_2026_Press_Kit.pdf"));
         const pressHubContent = readWorkspaceFile("components/design/public/press-hub.tsx");
-        const hasRealDownload =
-          apiRouteExists ||
-          pressHubContent.includes("/api/press/pack") ||
-          pressHubContent.includes(".pdf") ||
-          pressHubContent.includes(".zip");
 
-        expect(
-          hasRealDownload,
-          "Expected an authentic press pack downloadable asset or /api/press/pack endpoint"
-        ).toBe(true);
+        expect(apiRouteExists, "Unverified /api/press/pack route must not exist").toBe(false);
+        expect(pdfFileExists, "Simulated press kit PDF must not exist").toBe(false);
+        expect(pressHubContent).not.toContain("Download Press Pack");
+        expect(pressHubContent).not.toContain("2,400+");
+        expect(pressHubContent).not.toContain("1 Gbps");
       });
 
       it("1.4.5: Press hub media accreditation contact displays canonical 'abeokutapolo@gmail.com'", () => {
@@ -476,7 +470,7 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
           if (item.imageUrl.startsWith("/")) {
             const localAssetPath = path.resolve(process.cwd(), `public${item.imageUrl}`);
             expect(
-              fs.existsSync(localAssetPath) || item.imageUrl.startsWith("/images/gallery/"),
+              fs.existsSync(localAssetPath),
               `Referenced local asset path does not exist: ${item.imageUrl}`
             ).toBe(true);
           } else {
@@ -492,17 +486,15 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
         }
       });
 
-      it("2.2.4: Card gradient overlay is softened (opacity < 60%) to prevent obscuring photo details", () => {
+      it("2.2.4: Gallery component enforces curatorial fallback when archive is empty", () => {
         const content = readWorkspaceFile("components/design/public/gallery-showcase.tsx");
-        // Ensure heavy 90% blackout gradient has been replaced with softened overlay
-        const hasHeavyBlackout = content.includes("from-forest-deep/90");
-        expect(hasHeavyBlackout, "Gallery card thumbnail must not use heavy 90% blackout gradient").toBe(false);
+        expect(content).toContain("Archive In Curation");
       });
 
-      it("2.2.5: Lightbox modal gradient does not shroud photo details with dark opacity", () => {
-        const content = readWorkspaceFile("components/design/public/gallery-showcase.tsx");
-        const hasHeavyModalShrouding = content.includes("from-forest-deep via-transparent to-transparent opacity-80");
-        expect(hasHeavyModalShrouding, "Modal lightbox must not shroud photo details with 80% opacity gradient").toBe(false);
+      it("2.2.5: Publications hub cleanly serves genuine official tournament documents", () => {
+        const publicationsContent = readWorkspaceFile("components/design/public/publications-hub.tsx");
+        expect(publicationsContent).not.toContain("68-page");
+        expect(publicationsContent).toContain("3-Day Tournament Programme");
       });
 
       it("2.2.6: Gallery categories match official festival classification tokens", () => {
@@ -619,9 +611,10 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
         expect(privateCheckLogic).toBe(true);
       });
 
-      it("2.4.3: Press kit download action specifies standard downloadable document attributes", () => {
+      it("2.4.3: Press kit unverified downloads are eliminated in favor of genuine accreditation", () => {
         const pressHubContent = readWorkspaceFile("components/design/public/press-hub.tsx");
-        expect(pressHubContent).toContain("Download Press Pack");
+        expect(pressHubContent).not.toContain("Download Press Pack");
+        expect(pressHubContent).toContain("Secretariat Media Inquiries & Accreditation Desk");
       });
 
       it("2.4.4: Press accreditation categories cover Broadcast, Print, Photojournalism, and Digital", () => {
@@ -639,12 +632,13 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
         expect(phoneValidation.isValid).toBe(true);
       });
 
-      it("2.4.6: Public header and footer navigation links expose /press and /gallery", () => {
+      it("2.4.6: Public header and footer navigation links expose /press and safely omit uncurated /gallery", () => {
         const header = readWorkspaceFile("components/design/public/public-header.tsx");
         const footer = readWorkspaceFile("components/design/public/public-footer.tsx");
 
         expect(header.includes("/press") || footer.includes("/press")).toBe(true);
-        expect(header.includes("/gallery") || footer.includes("/gallery")).toBe(true);
+        expect(header.includes("/gallery")).toBe(false);
+        expect(footer.includes("/gallery")).toBe(false);
       });
     });
   });
@@ -796,18 +790,23 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
       const pressPage = readWorkspaceFile("app/(public)/press/page.tsx");
       expect(pressPage).toContain("Press & Media");
 
-      // 3. Media kit download is ready
+      // 3. Media desk guidelines are displayed without fake download buttons
       const pressHub = readWorkspaceFile("components/design/public/press-hub.tsx");
-      expect(pressHub).toContain("Download Press Pack");
+      expect(pressHub).toContain("Secretariat Media Inquiries & Accreditation Desk");
+      expect(pressHub).not.toContain("Download Press Pack");
 
       // 4. Inquiries point to canonical email and verified phone hotline
       expect(pressHub).toContain(CANONICAL_EMAILS.PUBLIC_INQUIRY);
       expect(pressHub).toContain("+234 818 188 8884");
     });
 
-    it("4.3: Scenario 3: Patron Cultural Gallery Journey -> 100% Authentic Imagery -> 4 Required Events Verified -> Contact Inquiry -> Pass Claim", () => {
-      // 1. Patron visits /gallery
-      expect(GALLERY_DATA.length).toBeGreaterThanOrEqual(12);
+    it("4.3: Scenario 3: Patron Cultural Gallery Journey -> Curatorial Integrity -> Zero AI/Mock Assets -> Secretariat Contact Notice", () => {
+      // 1. Zero unoriginal AI-generated mock images in public directory
+      const galleryDir = path.resolve(process.cwd(), "public/images/gallery");
+      if (fs.existsSync(galleryDir)) {
+        const files = fs.readdirSync(galleryDir).filter((f) => f.endsWith(".jpg") || f.endsWith(".png"));
+        expect(files.length).toBe(0);
+      }
 
       // 2. Zero stock Unsplash images
       const unsplashFound = GALLERY_DATA.some((i) => i.imageUrl.includes("unsplash.com"));
@@ -817,11 +816,10 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
       const urls = GALLERY_DATA.map((i) => i.imageUrl);
       expect(new Set(urls).size).toBe(urls.length);
 
-      // 4. All 4 required events verified
-      const allText = GALLERY_DATA.map((i) => `${i.title} ${i.description}`).join(" ");
-      for (const reqEvent of REQUIRED_GALLERY_EVENTS) {
-        expect(allText, `Required event ${reqEvent.name} must be represented in gallery`).toMatch(reqEvent.pattern);
-      }
+      // 4. Curatorial holding notice informs visitors with canonical Secretariat contact
+      const galleryPage = readWorkspaceFile("app/(public)/gallery/page.tsx");
+      expect(galleryPage).toContain("Official Photographic Archives in Curation");
+      expect(galleryPage).toContain("abeokutapolo@gmail.com");
     });
 
     it("4.4: Scenario 4: High-Concurrency Multi-Attendee Device Binding & Turnstile Isolation", async () => {

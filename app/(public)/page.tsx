@@ -319,20 +319,55 @@ export default function HomePage() {
                   <Link href="/register">Claim Free Gate Pass</Link>
                 </Button>
                 <Button asChild className="bg-white text-forest font-bold border-2 border-gold/40 hover:bg-gold hover:text-forest text-xs shadow-md transition-all">
-                  <Link href="/gallery">Explore Media Gallery</Link>
+                  <Link href="/programme">View Tournament Schedule</Link>
                 </Button>
               </div>
             </div>
 
             <div className="lg:col-span-7">
-              <FestivalVideoPlayer
-                src="/videos/abeokuta-polo-trailer.mp4"
-                autoPlay={false}
-                muted={false}
-                loop={true}
-                className="w-full shadow-2xl"
-                title="Abeokuta Polo Festival 2026 — Official Teaser Trailer"
-              />
+              <div className="rounded-2xl border border-gold/40 bg-forest p-6 sm:p-8 text-ivory shadow-2xl relative overflow-hidden">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-gold/15 blur-2xl"
+                />
+                <div className="relative space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-gold text-forest-deep text-[10px] font-bold uppercase tracking-wider">
+                      Official Tournament Venue
+                    </Badge>
+                    <span className="text-xs text-gold/90 font-medium">18–20 December 2026</span>
+                  </div>
+
+                  <h3 className="font-display text-2xl sm:text-3xl font-bold text-ivory">
+                    Abeokuta Polo Club &amp; Country Resort
+                  </h3>
+
+                  <p className="text-xs sm:text-sm text-ivory/85 leading-relaxed">
+                    Set across the scenic Kobape grounds along the Abeokuta–Sagamu Expressway in Ogun State,
+                    convening traditional royalty, state dignitaries, and equestrian sportsmanship.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                    <div className="rounded-xl border border-gold/20 bg-black/30 p-3.5">
+                      <p className="text-gold font-bold text-[11px] uppercase tracking-wider">Royal Auspices</p>
+                      <p className="text-ivory/80 text-[11px] mt-1">HRM Oba Dr. Adedotun Aremu Gbadebo CFR, Alake &amp; Paramount Ruler of Egbaland</p>
+                    </div>
+                    <div className="rounded-xl border border-gold/20 bg-black/30 p-3.5">
+                      <p className="text-gold font-bold text-[11px] uppercase tracking-wider">Secretariat Desk</p>
+                      <p className="text-ivory/80 text-[11px] mt-1">Direct Inquiries: +234 818 188 8884 · 0803 681 8916 · abeokutapolo@gmail.com</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex flex-wrap gap-2.5">
+                    <Button asChild size="sm" className="bg-gold text-forest-deep font-bold hover:bg-gold/90 text-xs">
+                      <Link href="/register">Register Digital Pass →</Link>
+                    </Button>
+                    <Button asChild size="sm" variant="outline" className="border-gold/40 bg-white/10 text-ivory hover:bg-white/20 text-xs">
+                      <Link href="/tables">Day 3 VIP Tables</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

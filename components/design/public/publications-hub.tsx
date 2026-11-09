@@ -40,10 +40,8 @@ interface FilterOption {
 
 const FILTER_OPTIONS: FilterOption[] = [
   { id: "all", label: "All Publications" },
-  { id: "gazette", label: "Tournament Gazettes" },
-  { id: "guides", label: "Spectator Guides & Maps" },
-  { id: "programmes", label: "Sovereign Match Programmes" },
-  { id: "equine", label: "Equine Care & Rosters" },
+  { id: "programmes", label: "3-Day Tournament Programme" },
+  { id: "guides", label: "Spectator & Entry Guides" },
 ];
 
 export function PublicationsHub() {
@@ -176,7 +174,7 @@ export function PublicationsHub() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 2. FEATURED PUBLICATION SPOTLIGHT                                   */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {(!searchQuery && (filter === "all" || filter === "gazette")) && (
+      {(!searchQuery && (filter === "all" || filter === "programmes")) && (
         <section
           aria-labelledby="featured-publication-title"
           className="relative overflow-hidden rounded-2xl border border-gold/30 bg-forest text-ivory shadow-xl"
@@ -195,9 +193,7 @@ export function PublicationsHub() {
               <span className="text-gold/50">·</span>
               <span className="text-ivory/80">{featuredPublication.date}</span>
               <span className="text-gold/50">·</span>
-              <span className="font-semibold text-gold">{featuredPublication.pages} Archival Pages</span>
-              <span className="text-gold/50">·</span>
-              <span className="text-ivory/70">{featuredPublication.fileSize}</span>
+              <span className="font-semibold text-gold">{featuredPublication.pages} Official Pages</span>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
@@ -353,7 +349,7 @@ export function PublicationsHub() {
                     >
                       {item.badge}
                     </Badge>
-                    <span className="text-[11px] font-mono text-muted-brand">{item.fileSize}</span>
+                    <span className="text-[11px] font-medium text-muted-brand">{item.format}</span>
                   </div>
 
                   <h3 className="mt-3.5 font-display text-xl font-semibold text-forest group-hover:text-forest-interactive transition-colors">
@@ -599,7 +595,7 @@ export function PublicationsHub() {
                 {activeItem.title}
               </DialogTitle>
               <DialogDescription className="mt-1 text-xs text-ivory/80">
-                {activeItem.subtitle} · Published {activeItem.date} · {activeItem.pages} Pages ({activeItem.fileSize})
+                {activeItem.subtitle} · Published {activeItem.date} · {activeItem.pages} Pages ({activeItem.format})
               </DialogDescription>
             </div>
 
@@ -643,8 +639,8 @@ export function PublicationsHub() {
                   <span className="font-semibold text-forest mt-0.5 block">{activeItem.format}</span>
                 </div>
                 <div className="rounded-lg border border-line bg-ivory p-3">
-                  <span className="text-[10px] text-muted-brand uppercase block">Asset Size</span>
-                  <span className="font-semibold text-forest mt-0.5 block">{activeItem.fileSize}</span>
+                  <span className="text-[10px] text-muted-brand uppercase block">Distribution</span>
+                  <span className="font-semibold text-forest mt-0.5 block">Official Public</span>
                 </div>
                 <div className="rounded-lg border border-line bg-ivory p-3">
                   <span className="text-[10px] text-muted-brand uppercase block">Issuing Authority</span>

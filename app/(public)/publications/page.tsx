@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { PublicationsHub } from "@/components/design/public/publications-hub";
 
 export const metadata = {
-  title: "Tournament Gazette & Official Publications — 2026 Abeokuta Polo Festival",
+  title: "Tournament Schedule & Official Documents — 2026 Abeokuta Polo Festival",
   description:
-    "Official tournament gazettes, spectator guide, festival rules of entry, equine pedigree logs, and commemorative publications from the Abeokuta Polo Club.",
+    "Official 3-Day tournament programme, visitor guidelines, sponsorship prospectus, and Secretariat documentation for the 2026 Abeokuta Polo Festival.",
 };
 
 export default function PublicationsPage() {
@@ -27,7 +27,7 @@ export default function PublicationsPage() {
               variant="outline"
               className="border-gold/40 bg-gold/10 text-[11px] tracking-widest text-gold uppercase"
             >
-              Official Repository
+              Secretariat Documents
             </Badge>
             <Badge className="bg-gold text-forest font-bold text-[10px]">
               ESTABLISHED 2025
@@ -35,13 +35,13 @@ export default function PublicationsPage() {
           </div>
 
           <h1 className="mt-4 max-w-3xl font-display text-4xl leading-tight font-semibold text-balance text-ivory sm:text-6xl">
-            Tournament Gazette &amp;{" "}
-            <span className="font-normal text-gold italic">Official Publications</span>
+            Tournament Programme &amp;{" "}
+            <span className="font-normal text-gold italic">Official Documents</span>
           </h1>
 
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-ivory/80 sm:text-lg">
-            Curated festival literature, official tournament programmes, Kobape ground maps, equine
-            pedigree rosters, and historical retrospectives preserved by the Curatorial Secretariat.
+            Council-approved festival literature, official 3-day tournament programme, commercial partnership
+            prospectus, and visitor gate admission guidelines from the Abeokuta Polo Club Secretariat.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">

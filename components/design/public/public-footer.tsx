@@ -46,8 +46,7 @@ const COLUMNS = [
     links: [
       { href: "/visit", label: "Plan Your Visit" },
       { href: "/faq", label: "Visitor Protocols & FAQs" },
-      { href: "/publications", label: "Tournament Gazette" },
-      { href: "/gallery", label: "Archival Imagery" },
+      { href: "/publications", label: "Tournament Itinerary" },
       { href: "/news", label: "Festival News" },
     ],
   },

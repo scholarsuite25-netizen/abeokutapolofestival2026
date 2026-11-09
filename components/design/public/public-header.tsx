@@ -109,7 +109,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     title: "Media",
-    desc: "Dispatches, gazette & gallery",
+    desc: "Dispatches, schedule & press",
     items: [
       {
         href: "/news",
@@ -118,15 +118,9 @@ const NAV_CATEGORIES: NavCategory[] = [
         icon: Newspaper,
       },
       {
-        href: "/gallery",
-        label: "Gallery",
-        desc: "Match action & society photos",
-        icon: ImageIcon,
-      },
-      {
         href: "/publications",
-        label: "Gazette",
-        desc: "Official brochures & publications",
+        label: "Publications",
+        desc: "Official schedule & publications",
         icon: BookOpen,
       },
       {
