@@ -46,8 +46,8 @@ export default function PrivacyPage() {
             <h2 className="font-display text-xl font-semibold text-forest pt-4">4. Data Subject Rights &amp; Contact</h2>
             <p>
               Attendees may request access, rectification, or deletion of their registration records by contacting the Secretariat at{" "}
-              <a href="mailto:privacy@abeokutapolofestival.com" className="text-forest font-semibold underline">
-                privacy@abeokutapolofestival.com
+              <a href="mailto:abeokutapolo@gmail.com" className="text-forest font-semibold underline">
+                abeokutapolo@gmail.com
               </a>.
             </p>
           </div>

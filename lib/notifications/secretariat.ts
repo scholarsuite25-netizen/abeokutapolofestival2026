@@ -71,7 +71,7 @@ export async function notifySecretariatOfBankPayment(payload: BankPaymentNotific
   const secretariatEmail =
     process.env.SECRETARIAT_EMAIL ||
     process.env.ADMIN_EMAIL ||
-    "secretariat@abeokutapolofestival.com";
+    "abeokutapolo@gmail.com";
 
   try {
     await sendEmail({

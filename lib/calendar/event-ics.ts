@@ -14,7 +14,7 @@ METHOD:PUBLISH
 X-WR-CALNAME:Abeokuta Polo Festival 2026 - The Blueprint
 X-WR-TIMEZONE:Africa/Lagos
 BEGIN:VEVENT
-UID:abk-polo-2026-day1@abeokutapolo.com
+UID:abk-polo-2026-day1@guests.abeokutapolofestival2026.org.ng
 DTSTAMP:${now}
 DTSTART;TZID=Africa/Lagos:20261218T100000
 DTEND;TZID=Africa/Lagos:20261218T220000
@@ -39,7 +39,7 @@ DESCRIPTION:Abeokuta Polo Festival opening in 2 hours. Have your QR pass ready!
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:abk-polo-2026-day2@abeokutapolo.com
+UID:abk-polo-2026-day2@guests.abeokutapolofestival2026.org.ng
 DTSTAMP:${now}
 DTSTART;TZID=Africa/Lagos:20261219T120000
 DTEND;TZID=Africa/Lagos:20261219T220000
@@ -59,7 +59,7 @@ DESCRIPTION:Royal Opening Ceremony begins in 2 hours.
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:abk-polo-2026-day3@abeokutapolo.com
+UID:abk-polo-2026-day3@guests.abeokutapolofestival2026.org.ng
 DTSTAMP:${now}
 DTSTART;TZID=Africa/Lagos:20261220T120000
 DTEND;TZID=Africa/Lagos:20261220T230000

@@ -36,6 +36,7 @@ import {
   forceDownloadAllPasses,
   type StoredPass,
 } from "@/lib/storage/pass-storage";
+import { MobileBindingStation, isMobileBrowser } from "@/components/shared/pass-device-guard";
 import { downloadProgrammePDF } from "@/lib/pdf/programme-pdf";
 import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
 import { IdAccessCard } from "@/components/shared/id-access-card";
@@ -271,9 +272,13 @@ function RegisterContent() {
       if (res.success && res.passes && res.passes.length > 0) {
         setResult(res);
         setIssuedPasses(res.passes);
-        persistRegisteredPass(res.passes);
-        forceDownloadAllPasses(res.passes);
-        setDownloadTriggered(true);
+        if (isMobileBrowser()) {
+          persistRegisteredPass(res.passes);
+          forceDownloadAllPasses(res.passes);
+          setDownloadTriggered(true);
+        } else {
+          setDownloadTriggered(false);
+        }
       } else {
         setErrorMsg(res.error || "We could not confirm your payment. Please contact the festival office.");
       }
@@ -439,12 +444,17 @@ function RegisterContent() {
       setResult(res);
       setIssuedPasses(res.passes);
 
-      // 1. Persist to phone storage (localStorage, sessionStorage, and 365-day cookie)
-      persistRegisteredPass(res.passes);
+      if (isMobileBrowser()) {
+        // 1. Persist to mobile phone storage (localStorage, sessionStorage, and 365-day cookie)
+        persistRegisteredPass(res.passes);
 
-      // 2. Automatically download offline ID Card HTML pass(es)
-      forceDownloadAllPasses(res.passes);
-      setDownloadTriggered(true);
+        // 2. Automatically download offline ID Card HTML pass(es) on mobile
+        forceDownloadAllPasses(res.passes);
+        setDownloadTriggered(true);
+      } else {
+        // Desktop session: pass remains UNBOUND to laptop browser session
+        setDownloadTriggered(false);
+      }
     } else {
       setErrorMsg(res.error || "Failed to process registration.");
     }
@@ -741,41 +751,17 @@ function RegisterContent() {
                 const whatsappSaveUrl = formatWhatsAppUrl(formData.phone, whatsappSaveMessage);
 
                 return (
-                  <div className="rounded-2xl border-2 border-emerald-500/80 bg-gradient-to-br from-emerald-50 via-emerald-100/40 to-teal-50 p-5 shadow-sm text-center space-y-3">
-                    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 text-white px-3 py-1 text-[11px] font-bold tracking-wide uppercase shadow-xs">
-                      <WhatsAppIcon className="size-3.5 text-white" />
-                      <span>Option 1: Primary Delivery Channel</span>
-                    </div>
-
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-forest">
-                      Instant Gate Pass Delivery to WhatsApp
-                    </h3>
-
-                    <p className="text-xs sm:text-sm text-forest/80 max-w-md mx-auto">
-                      Save your official credentials directly in WhatsApp for 1-tap offline display at
-                      the entrance turnstiles.
-                    </p>
-
-                    <div className="pt-1 flex justify-center">
-                      <Button
-                        asChild
-                        size="lg"
-                        className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-sm sm:text-base px-6 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer w-full sm:w-auto"
-                      >
-                        <a href={whatsappSaveUrl} target="_blank" rel="noopener noreferrer">
-                          <WhatsAppIcon className="mr-2 size-5" />
-                          Open &amp; Save Pass on WhatsApp
-                        </a>
-                      </Button>
-                    </div>
-
-                    <div className="text-[11px] text-muted-brand flex items-center justify-center gap-1.5 pt-1">
-                      <Mail className="size-3 text-muted-brand/70" />
-                      <span>
-                        Option 2 Fallback: Confirmation email also dispatched to{" "}
-                        <strong>{formData.email}</strong>
-                      </span>
-                    </div>
+                  <div className="space-y-4">
+                    {/* Desktop Mobile Binding Station (Scan to bind to your mobile phone) */}
+                    <MobileBindingStation
+                      passCode={primaryPass ? primaryPass.passCode : ""}
+                      holderName={
+                        result.holderName || `${formData.firstName} ${formData.lastName}`.trim()
+                      }
+                      phone={formData.phone}
+                      email={formData.email}
+                      category={primaryPass ? primaryPass.category : "Festival Pass"}
+                    />
                   </div>
                 );
               })()}

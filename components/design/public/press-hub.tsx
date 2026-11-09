@@ -101,10 +101,19 @@ export function PressHub() {
 
   function handleDownloadPack() {
     setDownloadingPack(true);
-    setTimeout(() => {
-      setDownloadingPack(false);
+    try {
+      const link = document.createElement("a");
+      link.href = "/api/press/pack";
+      link.setAttribute("download", "Abeokuta_Polo_Festival_2026_Press_Kit.pdf");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       setPackDownloaded(true);
-    }, 1200);
+    } catch (err) {
+      console.error("Failed to download press pack:", err);
+    } finally {
+      setDownloadingPack(false);
+    }
   }
 
   return (
@@ -188,8 +197,8 @@ export function PressHub() {
                 {downloadingPack
                   ? "Preparing Press Pack..."
                   : packDownloaded
-                  ? "Press Pack Ready ✓"
-                  : "Download Press Pack (ZIP, 24MB)"}
+                  ? "Press Pack Downloaded ✓"
+                  : "Download Press Pack (PDF Dossier)"}
               </span>
             </Button>
             <Button
@@ -393,7 +402,7 @@ export function PressHub() {
           <div className="rounded-xl border border-line bg-sage/20 p-4">
             <Mail className="size-4 text-gold mb-2" />
             <p className="text-xs font-semibold text-forest">Media Accreditation Email</p>
-            <p className="text-[11px] text-muted-brand mt-0.5 break-all">press.abeokutapolo@gmail.com</p>
+            <p className="text-[11px] text-muted-brand mt-0.5 break-all">abeokutapolo@gmail.com</p>
             <p className="text-[10px] text-forest-interactive mt-2 font-medium">Responses within 24 hours</p>
           </div>
 

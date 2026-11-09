@@ -41,8 +41,8 @@ export default function AccessibilityPage() {
             <h2 className="font-display text-xl font-semibold text-forest pt-4">3. Special Accommodations Request</h2>
             <p>
               Guests requiring personal mobility assistance, dedicated companion seating, or medical equipment access may notify the Secretariat prior to arrival via{" "}
-              <a href="mailto:liaison@abeokutapolofestival.com" className="text-forest font-semibold underline">
-                liaison@abeokutapolofestival.com
+              <a href="mailto:abeokutapolo@gmail.com" className="text-forest font-semibold underline">
+                abeokutapolo@gmail.com
               </a>.
             </p>
           </div>

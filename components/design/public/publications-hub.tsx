@@ -474,11 +474,11 @@ export function PublicationsHub() {
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2 text-xs">
               <a
-                href="mailto:archives.abeokutapolo@gmail.com"
+                href="mailto:abeokutapolo@gmail.com"
                 className="inline-flex items-center gap-2 rounded-lg border border-line bg-card px-3.5 py-2 font-medium text-forest hover:border-gold break-all"
               >
                 <Mail className="size-4 text-gold" />
-                archives.abeokutapolo@gmail.com
+                abeokutapolo@gmail.com
               </a>
               <a
                 href="tel:+2348181888884"

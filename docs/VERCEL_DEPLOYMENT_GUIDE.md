@@ -41,7 +41,7 @@ Configure these variables in **Project Settings → Environment Variables** on V
 | `EMAILBUMP_SMTP_HOST` | Production, Preview | `smtp.emailbump.com` |
 | `EMAILBUMP_SMTP_PORT` | Production, Preview | `587` |
 | `EMAILBUMP_SMTP_PASSWORD` | Production, Preview | `emailbump` |
-| `EMAIL_FROM` | Production, Preview | `tickets@abeokutapolofestival.com` |
+| `EMAIL_FROM` | Production, Preview | `tickets@guests.abeokutapolofestival2026.org.ng` |
 | `NEXT_PUBLIC_FEATURE_HOSPITALITY_ENQUIRY` | All | `true` |
 
 > [!IMPORTANT]

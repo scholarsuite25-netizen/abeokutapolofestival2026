@@ -121,7 +121,7 @@ TERMII_SENDER_ID=AbeokutaPolo
 ### Fallback Email Gateway (Resend / EmailBump):
 ```env
 EMAILBUMP_API_KEY=emb_...
-EMAILBUMP_FROM_EMAIL=passes@abeokutapolo.com
+EMAILBUMP_FROM_EMAIL=tickets@guests.abeokutapolofestival2026.org.ng
 ```
 
 When API keys are not present in local development, the engine automatically operates in **Immediate Zero-Cost Click-to-Chat Queue Mode**, ensuring 100% functionality without service interruption.

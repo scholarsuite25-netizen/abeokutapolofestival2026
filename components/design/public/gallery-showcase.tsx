@@ -33,7 +33,7 @@ export interface GalleryItem {
   fallbackColor: string;
 }
 
-const GALLERY_DATA: GalleryItem[] = [
+export const GALLERY_DATA: GalleryItem[] = [
   {
     id: "royal-groundbreaking-2025",
     title: "HRM The Alake of Egbaland Chairs Landmark Groundbreaking",
@@ -44,8 +44,7 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "HRM Oba Dr. Adedotun Aremu Gbadebo CFR, Alake & Paramount Ruler of Egbaland",
     description:
       "His Royal Majesty presiding over the sovereign sod-turning ceremony for the 100+ acre Abeokuta Polo Club & Country Resort, inaugurating the permanent home of equestrian excellence in Ogun State.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/alake-groundbreaking.jpg",
     fallbackColor: "from-amber-900 to-forest-deep",
   },
   {
@@ -58,8 +57,7 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "Dr. Chief Sheriff Abdulrahman Adams (PhD) & HRM Oba Dr. Adedapo Tejuoso",
     description:
       "The Osile of Oke-Ona Egba formally conferring the traditional equestrian title of Aare Eleshin of Oke-Ona Egba upon Club President Dr. Sheriff Adams during his 37th coronation anniversary celebrations.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/chieftaincy-conferment.jpg",
     fallbackColor: "from-emerald-950 to-forest",
   },
   {
@@ -72,22 +70,20 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "Deputy Governor Engr. Noimot Salako-Oyedele (Rep. Gov. Prince Dapo Abiodun CON)",
     description:
       "The Deputy Governor of Ogun State delivering the official executive address endorsing the Abeokuta Polo & Country Resort as a transformative sports-tourism catalyst for Ogun State.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/ogun-executive-endorsement.jpg",
     fallbackColor: "from-slate-900 to-forest-deep",
   },
   {
     id: "maiden-festival-chukka-2025",
-    title: "Maiden Abeokuta Polo Festival: Inaugural Chukka",
+    title: "Maiden Abeokuta Polo Festival: Inaugural Chukka on Kobape Turf",
     category: "Official Opening & Chukkas",
     date: "December 21, 2025",
     year: "2025",
     location: "Kobape Polo Arena, Abeokuta",
     dignitaries: "Abeokuta Polo Club Patron Squad vs Invited High-Goal Delegations",
     description:
-      "The thunder of thoroughbred hooves during the historic inaugural chukka of the maiden Abeokuta Polo Festival on December 21, 2025, celebrating the club's competitive debut.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1558904541-efa8c4a08931?auto=format&fit=crop&w=1200&q=80",
+      "The thunder of thoroughbred hooves during the historic inaugural chukka of the maiden Abeokuta Polo Festival on December 21, 2025, celebrating the competitive club debut on Kobape turf.",
+    imageUrl: "/images/gallery/kobape-inaugural-chukka.jpg",
     fallbackColor: "from-forest to-emerald-900",
   },
   {
@@ -100,8 +96,7 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "Dr. Chief Sheriff Abdulrahman Adams with Project Engineers & Surveyors",
     description:
       "Club President Dr. Sheriff Adams leading technical site walkthroughs of the regulation Tifway 419 Bermuda grass turf, drainage systems, and spectator pavilion foundations.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/kobape-turf-inspection.jpg",
     fallbackColor: "from-amber-950 to-stone-900",
   },
   {
@@ -113,9 +108,8 @@ const GALLERY_DATA: GalleryItem[] = [
     location: "Abeokuta Secretariat / Palace Chamber",
     dignitaries: "HRM Oba Dr. Adedotun Aremu Gbadebo CFR & Prince Ma'ruf Adesegun Ajibola SAN",
     description:
-      "The Paramount Ruler of Egbaland presenting official membership insignia and club blazers to pioneer inductees, including Crescent University proprietor Prince Ma'ruf Adesegun Ajibola (SAN).",
-    imageUrl:
-      "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=1200&q=80",
+      "The Paramount Ruler of Egbaland presenting official membership insignia and club blazers to pioneer inductees, including Crescent University proprietor Prince Maruf Adesegun Ajibola (SAN).",
+    imageUrl: "/images/gallery/alake-pioneer-inductions.jpg",
     fallbackColor: "from-forest-deep to-amber-950",
   },
   {
@@ -128,8 +122,7 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "National Female Polo Riders & Royal Chaperones",
     description:
       "Celebrating women in equestrian sport with exhilarating tactical play, precision mallet work, and sporting grace during the signature Queens Cup exhibition.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/queens-polo-invitational.jpg",
     fallbackColor: "from-pink-950 to-forest-deep",
   },
   {
@@ -141,9 +134,8 @@ const GALLERY_DATA: GalleryItem[] = [
     location: "Conference Hotel, Oke Mosan, Abeokuta",
     dignitaries: "Chief Dr. Abiodun Lasile (Orunto of Owu) & Ogun State Tourism Leadership",
     description:
-      "Strategic consultative briefing outlining the 2026 Festival Blueprint as the cornerstone of Ogun State's socio-economic and cultural tourism calendar.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+      "Strategic consultative briefing outlining the 2026 Festival Blueprint as the cornerstone of Ogun State socio-economic and cultural tourism calendar.",
+    imageUrl: "/images/gallery/ogun-tourism-alliance.jpg",
     fallbackColor: "from-blue-950 to-slate-900",
   },
   {
@@ -156,8 +148,7 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "Egba Cultural Council, Club Trustees & Architectural Team",
     description:
       "Unveiling the architectural blueprint of the dedicated arts and performance amphitheater honoring Nobel Laureate Prof. Wole Soyinka within the Kobape Country Resort.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1469488865564-c2de10f69f96?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/wole-soyinka-amphitheater.jpg",
     fallbackColor: "from-stone-900 to-amber-950",
   },
   {
@@ -170,8 +161,7 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "Captains of Industry, Diplomatic Envoys & Society Patrons",
     description:
       "Distinguished guests in bespoke Nigerian adire-infused couture and luxury garden attire enjoying hospitality service alongside the championship pitch.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/vip-chukka-terrace-fashion.jpg",
     fallbackColor: "from-rose-950 to-amber-900",
   },
   {
@@ -184,13 +174,12 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "Over 100 Yoruba Monarchs, Royal Highnesses & Egba Council of Obas",
     description:
       "The signature royal assembly uniting sovereign crowned rulers from across Yorubaland in celebration of cultural continuity, peace, and equestrian heritage.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/royal-procession-100-kings.jpg",
     fallbackColor: "from-amber-950 to-forest",
   },
   {
     id: "aristos-berryola-musical-gala",
-    title: "Festival Twilight Gala: Aristos Band & Berryola Live",
+    title: "Patrons Gala & Twilight Celebration: Aristos Band Live",
     category: "Culture & Entertainment",
     date: "Festival Grand Finale",
     year: "2026",
@@ -198,8 +187,7 @@ const GALLERY_DATA: GalleryItem[] = [
     dignitaries: "Aristos Band, Berryola, and Festival Patrons",
     description:
       "Electrifying live musical entertainment, highlife melodies, and celebration dinner concluding the 3-day tournament festivities on Sunday, 20 December 2026.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/images/gallery/patrons-gala-twilight.jpg",
     fallbackColor: "from-indigo-950 to-purple-950",
   },
 ];
@@ -306,7 +294,7 @@ export function GalleryShowcase() {
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
                 unoptimized
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/90 via-forest-deep/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/40 via-transparent to-transparent pointer-events-none" />
 
               {/* Badges Overlay */}
               <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
@@ -410,7 +398,6 @@ export function GalleryShowcase() {
                 className="object-cover"
                 unoptimized
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-forest-deep via-transparent to-transparent opacity-80" />
             </div>
 
             {/* Modal Metadata */}

@@ -18,7 +18,6 @@ import {
   KeyRound,
   Send,
   CheckCircle2,
-  AlertCircle,
   Radio,
   Landmark,
 } from "lucide-react";
@@ -69,6 +68,22 @@ export interface ParticipantRecord {
   }> | null;
 }
 
+interface BroadcastResult {
+  success?: boolean;
+  error?: string;
+  channelStrategy?: string;
+  totalProcessed?: number;
+  whatsappPrimarySent?: number;
+  whatsappQueued?: number;
+  emailsSent?: number;
+  logs?: string[];
+  whatsappDirectLinks?: Array<{
+    name: string;
+    passCode: string;
+    url: string;
+  }>;
+}
+
 interface RegistrationsManagerProps {
   initialParticipants: ParticipantRecord[];
 }
@@ -94,7 +109,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
   const [broadcastTestPhone, setBroadcastTestPhone] = useState("");
   const [broadcastTestEmail, setBroadcastTestEmail] = useState("");
   const [broadcastLoading, setBroadcastLoading] = useState(false);
-  const [broadcastResponse, setBroadcastResponse] = useState<any>(null);
+  const [broadcastResponse, setBroadcastResponse] = useState<BroadcastResult | null>(null);
 
   const handleTriggerBroadcast = async (isTestOnly: boolean) => {
     setBroadcastLoading(true);
@@ -107,7 +122,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
           type: broadcastType,
           dayNumber: broadcastDay,
           testPhone: isTestOnly ? broadcastTestPhone || "+234 803 123 4567" : undefined,
-          testEmail: isTestOnly ? broadcastTestEmail || "secretariat@abeokutapolo.com" : undefined,
+          testEmail: isTestOnly ? broadcastTestEmail || "abeokutapolo@gmail.com" : undefined,
           testName: isTestOnly ? "Secretariat Test Recipient" : undefined,
           limit: isTestOnly ? 1 : 2500,
         }),
@@ -1346,7 +1361,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                     onChange={(e) => setBroadcastTestPhone(e.target.value)}
                   />
                   <Input
-                    placeholder="Admin Email: e.g. admin@abeokutapolo.com"
+                    placeholder="Admin Email: e.g. admin@abeokutapolo2026.ng"
                     className="bg-card text-xs"
                     value={broadcastTestEmail}
                     onChange={(e) => setBroadcastTestEmail(e.target.value)}
@@ -1426,7 +1441,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                         Instant WhatsApp Direct Click-to-Chat Queue ({broadcastResponse.whatsappDirectLinks.length}):
                       </span>
                       <div className="max-h-36 overflow-y-auto space-y-1 rounded border border-line bg-ivory p-2">
-                        {broadcastResponse.whatsappDirectLinks.map((item: any, idx: number) => (
+                        {broadcastResponse.whatsappDirectLinks.map((item, idx: number) => (
                           <div key={idx} className="flex items-center justify-between text-[11px] py-1 border-b border-line/60 last:border-b-0">
                             <span className="truncate max-w-[200px] font-medium text-forest">
                               {item.name} ({item.passCode})

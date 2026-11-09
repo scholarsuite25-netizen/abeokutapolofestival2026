@@ -547,7 +547,7 @@ export function generateSponsorshipHTML(): string {
         <p style="font-size: 11px; line-height: 1.6; color: var(--ink);">
           <strong>Telephone:</strong> +234 818 188 8884<br>
           <strong>Alternative:</strong> +234 803 681 8916<br>
-          <strong>Email:</strong> secretariat@abeokutapolofestival.com<br>
+          <strong>Email:</strong> abeokutapolo@gmail.com<br>
           <strong>Website:</strong> abeokuta-polo-festival-2026.vercel.app
         </p>
       </div>
