@@ -21,7 +21,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
   const env = requireServerEnv();
   const resendApiKey = env.RESEND_API_KEY;
   const emailBumpApiKey = env.EMAILBUMP_API_KEY;
-  const defaultFrom = env.EMAIL_FROM || "tickets@abeokutapolofestival.com";
+  const defaultFrom = env.EMAIL_FROM || "tickets@guests.abeokutapolofestival2026.org.ng";
 
   // 1. Try Resend if configured
   if (resendApiKey) {
