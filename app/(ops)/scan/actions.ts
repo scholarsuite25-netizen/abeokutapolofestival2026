@@ -5,6 +5,8 @@ import { PermissionError, requirePermission } from "@/lib/auth/require";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { verifyPassToken, hashPassToken } from "@/lib/qr/token";
+import { verifyInvitationToken, ROYAL_SECURITY_SEAL } from "@/lib/invitations/issuance";
+import { getInvitationByCode } from "@/lib/invitations/storage";
 import { isPassPendingVerification } from "@/lib/storage/unverified-passes";
 
 const scanInputSchema = z.object({
@@ -38,6 +40,37 @@ function rejected(message: string): ScanResult {
 
 // In-memory fallback attendance ledger for demo/local mode when remote Supabase isn't connected
 const localAttendanceCache = new Map<string, { day1?: boolean; day2?: boolean; day3?: boolean }>();
+
+/**
+ * Normalizes input from turnstile scanners (extracts raw code or token if URL was scanned).
+ */
+function normalizeTurnstileInput(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.includes("?") || trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    try {
+      const url = trimmed.startsWith("http") ? new URL(trimmed) : new URL(trimmed, "https://abeokuta-polo.local");
+      const sigParam = url.searchParams.get("sig") || url.searchParams.get("token");
+      if (sigParam) return decodeURIComponent(sigParam).trim();
+
+      const idParam = url.searchParams.get("id") || url.searchParams.get("code");
+      if (idParam) return decodeURIComponent(idParam).trim().toUpperCase();
+
+      const match = url.pathname.match(/ABK-2026-INV-[2-9A-HJ-NP-Z]{4}/i);
+      if (match) return match[0].toUpperCase();
+    } catch {
+      // Return trimmed
+    }
+  }
+
+  // Handle direct format "ABK-2026-INV-XXXX::Aare Elesin"
+  if (trimmed.includes("::")) {
+    const parts = trimmed.split("::");
+    const codePart = parts.find((p) => p.toUpperCase().includes("ABK-2026-INV-"));
+    if (codePart) return codePart.trim().toUpperCase();
+  }
+
+  return trimmed;
+}
 
 export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
   // 1. Authorization check
@@ -76,23 +109,42 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
     return rejected(parsed.error.issues[0]?.message || "Invalid pass format.");
   }
 
-  const { passIdentifier, gate, eventDay } = parsed.data;
+  const { passIdentifier: rawPassIdentifier, gate, eventDay } = parsed.data;
+  const passIdentifier = normalizeTurnstileInput(rawPassIdentifier);
 
   // 2. Token cryptographic validation
   let identifier: string;
   let decodedHolderName: string | undefined;
   let decodedPassType: string | undefined;
+  let isComplimentaryInvite = false;
+  let inviteCategory: string | undefined;
+  let inviteDesignation: string | undefined;
 
   if (passIdentifier.startsWith("ABK26.")) {
-    const tokenCheck = verifyPassToken(passIdentifier);
-    if (!tokenCheck.valid) {
-      return rejected(tokenCheck.error || "Cryptographic pass signature is invalid or forged.");
+    // 2a. Check if this is a signed Complimentary Invitation Token with "Aare Elesin" seal
+    const inviteCheck = verifyInvitationToken(passIdentifier);
+    if (inviteCheck.valid && inviteCheck.payload) {
+      identifier = inviteCheck.payload.credentialId.toUpperCase();
+      decodedHolderName = inviteCheck.payload.holderName;
+      decodedPassType = `Complimentary (${inviteCheck.payload.category})`;
+      isComplimentaryInvite = true;
+      inviteCategory = inviteCheck.payload.category;
+      inviteDesignation = inviteCheck.payload.designation;
+    } else {
+      // 2b. Standard pass token
+      const tokenCheck = verifyPassToken(passIdentifier);
+      if (!tokenCheck.valid) {
+        return rejected(tokenCheck.error || "Cryptographic pass signature is invalid or forged.");
+      }
+      identifier = hashPassToken(passIdentifier);
+      decodedHolderName = tokenCheck.payload?.holderName;
+      decodedPassType = tokenCheck.payload?.passType;
     }
-    identifier = hashPassToken(passIdentifier);
-    decodedHolderName = tokenCheck.payload?.holderName;
-    decodedPassType = tokenCheck.payload?.passType;
   } else {
     identifier = passIdentifier.toUpperCase().trim();
+    if (identifier.startsWith("ABK-2026-INV-") || identifier.startsWith("ABK-COMP-")) {
+      isComplimentaryInvite = true;
+    }
   }
 
   // 2b. Check in-memory unverified pass registry (Anti-Fraud Gate Guard)
@@ -100,13 +152,146 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
     return rejected("Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.");
   }
 
-  // 3. Database check
+  // 3. Handle Complimentary Invitation Gate Admission (ABK-2026-INV- / "Aare Elesin")
+  if (isComplimentaryInvite || identifier.startsWith("ABK-2026-INV-")) {
+    const inv = await getInvitationByCode(identifier);
+    if (inv) {
+      if (inv.status === "revoked") {
+        return {
+          status: "revoked",
+          result: "rejected",
+          holderName:
+            decodedHolderName ||
+            [inv.firstName, inv.surname].filter(Boolean).join(" ") ||
+            inv.designation,
+          passType: `Complimentary (${inv.category})`,
+          eventDay,
+          gate,
+          message: "This complimentary invitation has been officially revoked by tournament security.",
+        };
+      }
+
+      const holderName =
+        decodedHolderName ||
+        [inv.firstName, inv.surname].filter(Boolean).join(" ") ||
+        inv.designation ||
+        "Distinguished Guest";
+      const passCategory = inviteCategory || inv.category;
+      const passDesignation = inviteDesignation || inv.designation;
+
+      // Duplicate prevention for complimentary guest
+      const passKey = inv.invitationCode.toUpperCase();
+      const history = localAttendanceCache.get(passKey) || {};
+      const dayKey = eventDay === 1 ? "day1" : eventDay === 2 ? "day2" : "day3";
+
+      if (history[dayKey]) {
+        return {
+          status: "duplicate",
+          result: "already_admitted",
+          holderName,
+          passType: `Complimentary (${passCategory})`,
+          affiliationType: passCategory,
+          organization: passDesignation,
+          eventDay,
+          day1CheckedIn: !!history.day1,
+          day2CheckedIn: !!history.day2,
+          day3CheckedIn: !!history.day3,
+          lastGate: gate,
+          message: `Notice: This complimentary invitation has already been admitted on Day ${eventDay} at ${gate}.`,
+        };
+      }
+
+      // Record admission
+      history[dayKey] = true;
+      localAttendanceCache.set(passKey, history);
+
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = createAdminClient();
+          await supabase.from("check_in_events").insert({
+            credential_id: inv.id,
+            gate,
+            officer_id: officerId === "local-dev-officer" ? null : officerId,
+            result: "admitted",
+            details: {
+              eventDay,
+              passType: `Complimentary (${passCategory})`,
+              holderName,
+              securitySeal: ROYAL_SECURITY_SEAL,
+            },
+          });
+        } catch {}
+      }
+
+      const dayAdmissionMessage =
+        eventDay === 1
+          ? `Day 1 (Fri 18 Dec): Complimentary Guest Admission Confirmed (${passCategory}). Welcome!`
+          : eventDay === 2
+          ? `Day 2 (Sat 19 Dec): Dignitary Access Verified (${passCategory}). Welcome to Semi-Finals Day!`
+          : `Day 3 (Sun 20 Dec): Royal Dignitary Admission Verified (${passCategory} · Aare Elesin Seal). Welcome to Royal Finals Day!`;
+
+      return {
+        status: "valid",
+        result: "admitted",
+        holderName,
+        passType: `Complimentary (${passCategory})`,
+        affiliationType: passCategory,
+        organization: passDesignation,
+        eventDay,
+        day1CheckedIn: true,
+        day2CheckedIn: eventDay >= 2,
+        day3CheckedIn: eventDay === 3,
+        gate,
+        admittedAt: new Date().toLocaleTimeString(),
+        message: dayAdmissionMessage,
+      };
+    } else if (decodedHolderName && isComplimentaryInvite) {
+      // Offline validated token admission
+      const passKey = identifier;
+      const history = localAttendanceCache.get(passKey) || {};
+      const dayKey = eventDay === 1 ? "day1" : eventDay === 2 ? "day2" : "day3";
+
+      if (history[dayKey]) {
+        return {
+          status: "duplicate",
+          result: "already_admitted",
+          holderName: decodedHolderName,
+          passType: decodedPassType || "Complimentary Dignitary",
+          eventDay,
+          day1CheckedIn: !!history.day1,
+          day2CheckedIn: !!history.day2,
+          day3CheckedIn: !!history.day3,
+          lastGate: gate,
+          message: `Notice: This pass has already been admitted on Day ${eventDay}.`,
+        };
+      }
+
+      history[dayKey] = true;
+      localAttendanceCache.set(passKey, history);
+
+      return {
+        status: "valid",
+        result: "admitted",
+        holderName: decodedHolderName,
+        passType: decodedPassType || "Complimentary Dignitary",
+        eventDay,
+        day1CheckedIn: true,
+        day2CheckedIn: eventDay >= 2,
+        day3CheckedIn: eventDay === 3,
+        gate,
+        admittedAt: new Date().toLocaleTimeString(),
+        message: `Royal Dignitary Admission Verified (Aare Elesin Seal). Welcome to Day ${eventDay}!`,
+      };
+    }
+  }
+
+  // 4. Standard Pass Database check
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
 
       // Check credentials status directly
-      const { data: directCred, error: credQueryError } = await supabase
+      const { data: directCred } = await supabase
         .from("credentials")
         .select("id, status, holder_name, pass_type, check_in_count, first_checked_in_at, last_checked_in_at, last_check_in_gate")
         .or(`token_hash.eq.${identifier},pass_code.eq.${identifier}`)
@@ -240,12 +425,12 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
     }
   }
 
-  // 4. In production with database configured, refuse offline simulation fall-through
+  // 5. In production with database configured, refuse offline simulation fall-through
   if (process.env.NODE_ENV === "production" && isSupabaseConfigured()) {
     return rejected("Credential not recognized or pass code format invalid.");
   }
 
-  // 4. Local simulation for testing valid demo codes
+  // 6. Local simulation for testing valid demo codes
   if (identifier.startsWith("ABK-2026-") || decodedHolderName) {
     if (isPassPendingVerification(identifier) || isPassPendingVerification(passIdentifier)) {
       return rejected("Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.");

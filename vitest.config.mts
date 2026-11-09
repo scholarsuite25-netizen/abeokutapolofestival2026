@@ -9,7 +9,12 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
+    include: [
+      "tests/unit/**/*.test.ts",
+      "tests/unit/**/*.test.tsx",
+      "tests/e2e/**/*.test.ts",
+      "tests/e2e/**/*.test.tsx",
+    ],
     environment: "node",
     globals: false,
     coverage: {
