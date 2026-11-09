@@ -7,7 +7,7 @@ import { NotConfigured, PermissionDenied } from "@/components/shared/guards";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
-import { Building2, Landmark, CheckCircle2, Clock } from "lucide-react";
+import { Building2, Landmark, CheckCircle2, Clock, Crown, Users, Sparkles, Award } from "lucide-react";
 
 export const metadata = {
   title: "Offline Finance & Commitments Ledger | 2026 Abeokuta Polo Festival",
@@ -55,7 +55,23 @@ async function FinanceContent() {
     )
     .order("created_at", { ascending: false });
 
+  const { data: tableBookingsData } = await supabase
+    .from("table_bookings")
+    .select(
+      "id, package_id, package_name, table_serial, buyer_name, buyer_email, buyer_phone, amount_ngn, official_value_ngn, status, payment_method, affiliate_code, created_at",
+    )
+    .order("created_at", { ascending: false });
+
+  const { data: affiliateReferralsData } = await supabase
+    .from("affiliate_referrals")
+    .select(
+      "id, affiliate_code, item_type, category, buyer_name, official_value_ngn, commission_amount_ngn, status, created_at",
+    )
+    .order("created_at", { ascending: false });
+
   const rows = commitments ?? [];
+  const tableRows = tableBookingsData ?? [];
+  const referralRows = affiliateReferralsData ?? [];
   const totalProposed = rows.reduce((sum, c) => sum + (c.proposed_amount ?? 0), 0);
   const totalConfirmed = rows.reduce((sum, c) => sum + (c.confirmed_amount ?? 0), 0);
   const settledCount = rows.filter(
@@ -233,6 +249,100 @@ async function FinanceContent() {
           description="No offline commitments have been recorded yet. The Finance role records patron covenants and sponsor settlements here as they are confirmed by the Secretariat — entries are never generated automatically."
         />
       )}
+
+      {/* Day 3 VIP Table Sales & Affiliate Attribution Ledger */}
+      <div className="rounded-xl border border-line bg-card shadow-xs">
+        <div className="flex flex-col gap-2 border-b border-line px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/15 text-gold-deep">
+              <Crown className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="font-display text-base font-semibold text-forest">
+                Day 3 VIP Table Sales &amp; Affiliate Attributions
+              </h2>
+              <p className="text-xs text-muted-brand">
+                Tracks exact table bookings, buyers, serial allocations, and selling affiliate partner codes.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-muted-brand">
+            {tableRows.length} table booking{tableRows.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        {tableRows.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-line bg-sage/40 text-[11px] font-semibold uppercase tracking-wider text-muted-brand">
+                <tr>
+                  <th className="px-6 py-3">Table &amp; Serial</th>
+                  <th className="px-6 py-3">Buyer Contact</th>
+                  <th className="px-6 py-3">Selling Affiliate Partner</th>
+                  <th className="px-6 py-3 text-right">Testing Fee</th>
+                  <th className="px-6 py-3 text-right">Official Value</th>
+                  <th className="px-6 py-3 text-center">Payment Status</th>
+                  <th className="px-6 py-3">Channel</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {tableRows.map((tbl: any) => (
+                  <tr key={tbl.id} className="transition-colors hover:bg-sage/20">
+                    <td className="px-6 py-4 font-medium text-ink">
+                      <div>
+                        <p className="font-bold text-forest">{tbl.package_name}</p>
+                        <p className="font-mono text-[11px] text-gold-deep">{tbl.table_serial}</p>
+                        <p className="text-[10px] text-muted-brand">
+                          {new Date(tbl.created_at).toLocaleDateString("en-GB")}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-ink">{tbl.buyer_name}</p>
+                        <p className="text-[11px] text-muted-brand">{tbl.buyer_email}</p>
+                        <p className="text-[10px] font-mono text-muted-brand">{tbl.buyer_phone}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {tbl.affiliate_code ? (
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-2.5 py-0.5 text-xs font-bold text-gold-deep border border-gold/40">
+                          <Sparkles className="h-3 w-3 text-gold" />
+                          <span>{tbl.affiliate_code}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-brand italic text-[11px]">
+                          Direct Secretariat Booking
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono font-medium text-ink">
+                      ₦{(tbl.amount_ngn ?? 100).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono font-bold text-forest">
+                      ₦{(tbl.official_value_ngn ?? 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <StatusBadge
+                        tone={tbl.status === "confirmed" ? "success" : "warning"}
+                      >
+                        {tbl.status === "confirmed" ? "Confirmed ✓" : "Pending Verification"}
+                      </StatusBadge>
+                    </td>
+                    <td className="px-6 py-4 font-mono text-[11px] text-muted-brand uppercase">
+                      {tbl.payment_method ?? "gateway"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-8 text-center text-xs text-muted-brand">
+            No Day 3 private table reservations recorded yet.
+          </div>
+        )}
+      </div>
 
       <div className="rounded-xl border border-line bg-sage/30 p-5 text-xs text-muted-brand">
         <div className="flex items-center gap-2 font-semibold text-forest">

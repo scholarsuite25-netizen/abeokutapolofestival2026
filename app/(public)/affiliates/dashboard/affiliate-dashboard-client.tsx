@@ -131,36 +131,42 @@ export function AffiliateDashboardClient() {
   return (
     <div className="w-full bg-[#001A0E] text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
-        {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line/30 pb-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gold">
+        {/* Top Header - Solid Black Luxury Banner */}
+        <div className="rounded-3xl border-2 border-gold-deep/80 bg-black p-6 sm:p-10 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold-deep/80 bg-gold-deep/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-gold">
               <Globe className="size-4" />
               <span>International Affiliate Portal</span>
             </div>
             <h1 className="font-display text-2xl sm:text-4xl font-black text-ivory">
               Affiliate Partner Dashboard
             </h1>
-            <p className="text-xs text-ivory/70">
-              Real-time referral performance, 10% commission ledger, and bursary disbursements.
+            <p className="text-xs sm:text-sm text-ivory/80">
+              Real-time referral performance, 10% commission ledger, and Secretariat bursary disbursements.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="border-gold/40 text-gold hover:bg-gold/10 text-xs">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button asChild className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs border border-gold-deep px-4 py-2 shadow-sm">
               <Link href="/affiliates">Affiliate Info & Promo Kit</Link>
             </Button>
-            <Button asChild size="sm" className="bg-gold text-forest font-bold text-xs">
+            <Button asChild className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs border border-gold-deep px-4 py-2 shadow-sm">
               <Link href="/tables">VIP Tables</Link>
             </Button>
           </div>
         </div>
 
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-4 sm:my-6">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
+        </div>
+
         {/* Affiliate Code Lookup Bar (if not set or switching) */}
-        <form onSubmit={handleLookup} className="rounded-2xl border border-line/40 bg-[#062415] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+        <form onSubmit={handleLookup} className="rounded-2xl border border-gold-deep/40 bg-[#062415] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
           <div className="flex items-center gap-2 text-xs text-ivory/90 w-full sm:w-auto">
             <span className="font-bold text-gold">Active Tracking Code:</span>
-            <span className="font-mono font-bold text-ivory bg-[#001A0E] px-2.5 py-1 rounded border border-line/40">
+            <span className="font-mono font-bold text-gold bg-[#001A0E] px-2.5 py-1 rounded border border-gold-deep/50">
               {affiliateCode || "Not Connected"}
             </span>
           </div>
@@ -172,7 +178,7 @@ export function AffiliateDashboardClient() {
               placeholder="Enter AFF-POLO-XXXX"
               className="font-mono text-xs uppercase bg-[#001A0E] border-line w-full sm:w-48 text-center"
             />
-            <Button type="submit" size="sm" variant="outline" className="border-gold/50 text-gold text-xs shrink-0">
+            <Button type="submit" size="sm" className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs shrink-0 border border-gold-deep px-3 shadow-sm">
               Switch Code
             </Button>
           </div>
@@ -281,9 +287,9 @@ export function AffiliateDashboardClient() {
                 <Button
                   onClick={() => copyText(tableReferralLink, "tbl-link")}
                   size="sm"
-                  className="bg-gold text-forest font-bold text-xs h-9 px-3 shrink-0"
+                  className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs h-9 px-3 shrink-0 border border-gold-deep shadow-sm"
                 >
-                  {copiedLabel === "tbl-link" ? <Check className="size-3.5 text-forest" /> : <Copy className="size-3.5" />}
+                  {copiedLabel === "tbl-link" ? <Check className="size-3.5 text-black font-bold" /> : <Copy className="size-3.5" />}
                 </Button>
               </div>
             </div>
@@ -305,13 +311,19 @@ export function AffiliateDashboardClient() {
                 <Button
                   onClick={() => copyText(registerReferralLink, "reg-link")}
                   size="sm"
-                  className="bg-gold text-forest font-bold text-xs h-9 px-3 shrink-0"
+                  className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs h-9 px-3 shrink-0 border border-gold-deep shadow-sm"
                 >
-                  {copiedLabel === "reg-link" ? <Check className="size-3.5 text-forest" /> : <Copy className="size-3.5" />}
+                  {copiedLabel === "reg-link" ? <Check className="size-3.5 text-black font-bold" /> : <Copy className="size-3.5" />}
                 </Button>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-4 sm:my-6">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
         {/* ── Commission Payout Card ───────────────────────────────────────── */}
@@ -332,7 +344,7 @@ export function AffiliateDashboardClient() {
             <Button
               onClick={handleRequestPayout}
               disabled={loading || (dashboardData?.metrics?.availableBalanceNgn ?? 0) <= 0}
-              className="bg-gold text-forest font-bold hover:bg-gold-deep px-6 py-2.5 text-sm shrink-0"
+              className="bg-gold-deep hover:bg-gold-light text-black font-bold px-6 py-2.5 text-sm shrink-0 border border-gold-deep shadow-md"
             >
               <Wallet className="mr-2 size-4" /> Request Commission Payout
             </Button>
@@ -343,6 +355,12 @@ export function AffiliateDashboardClient() {
               {payoutMessage}
             </div>
           )}
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-4 sm:my-6">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
         {/* ── Commission Ledger (Recent Referral Transactions) ────────────── */}
@@ -414,8 +432,14 @@ export function AffiliateDashboardClient() {
           </div>
         </div>
 
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-4 sm:my-6">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
+        </div>
+
         {/* ── Quick Links to Marketing Kit & Agencies Directory ─────────────── */}
-        <div className="grid gap-4 sm:grid-cols-2 pt-4">
+        <div className="grid gap-4 sm:grid-cols-2 pt-2">
           <div className="rounded-2xl border border-line/40 bg-[#062415] p-5 space-y-2 flex flex-col justify-between">
             <div className="space-y-1">
               <h3 className="font-display text-base font-bold text-ivory">
@@ -426,7 +450,7 @@ export function AffiliateDashboardClient() {
               </p>
             </div>
             <div className="pt-2">
-              <Button asChild variant="outline" size="sm" className="border-gold/40 text-gold text-xs">
+              <Button asChild size="sm" className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs border border-gold-deep px-4 py-2 shadow-sm">
                 <Link href="/affiliates#promo-section">Open Marketing Kit →</Link>
               </Button>
             </div>
@@ -442,7 +466,7 @@ export function AffiliateDashboardClient() {
               </p>
             </div>
             <div className="pt-2">
-              <Button asChild variant="outline" size="sm" className="border-gold/40 text-gold text-xs">
+              <Button asChild size="sm" className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs border border-gold-deep px-4 py-2 shadow-sm">
                 <Link href="/affiliates#agencies-section">View Agency Directory →</Link>
               </Button>
             </div>

@@ -134,9 +134,9 @@ export function AffiliatesCentreClient() {
   return (
     <div className="w-full bg-[#001A0E] text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-12 sm:space-y-16">
-        {/* ── 1. Hero Section ──────────────────────────────────────────────── */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-gold shadow-sm">
+        {/* ── 1. Hero Section (Solid Black Luxury Card) ────────────────────── */}
+        <div className="rounded-3xl border-2 border-gold-deep/80 bg-black p-6 sm:p-12 text-center space-y-5 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold-deep/80 bg-gold-deep/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold shadow-sm">
             <Globe className="size-4 text-gold" />
             <span>International Affiliate & Ambassador Network</span>
           </div>
@@ -145,23 +145,29 @@ export function AffiliatesCentreClient() {
             Earn 10% Commission on Every Confirmed Pass & VIP Table
           </h1>
 
-          <p className="text-sm sm:text-base text-ivory/80 leading-relaxed">
+          <p className="text-sm sm:text-base text-ivory/80 leading-relaxed max-w-2xl mx-auto">
             Welcome to the official <strong>Abeokuta Polo Festival 2026 International Affiliate Centre</strong>. 
             Partner with Nigeria's most prestigious cultural and sporting showcase. Monetize your diaspora network, corporate relationships, and social audience with guaranteed 10% payouts.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild className="bg-gold text-forest font-bold hover:bg-gold-deep px-6 py-2.5 text-sm">
+            <Button asChild className="bg-gold-deep text-black font-bold hover:bg-gold-light px-6 py-2.5 text-sm border border-gold-deep shadow-md">
               <a href="#register-section">
                 Register as an Affiliate →
               </a>
             </Button>
-            <Button asChild variant="outline" className="border-gold/40 text-gold hover:bg-gold/10 px-5 py-2.5 text-sm">
+            <Button asChild className="bg-gold-deep hover:bg-gold-light text-black font-bold px-5 py-2.5 text-sm border border-gold-deep shadow-md">
               <Link href="/affiliates/dashboard">
                 Existing Affiliate Dashboard
               </Link>
             </Button>
           </div>
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6 sm:my-8">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
         {/* ── 2. Commission Value Matrix ────────────────────────────────────── */}
@@ -176,7 +182,7 @@ export function AffiliatesCentreClient() {
                 You earn a direct 10% commission on any category of confirmed tickets or private tables sold through your referral link.
               </p>
             </div>
-            <Badge className="bg-gold text-forest font-bold text-xs uppercase self-start sm:self-auto">
+            <Badge className="bg-gold-deep text-black font-bold text-xs uppercase self-start sm:self-auto border border-gold-deep">
               Guaranteed 10% Rate
             </Badge>
           </div>
@@ -221,6 +227,12 @@ export function AffiliatesCentreClient() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6 sm:my-8">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
         {/* ── 3. Interactive Earnings Calculator ────────────────────────────── */}
@@ -337,6 +349,12 @@ export function AffiliatesCentreClient() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6 sm:my-8">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
         {/* ── 4. Affiliate Registration & Onboarding Form ─────────────────── */}
@@ -554,11 +572,17 @@ export function AffiliatesCentreClient() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gold text-forest hover:bg-gold-deep font-display text-base font-black py-6 rounded-xl shadow-xl transition-all cursor-pointer"
+              className="w-full bg-gold-deep text-black hover:bg-gold-light font-display text-base font-black py-6 rounded-xl shadow-xl transition-all cursor-pointer border-2 border-gold-deep"
             >
               {loading ? "Generating Your Affiliate Portal..." : "Join International Affiliate Centre →"}
             </Button>
           </form>
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6 sm:my-8">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
         {/* ── 5. Ticket Sales Promotion & Advertising Kit ─────────────────── */}
@@ -602,12 +626,11 @@ export function AffiliatesCentreClient() {
                   <Button
                     onClick={() => copyText(promoTemplates[0].copyText, "wa-promo")}
                     size="sm"
-                    variant="outline"
-                    className="border-gold/50 bg-gold/10 text-gold hover:bg-gold/20 text-xs h-7"
+                    className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs h-8 border border-gold-deep px-3 shadow-sm"
                   >
                     {copiedItem === "wa-promo" ? (
                       <>
-                        <Check className="size-3 mr-1 text-emerald-400" /> Copied
+                        <Check className="size-3 mr-1 text-black font-bold" /> Copied
                       </>
                     ) : (
                       <>
@@ -632,12 +655,11 @@ export function AffiliatesCentreClient() {
                   <Button
                     onClick={() => copyText(promoTemplates[1].copyText, "li-promo")}
                     size="sm"
-                    variant="outline"
-                    className="border-gold/50 bg-gold/10 text-gold hover:bg-gold/20 text-xs h-7"
+                    className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs h-8 border border-gold-deep px-3 shadow-sm"
                   >
                     {copiedItem === "li-promo" ? (
                       <>
-                        <Check className="size-3 mr-1 text-emerald-400" /> Copied
+                        <Check className="size-3 mr-1 text-black font-bold" /> Copied
                       </>
                     ) : (
                       <>
@@ -661,10 +683,9 @@ export function AffiliatesCentreClient() {
                     <Button
                       onClick={() => copyText(promoTemplates[2].copyText, "x-promo")}
                       size="sm"
-                      variant="outline"
-                      className="border-gold/50 bg-gold/10 text-gold text-xs h-7"
+                      className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs h-8 border border-gold-deep px-3 shadow-sm"
                     >
-                      {copiedItem === "x-promo" ? <Check className="size-3" /> : <Copy className="size-3" />}
+                      {copiedItem === "x-promo" ? <Check className="size-3 text-black font-bold" /> : <Copy className="size-3" />}
                     </Button>
                   </div>
                   <pre className="rounded-xl bg-[#001A0E] p-3 font-sans text-xs text-ivory/90 whitespace-pre-wrap border border-line/30">
@@ -678,10 +699,9 @@ export function AffiliatesCentreClient() {
                     <Button
                       onClick={() => copyText(promoTemplates[3].copyText, "ig-promo")}
                       size="sm"
-                      variant="outline"
-                      className="border-gold/50 bg-gold/10 text-gold text-xs h-7"
+                      className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs h-8 border border-gold-deep px-3 shadow-sm"
                     >
-                      {copiedItem === "ig-promo" ? <Check className="size-3" /> : <Copy className="size-3" />}
+                      {copiedItem === "ig-promo" ? <Check className="size-3 text-black font-bold" /> : <Copy className="size-3" />}
                     </Button>
                   </div>
                   <pre className="rounded-xl bg-[#001A0E] p-3 font-sans text-xs text-ivory/90 whitespace-pre-wrap border border-line/30">
@@ -704,7 +724,7 @@ export function AffiliatesCentreClient() {
                 {/* Live Badge Preview */}
                 <div className="p-4 rounded-xl border border-gold/40 bg-[#1C1605] flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-xl bg-gold text-forest flex items-center justify-center font-bold">
+                    <div className="size-10 rounded-xl bg-gold-deep text-black flex items-center justify-center font-bold">
                       <Crown className="size-5" />
                     </div>
                     <div>
@@ -716,7 +736,7 @@ export function AffiliatesCentreClient() {
                       </p>
                     </div>
                   </div>
-                  <Button asChild size="sm" className="bg-gold text-forest font-bold text-xs">
+                  <Button asChild size="sm" className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs border border-gold-deep shadow-sm">
                     <Link href="/tables">Reserve VIP Table →</Link>
                   </Button>
                 </div>
@@ -733,6 +753,12 @@ export function AffiliatesCentreClient() {
               </div>
             </TabsContent>
           </Tabs>
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6 sm:my-8">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
         {/* ── 6. Ticketing Agencies Directory (Nigeria & International) ────── */}
@@ -789,7 +815,7 @@ export function AffiliatesCentreClient() {
                   <p className="text-[10px] text-gold-deep italic leading-tight">
                     💡 {agency.integrationNote}
                   </p>
-                  <Button asChild variant="outline" size="sm" className="w-full border-gold/40 text-gold hover:bg-gold/10 text-xs h-7">
+                  <Button asChild size="sm" className="w-full bg-gold-deep hover:bg-gold-light text-black font-bold text-xs h-8 border border-gold-deep shadow-sm">
                     <a href={agency.website} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5">
                       <span>Visit Agency Portal</span>
                       <ExternalLink className="size-3" />

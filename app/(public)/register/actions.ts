@@ -1069,7 +1069,9 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
           last_name: buyerLastName,
           email: buyerEmail,
           phone: buyerPhone,
-          category: `${pkg.name} (${tableSerial})`,
+          category: affiliateCode
+            ? `${pkg.name} (${tableSerial}) · Sold by: ${affiliateCode}`
+            : `${pkg.name} (${tableSerial})`,
           group_size: 10,
           status: bookingStatus,
           has_day2_ticket: false,

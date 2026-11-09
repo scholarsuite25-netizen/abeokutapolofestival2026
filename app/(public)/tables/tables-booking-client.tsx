@@ -99,13 +99,24 @@ export function TablesBookingClient() {
   // Read URL search params for return from online payment or affiliate ref
   const returnHandled = useRef(false);
   useEffect(() => {
-    const refParam = searchParams.get("ref");
+    const refParam = searchParams.get("ref") || searchParams.get("aff");
     if (refParam) {
-      const code = refParam.toUpperCase();
+      const code = refParam.toUpperCase().trim();
       setAffiliateRef(code);
       recordAffiliateClick(code).catch(() => {});
       try {
         document.cookie = `abk_affiliate_ref=${encodeURIComponent(code)}; max-age=2592000; path=/; SameSite=Lax`;
+      } catch {
+        // Non-blocking
+      }
+    } else {
+      try {
+        const match = typeof document !== "undefined" ? document.cookie.match(/abk_affiliate_ref=([^;]+)/) : null;
+        if (match && match[1]) {
+          const cookieCode = decodeURIComponent(match[1]).toUpperCase().trim();
+          setAffiliateRef(cookieCode);
+          recordAffiliateClick(cookieCode).catch(() => {});
+        }
       } catch {
         // Non-blocking
       }
@@ -294,21 +305,27 @@ export function TablesBookingClient() {
     const hostName = bookingResult.buyerName || `${firstName} ${lastName}`;
 
     return (
-      <div className="w-full bg-[#00210E] text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8">
+      <div className="w-full bg-[#050505] text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8 min-h-screen">
         <div className="mx-auto max-w-5xl space-y-8">
-          {/* Header Banner */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-gold">
-              <Crown className="size-4 text-gold" />
+          {/* Header Banner (Solid Black) */}
+          <div className="rounded-3xl border-2 border-gold-deep/80 bg-black p-6 sm:p-10 text-center space-y-4 shadow-2xl relative overflow-hidden">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold-deep/60 bg-gold-deep/15 px-4 py-1 text-xs font-bold uppercase tracking-widest text-gold-light">
+              <Crown className="size-4 text-gold-deep" />
               <span>Day 3 Grand Finale · Private Table Enclosure</span>
             </div>
             <h1 className="font-display text-2xl sm:text-4xl lg:text-5xl font-black text-ivory tracking-tight">
               Table Enclosure Confirmed!
             </h1>
-            <p className="max-w-2xl mx-auto text-sm sm:text-base text-ivory/80">
+            <p className="max-w-2xl mx-auto text-sm sm:text-base text-ivory/85">
               Welcome to the <strong>{bookingResult.packageName}</strong> ({bookingResult.tableSerial}). 
               All <strong>10 distinct VIP ID access cards</strong> have been generated with cryptographic HMAC-256 signatures.
             </p>
+          </div>
+
+          {/* Golden Demarcation Line */}
+          <div className="w-full my-6 sm:my-8">
+            <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+            <div className="h-px w-full bg-gold/30 mt-0.5" />
           </div>
 
           {/* Provisional Bursary Notice for Bank Transfers */}
@@ -431,7 +448,7 @@ export function TablesBookingClient() {
                       <Button
                         asChild
                         size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-8 flex-1"
+                        className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs h-8 flex-1 shadow-sm border border-gold-deep"
                       >
                         <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
                           <Share2 className="mr-1.5 size-3.5" /> Share WhatsApp
@@ -442,11 +459,11 @@ export function TablesBookingClient() {
                         onClick={() => copyToClipboard(passUrl, pass.passCode)}
                         variant="outline"
                         size="sm"
-                        className="border-gold/50 bg-gold/10 text-gold hover:bg-gold/20 text-xs h-8 px-2.5"
+                        className="border-gold-deep bg-gold-deep/20 text-gold-light hover:bg-gold-deep hover:text-black font-bold text-xs h-8 px-2.5 transition-colors"
                         title="Copy Pass Link"
                       >
                         {copiedCode === pass.passCode ? (
-                          <Check className="size-3.5 text-emerald-400" />
+                          <Check className="size-3.5 text-black" />
                         ) : (
                           <Copy className="size-3.5" />
                         )}
@@ -456,7 +473,7 @@ export function TablesBookingClient() {
                         asChild
                         variant="outline"
                         size="sm"
-                        className="border-line bg-card text-forest hover:bg-sage/40 text-xs h-8 px-2.5"
+                        className="border-gold-deep/60 bg-black/60 text-gold-light hover:bg-gold-deep hover:text-black font-bold text-xs h-8 px-2.5 transition-colors"
                         title="View Full Access Card"
                       >
                         <Link href={`/pass/${pass.passCode}`}>
@@ -470,21 +487,26 @@ export function TablesBookingClient() {
             </div>
           </div>
 
+          {/* Golden Demarcation Line */}
+          <div className="w-full my-6 sm:my-8">
+            <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+            <div className="h-px w-full bg-gold/30 mt-0.5" />
+          </div>
+
           {/* Bottom Actions */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-6 border-t border-gold/20">
             <Button
               onClick={() => {
                 bookingResult.passes?.forEach((p) => forceDownloadOfflinePassCard(p));
               }}
-              className="bg-gold text-forest font-bold hover:bg-gold/90 shadow-md px-6 py-2.5 text-sm"
+              className="bg-gold-deep text-black font-black hover:bg-gold-light shadow-md px-6 py-3 text-sm border border-gold-deep"
             >
               <Download className="mr-2 size-4" /> Download All 10 Offline ID Cards
             </Button>
 
             <Button
               asChild
-              variant="outline"
-              className="border-gold/40 text-ivory hover:bg-gold/10 px-5 py-2.5 text-sm"
+              className="bg-gold-deep text-black font-bold hover:bg-gold-light shadow-md px-5 py-3 text-sm border border-gold-deep"
             >
               <Link href="/pass/lookup">Pass Lookup Hub</Link>
             </Button>
@@ -500,9 +522,9 @@ export function TablesBookingClient() {
   return (
     <div className="w-full bg-[#001A0E] text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
-        {/* Hero Section */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-gold shadow-sm">
+        {/* Hero Section - Solid Black Luxury Card */}
+        <div className="rounded-3xl border-2 border-gold-deep/80 bg-black p-6 sm:p-12 text-center space-y-5 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold-deep/80 bg-gold-deep/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold shadow-sm">
             <Crown className="size-4 text-gold" />
             <span>Day 3 Grand Finale · Sunday 20 December 2026</span>
           </div>
@@ -511,12 +533,12 @@ export function TablesBookingClient() {
             Exclusive VIP Table Packages
           </h1>
 
-          <p className="text-sm sm:text-base text-ivory/80 leading-relaxed">
+          <p className="text-sm sm:text-base text-ivory/80 leading-relaxed max-w-2xl mx-auto">
             Reserve a dedicated, serial-numbered private table for 10 guests. Experience pitch-side championship polo, royal hospitality, fine dining, and live musical headline concerts in Abeokuta.
           </p>
 
           {/* Active Pilot Testing Mode Banner */}
-          <div className="rounded-xl border-2 border-gold/70 bg-gradient-to-r from-gold/25 via-gold/15 to-gold/25 p-3.5 text-center shadow-lg">
+          <div className="rounded-xl border border-gold-deep/80 bg-[#0d0d0d] p-4 text-center shadow-lg max-w-2xl mx-auto">
             <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-black text-gold uppercase tracking-wider">
               <Sparkles className="size-4 text-gold shrink-0 animate-pulse" />
               <span>Active Pilot Testing Mode — ₦100.00 Checkout</span>
@@ -525,6 +547,12 @@ export function TablesBookingClient() {
               Official package values (₦10,000,000 to ₦1,500,000) are preserved on all credentials and hospitality enclosures. For live end-to-end testing, transactions are charged at a nominal <strong>₦100.00</strong> fee.
             </p>
           </div>
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6 sm:my-10">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/40 mt-0.5" />
         </div>
 
         {/* 1. Category Selection Cards */}
@@ -606,6 +634,12 @@ export function TablesBookingClient() {
           </div>
         </div>
 
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6 sm:my-8">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
+        </div>
+
         {/* 2. Serial Table Number Selection */}
         <div className="rounded-2xl border border-gold/40 bg-[#062415] p-5 sm:p-7 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -633,8 +667,8 @@ export function TablesBookingClient() {
                   onClick={() => setSelectedSerial(serial)}
                   className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer border ${
                     isSerialSelected
-                      ? "bg-gold text-forest border-gold shadow-md scale-105"
-                      : "bg-[#00210E] text-ivory/90 border-line/60 hover:border-gold/60 hover:text-gold"
+                      ? "bg-gold-deep text-black border-gold-deep shadow-md scale-105"
+                      : "bg-[#00210E] text-ivory/90 border-line/60 hover:border-gold-deep hover:text-gold"
                   }`}
                 >
                   {serial}
@@ -642,6 +676,12 @@ export function TablesBookingClient() {
               );
             })}
           </div>
+        </div>
+
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6 sm:my-8">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
         {/* 3. Attendee Personalization (10 Seats) & Checkout Form */}
@@ -767,27 +807,10 @@ export function TablesBookingClient() {
             </div>
           </div>
 
-          {/* Affiliate Code Input (Optional) */}
-          <div className="pt-2">
-            <div className="rounded-xl border border-line/40 bg-[#00210E] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <span className="text-xs font-bold text-ivory flex items-center gap-1.5">
-                  <Sparkles className="size-3.5 text-gold" />
-                  <span>Affiliate / Partner Referral Code</span>
-                </span>
-                <p className="text-[11px] text-ivory/70">
-                  If referred by an authorized affiliate partner, enter their tracking code to credit their 10% commission.
-                </p>
-              </div>
-              <div className="w-full sm:w-48">
-                <Input
-                  value={affiliateRef}
-                  onChange={(e) => setAffiliateRef(e.target.value.toUpperCase())}
-                  placeholder="e.g. AFF-POLO-8472"
-                  className="font-mono text-xs uppercase bg-[#1C1605] border-gold/50 text-gold text-center"
-                />
-              </div>
-            </div>
+          {/* Golden Demarcation Line */}
+          <div className="w-full my-4">
+            <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+            <div className="h-px w-full bg-gold/30 mt-0.5" />
           </div>
 
           {/* Payment Method Selector */}
@@ -902,7 +925,7 @@ export function TablesBookingClient() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gold text-forest hover:bg-gold-deep font-display text-base font-black py-6 rounded-xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full bg-gold-deep text-black hover:bg-gold-light font-display text-base font-black py-6 rounded-xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 border-2 border-gold-deep"
             >
               {loading ? (
                 <span>Processing Table Reservation...</span>
@@ -921,12 +944,18 @@ export function TablesBookingClient() {
           </div>
         </form>
 
+        {/* Golden Demarcation Line */}
+        <div className="w-full my-6">
+          <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-gold-deep to-transparent" />
+          <div className="h-px w-full bg-gold/30 mt-0.5" />
+        </div>
+
         {/* Individual Pass Fallback link */}
-        <div className="text-center pt-4 border-t border-line/30 space-y-2">
+        <div className="text-center pt-2 space-y-3">
           <p className="text-xs text-ivory/80">
             Looking for individual tickets instead of a table for 10?
           </p>
-          <Button asChild variant="outline" size="sm" className="border-gold/40 text-gold hover:bg-gold/10 text-xs">
+          <Button asChild className="bg-gold-deep hover:bg-gold-light text-black font-bold border border-gold-deep text-xs px-6 py-2.5 shadow-md">
             <Link href="/register">
               Go to General Registration & Individual Day 3 VVIP Passes (₦50,000 / ₦100) →
             </Link>
