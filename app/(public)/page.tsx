@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { FAQAccordion } from "@/components/design/public/faq-accordion";
 import { EnquiryDialog } from "@/components/design/public/enquiry-dialog";
 import { FestivalCountdown } from "@/components/shared/festival-countdown";
-import { FestivalVideoPlayer, FestivalVideoModal } from "@/components/shared/festival-video-player";
+
 import { AttendanceMilestoneWidget } from "@/components/shared/attendance-milestone-widget";
 import { ReadMoreSection } from "@/components/shared/read-more-section";
 import { FESTIVAL_METADATA } from "@/lib/data/programme";
@@ -93,18 +93,16 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Quick Hero Actions: Immediate Registration & Video */}
+              {/* Quick Hero Actions: Immediate Registration & Itinerary */}
               <div className="flex flex-wrap items-center gap-3 pt-3">
                 <Button asChild className="bg-gold font-bold text-black hover:bg-gold/90 text-xs shadow-md py-4 px-5">
                   <Link href="/register">Register Gate Pass (Days 1 &amp; 2 Free) →</Link>
                 </Button>
-                <FestivalVideoModal
-                  triggerText="Watch Official Teaser"
-                  triggerVariant="outline"
-                  className="border-gold/50 bg-gold/15 text-gold hover:bg-gold/25 font-semibold text-xs"
-                />
+                <Button asChild variant="outline" className="border-gold/50 bg-gold/15 text-gold hover:bg-gold/25 font-semibold text-xs py-4 px-5">
+                  <Link href="/programme">View 3-Day Programme</Link>
+                </Button>
                 <Button asChild variant="ghost" className="text-ivory/80 hover:text-ivory text-xs">
-                  <Link href="/programme">View 3-Day Programme →</Link>
+                  <Link href="/royal-cup">The Royal Cup →</Link>
                 </Button>
               </div>
             </div>
