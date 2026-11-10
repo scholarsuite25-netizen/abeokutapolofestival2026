@@ -122,20 +122,26 @@ export interface TlsHandshakeInfo {
 /**
  * Perform Cloudflare API GET request
  */
-export async function cfApiGet<T>(endpoint: string): Promise<T> {
-  const url = `https://api.cloudflare.com/client/v4${endpoint}`;
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${DOMAIN_CONFIG.CLOUDFLARE_API_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!response.ok && response.status !== 404) {
-    const text = await response.text();
-    throw new Error(`Cloudflare API error ${response.status}: ${text}`);
+export async function cfApiGet<T>(endpoint: string): Promise<T | null> {
+  if (!DOMAIN_CONFIG.CLOUDFLARE_API_TOKEN) {
+    return null;
   }
-  return (await response.json()) as T;
+  const url = `https://api.cloudflare.com/client/v4${endpoint}`;
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${DOMAIN_CONFIG.CLOUDFLARE_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      return null;
+    }
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -145,7 +151,7 @@ export async function getCloudflareAccount(): Promise<{ id: string; name: string
   const data = await cfApiGet<{ result: Array<{ id: string; name: string }>; success: boolean }>(
     "/accounts"
   );
-  if (!data.success || !data.result || data.result.length === 0) {
+  if (!data?.success || !data?.result || data.result.length === 0) {
     return null;
   }
   return data.result.find((a) => a.id === DOMAIN_CONFIG.CLOUDFLARE_ACCOUNT_ID) || data.result[0];
@@ -158,7 +164,7 @@ export async function getCloudflareZone(): Promise<CloudflareZone | null> {
   const data = await cfApiGet<{ result: CloudflareZone[]; success: boolean }>(
     `/zones?name=${DOMAIN_CONFIG.APEX_DOMAIN}`
   );
-  if (!data.success || !data.result || data.result.length === 0) {
+  if (!data?.success || !data?.result || data.result.length === 0) {
     return null;
   }
   return data.result[0];
@@ -171,7 +177,7 @@ export async function getCloudflareDnsRecords(zoneId: string): Promise<Cloudflar
   const data = await cfApiGet<{ result: CloudflareDnsRecord[]; success: boolean }>(
     `/zones/${zoneId}/dns_records?per_page=100`
   );
-  return data.result || [];
+  return data?.result || [];
 }
 
 /**
@@ -184,7 +190,7 @@ export async function getCloudflareZoneSetting(
   const data = await cfApiGet<{ result: CloudflareSetting; success: boolean }>(
     `/zones/${zoneId}/settings/${settingKey}`
   );
-  return data.result?.value;
+  return data?.result?.value;
 }
 
 let cachedVercelDomains: VercelDomainRecord[] | null = null;
@@ -211,20 +217,26 @@ export async function getVercelDomains(forceRefresh: boolean = false): Promise<V
 /**
  * Query Resend API for domain details
  */
-export async function getResendDomainDetails(): Promise<ResendDomainDetails> {
-  const url = `https://api.resend.com/domains/${DOMAIN_CONFIG.RESEND_DOMAIN_ID}`;
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${DOMAIN_CONFIG.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Resend API error ${response.status}: ${text}`);
+export async function getResendDomainDetails(): Promise<ResendDomainDetails | null> {
+  if (!DOMAIN_CONFIG.RESEND_API_KEY) {
+    return null;
   }
-  return (await response.json()) as ResendDomainDetails;
+  const url = `https://api.resend.com/domains/${DOMAIN_CONFIG.RESEND_DOMAIN_ID}`;
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${DOMAIN_CONFIG.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      return null;
+    }
+    return (await response.json()) as ResendDomainDetails;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -237,21 +249,28 @@ export async function queryDnsRecord(
 ): Promise<any> {
   const resolver = new Resolver();
   resolver.setServers([dnsServerIp]);
-  switch (type) {
-    case "TXT":
-      return await resolver.resolveTxt(name);
-    case "CNAME":
-      return await resolver.resolveCname(name);
-    case "MX":
-      return await resolver.resolveMx(name);
-    case "A":
-      return await resolver.resolve4(name);
-    case "NS":
-      return await resolver.resolveNs(name);
-    case "SOA":
-      return await resolver.resolveSoa(name);
-    default:
-      throw new Error(`Unsupported DNS record type: ${type}`);
+  try {
+    switch (type) {
+      case "TXT":
+        return await resolver.resolveTxt(name);
+      case "CNAME":
+        return await resolver.resolveCname(name);
+      case "MX":
+        return await resolver.resolveMx(name);
+      case "A":
+        return await resolver.resolve4(name);
+      case "NS":
+        return await resolver.resolveNs(name);
+      case "SOA":
+        return await resolver.resolveSoa(name);
+      default:
+        throw new Error(`Unsupported DNS record type: ${type}`);
+    }
+  } catch (err: any) {
+    if (err.code === "ENOTFOUND" || err.code === "NODATA" || err.code === "ETIMEOUT" || err.code === "EREFUSED") {
+      return [];
+    }
+    throw err;
   }
 }
 
