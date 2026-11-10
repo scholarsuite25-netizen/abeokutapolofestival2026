@@ -25,6 +25,8 @@ import {
   Sparkle,
   ShieldCheck,
   Printer,
+  ExternalLink,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +45,7 @@ interface SubmenuItem {
   desc?: string;
   icon: React.ComponentType<{ className?: string }>;
   isPriority?: boolean;
+  isExternal?: boolean;
 }
 
 interface NavCategory {
@@ -112,6 +115,13 @@ const NAV_CATEGORIES: NavCategory[] = [
         label: "Affiliate Dashboard",
         desc: "Track partner referrals & commission",
         icon: ShieldCheck,
+      },
+      {
+        href: "https://www.abeokutapoloclub.org.ng/register",
+        label: "Club Membership",
+        desc: "Official Abeokuta Polo Club membership enquiries",
+        icon: Award,
+        isExternal: true,
       },
     ],
   },
@@ -272,17 +282,9 @@ export function PublicHeader() {
                     <div className="mt-1.5 space-y-0.5">
                       {category.items.map((item) => {
                         const Icon = item.icon;
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setActiveCategory(null)}
-                            className={`flex items-start gap-2.5 rounded-lg p-2 transition-colors cursor-pointer ${
-                              item.isPriority
-                                ? "bg-gold/15 border border-gold/50 text-forest hover:bg-gold/25"
-                                : "hover:bg-sage/40 text-ink"
-                            }`}
-                          >
+                        const isExt = Boolean(item.isExternal || item.href.startsWith("http"));
+                        const content = (
+                          <>
                             <div
                               className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md ${
                                 item.isPriority ? "bg-forest text-gold" : "bg-sage/60 text-forest"
@@ -292,8 +294,9 @@ export function PublicHeader() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-forest">
+                                <span className="text-xs font-semibold text-forest flex items-center gap-1">
                                   {item.label}
+                                  {isExt && <ExternalLink className="size-2.5 opacity-60 text-gold-deep" />}
                                 </span>
                                 {item.isPriority && (
                                   <Badge className="bg-forest text-gold text-[8px] px-1.5 py-0 font-bold uppercase tracking-widest border border-gold/40">
@@ -307,6 +310,34 @@ export function PublicHeader() {
                                 </p>
                               )}
                             </div>
+                          </>
+                        );
+
+                        const itemClasses = `flex items-start gap-2.5 rounded-lg p-2 transition-colors cursor-pointer ${
+                          item.isPriority
+                            ? "bg-gold/15 border border-gold/50 text-forest hover:bg-gold/25"
+                            : "hover:bg-sage/40 text-ink"
+                        }`;
+
+                        return isExt ? (
+                          <a
+                            key={item.href}
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setActiveCategory(null)}
+                            className={itemClasses}
+                          >
+                            {content}
+                          </a>
+                        ) : (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setActiveCategory(null)}
+                            className={itemClasses}
+                          >
+                            {content}
                           </Link>
                         );
                       })}
@@ -316,6 +347,17 @@ export function PublicHeader() {
               </div>
             );
           })}
+          {/* Membership Direct Club Portal Link */}
+          <a
+            href="https://www.abeokutapoloclub.org.ng/register"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors outline-none cursor-pointer text-ink/80 hover:bg-sage/50 hover:text-forest"
+            aria-label="Membership Enquiries at Abeokuta Polo Club (Opens in new tab)"
+          >
+            <span>Membership</span>
+            <ExternalLink className="size-3 opacity-60 text-gold-deep" />
+          </a>
         </nav>
 
         {/* ── 3. High-Priority Registration CTA (Find My Pass removed to keep navbar clean) ── */}
@@ -517,8 +559,8 @@ export function PublicHeader() {
                 </div>
               )}
 
-              {/* Mobile Quick Action Buttons: Sponsorship, Affiliates, VIP Tables */}
-              <div className="mt-4 grid grid-cols-3 gap-1.5">
+              {/* Mobile Quick Action Buttons: Sponsorship, Affiliates, VIP Tables, Membership */}
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 <SheetClose asChild>
                   <Link
                     href="/sponsorship"
@@ -546,6 +588,15 @@ export function PublicHeader() {
                     <span>VIP Tables</span>
                   </Link>
                 </SheetClose>
+                <a
+                  href="https://www.abeokutapoloclub.org.ng/register"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center gap-1 rounded-xl border border-gold/60 bg-forest p-2.5 text-center text-[11px] font-semibold text-ivory hover:bg-forest-interactive shadow-xs"
+                >
+                  <Award className="size-4 text-gold" />
+                  <span className="text-gold">Membership</span>
+                </a>
               </div>
 
               {/* Grouped Submenus */}
@@ -562,27 +613,44 @@ export function PublicHeader() {
                     <div className="grid grid-cols-1 gap-1">
                       {category.items.map((item) => {
                         const Icon = item.icon;
-                        return (
+                        const isExt = Boolean(item.isExternal || item.href.startsWith("http"));
+                        const rowContent = (
+                          <>
+                            <span className="flex items-center gap-2">
+                              <Icon className="size-3.5 text-gold-deep" />
+                              {item.label}
+                              {isExt && <ExternalLink className="size-3 opacity-60 text-gold-deep" />}
+                            </span>
+                            {item.isPriority ? (
+                              <Badge className="bg-forest text-gold text-[9px] px-1 py-0 font-bold uppercase">
+                                Day 1 Free
+                              </Badge>
+                            ) : (
+                              <span className="text-[10px] text-muted-brand">{item.desc}</span>
+                            )}
+                          </>
+                        );
+
+                        const rowClasses = `flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
+                          item.isPriority
+                            ? "bg-gold/15 text-forest font-semibold"
+                            : "text-ink/80 hover:bg-sage/40 hover:text-forest"
+                        }`;
+
+                        return isExt ? (
+                          <a
+                            key={item.href}
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={rowClasses}
+                          >
+                            {rowContent}
+                          </a>
+                        ) : (
                           <SheetClose asChild key={item.href}>
-                            <Link
-                              href={item.href}
-                              className={`flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
-                                item.isPriority
-                                  ? "bg-gold/15 text-forest font-semibold"
-                                  : "text-ink/80 hover:bg-sage/40 hover:text-forest"
-                              }`}
-                            >
-                              <span className="flex items-center gap-2">
-                                <Icon className="size-3.5 text-gold-deep" />
-                                {item.label}
-                              </span>
-                              {item.isPriority ? (
-                                <Badge className="bg-forest text-gold text-[9px] px-1 py-0 font-bold uppercase">
-                                  Day 1 Free
-                                </Badge>
-                              ) : (
-                                <span className="text-[10px] text-muted-brand">{item.desc}</span>
-                              )}
+                            <Link href={item.href} className={rowClasses}>
+                              {rowContent}
                             </Link>
                           </SheetClose>
                         );

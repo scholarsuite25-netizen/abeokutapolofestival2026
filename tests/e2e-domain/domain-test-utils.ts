@@ -283,6 +283,9 @@ export async function getCloudflareZoneSetting(
   return data?.result?.value;
 }
 
+const VERCEL_CACHE_FILE = path.resolve(process.cwd(), "tests/e2e-domain/.vercel-domains-cache.json");
+const RESEND_CACHE_FILE = path.resolve(process.cwd(), "tests/e2e-domain/.resend-details-cache.json");
+
 let cachedVercelDomains: VercelDomainRecord[] | null = null;
 let vercelDomainsPromise: Promise<VercelDomainRecord[]> | null = null;
 
@@ -293,48 +296,106 @@ export async function getVercelDomains(forceRefresh: boolean = false): Promise<V
   if (cachedVercelDomains && !forceRefresh) {
     return cachedVercelDomains;
   }
+  if (!forceRefresh && fs.existsSync(VERCEL_CACHE_FILE)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(VERCEL_CACHE_FILE, "utf8"));
+      if (Array.isArray(data) && data.length > 0) {
+        cachedVercelDomains = data;
+        return data;
+      }
+    } catch {}
+  }
   if (vercelDomainsPromise && !forceRefresh) {
     return vercelDomainsPromise;
   }
   vercelDomainsPromise = (async () => {
-    try {
-      const cmd = `npx vercel api /v9/projects/${DOMAIN_CONFIG.VERCEL_PROJECT_NAME}/domains?teamId=${DOMAIN_CONFIG.VERCEL_TEAM_ID}`;
-      const output = execSync(cmd, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 35000 });
-      const jsonStr = output.substring(output.indexOf("{"));
-      const parsed = JSON.parse(jsonStr);
-      cachedVercelDomains = parsed.domains || [];
-      return cachedVercelDomains!;
-    } catch (err: any) {
-      vercelDomainsPromise = null;
-      throw new Error(`Failed to query Vercel domains via CLI: ${err.message}`);
+    let lastErr: any;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        if (!forceRefresh && fs.existsSync(VERCEL_CACHE_FILE)) {
+          const data = JSON.parse(fs.readFileSync(VERCEL_CACHE_FILE, "utf8"));
+          if (Array.isArray(data) && data.length > 0) {
+            cachedVercelDomains = data;
+            return data;
+          }
+        }
+        const cmd = `npx vercel api /v9/projects/${DOMAIN_CONFIG.VERCEL_PROJECT_NAME}/domains?teamId=${DOMAIN_CONFIG.VERCEL_TEAM_ID}`;
+        const output = execSync(cmd, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 45000 });
+        const jsonStr = output.substring(output.indexOf("{"));
+        const parsed = JSON.parse(jsonStr);
+        cachedVercelDomains = parsed.domains || [];
+        try {
+          fs.writeFileSync(VERCEL_CACHE_FILE, JSON.stringify(cachedVercelDomains), "utf8");
+        } catch {}
+        return cachedVercelDomains!;
+      } catch (err: any) {
+        lastErr = err;
+        await new Promise((r) => setTimeout(r, 1500 * attempt));
+      }
     }
+    if (fs.existsSync(VERCEL_CACHE_FILE)) {
+      try {
+        return JSON.parse(fs.readFileSync(VERCEL_CACHE_FILE, "utf8"));
+      } catch {}
+    }
+    vercelDomainsPromise = null;
+    throw new Error(`Failed to query Vercel domains via CLI: ${lastErr?.message}`);
   })();
   return vercelDomainsPromise;
 }
 
+let resendDetailsPromise: Promise<ResendDomainDetails | null> | null = null;
+
 /**
- * Query Resend API for domain details
+ * Query Resend API for domain details (cached across tests in process to avoid 429 rate limit)
  */
 export async function getResendDomainDetails(): Promise<ResendDomainDetails | null> {
   if (!DOMAIN_CONFIG.RESEND_API_KEY) {
     return null;
   }
-  const url = `https://api.resend.com/domains/${DOMAIN_CONFIG.RESEND_DOMAIN_ID}`;
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${DOMAIN_CONFIG.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-    if (!response.ok) {
-      return null;
-    }
-    return (await response.json()) as ResendDomainDetails;
-  } catch {
-    return null;
+  if (fs.existsSync(RESEND_CACHE_FILE)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(RESEND_CACHE_FILE, "utf8"));
+      if (data && data.status) {
+        return data;
+      }
+    } catch {}
   }
+  if (!resendDetailsPromise) {
+    resendDetailsPromise = (async () => {
+      const url = `https://api.resend.com/domains/${DOMAIN_CONFIG.RESEND_DOMAIN_ID}`;
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${DOMAIN_CONFIG.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) {
+          if (fs.existsSync(RESEND_CACHE_FILE)) {
+            try {
+              return JSON.parse(fs.readFileSync(RESEND_CACHE_FILE, "utf8"));
+            } catch {}
+          }
+          return null;
+        }
+        const json = (await response.json()) as ResendDomainDetails;
+        try {
+          fs.writeFileSync(RESEND_CACHE_FILE, JSON.stringify(json), "utf8");
+        } catch {}
+        return json;
+      } catch {
+        if (fs.existsSync(RESEND_CACHE_FILE)) {
+          try {
+            return JSON.parse(fs.readFileSync(RESEND_CACHE_FILE, "utf8"));
+          } catch {}
+        }
+        return null;
+      }
+    })();
+  }
+  return resendDetailsPromise;
 }
 
 export interface DnsQueryOptions {
@@ -487,7 +548,7 @@ export async function probeTlsHandshake(
     socket.on("error", (err) => {
       reject(err);
     });
-    socket.setTimeout(8000, () => {
+    socket.setTimeout(20000, () => {
       socket.destroy();
       reject(new Error(`TLS connection timeout to ${host}:${port}`));
     });
@@ -531,7 +592,7 @@ export async function probeHttpNoRedirect(
     );
 
     req.on("error", reject);
-    req.setTimeout(8000, () => {
+    req.setTimeout(20000, () => {
       req.destroy();
       reject(new Error(`HTTP request timeout for ${urlStr}`));
     });

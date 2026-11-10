@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FestivalCountdown } from "@/components/shared/festival-countdown";
 import { ReadMoreSection } from "@/components/shared/read-more-section";
+import { SocialShareBar } from "@/components/shared/social-share-bar";
 import { OFFICIAL_PROGRAMME, FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export const metadata = {
@@ -481,6 +482,15 @@ export default function ProgrammePage() {
                 <Link href="/pass/lookup">Look Up Pass</Link>
               </Button>
             </div>
+          </div>
+
+          {/* Social Share Bar */}
+          <div className="mt-8">
+            <SocialShareBar
+              title="Official 3-Day Tournament Programme — 2026 Abeokuta Polo Festival"
+              description="Explore the complete chukka fixtures, gala evening schedules, and Royal Cup finals at Abeokuta Polo Club (18–20 Dec 2026)."
+              url="https://www.abeokutapolofestival2026.org.ng/programme"
+            />
           </div>
         </div>
       </section>

@@ -49,3 +49,4 @@ next-env.d.ts
 
 # agents
 .agents/
+tests/e2e-domain/.*-cache.json

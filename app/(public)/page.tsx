@@ -23,6 +23,7 @@ import { FestivalCountdown } from "@/components/shared/festival-countdown";
 
 import { AttendanceMilestoneWidget } from "@/components/shared/attendance-milestone-widget";
 import { ReadMoreSection } from "@/components/shared/read-more-section";
+import { SocialShareBar } from "@/components/shared/social-share-bar";
 import { FESTIVAL_METADATA } from "@/lib/data/programme";
 import { DAY3_VVIP_PRICE_DISPLAY } from "@/lib/config/checkout-config";
 
@@ -937,6 +938,11 @@ export default function HomePage() {
                     <Users className="size-3.5" />
                     @abeokuta_polofestival
                   </span>
+                </div>
+
+                {/* Global Social Sharing Widget */}
+                <div className="pt-2">
+                  <SocialShareBar />
                 </div>
 
                 {/* Pre-footer Gate Notice */}

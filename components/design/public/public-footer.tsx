@@ -25,6 +25,7 @@ const COLUMNS = [
     links: [
       { href: "/register", label: "Register for Pass (Free)" },
       { href: "/tables", label: "VIP Table Enclosures (10 Guests)" },
+      { href: "https://www.abeokutapoloclub.org.ng/register", label: "Membership", external: true },
       { href: "/register/poster", label: "Venue QR Standee / Poster" },
       { href: "/pass/lookup", label: "Find My Access Card" },
       { href: "/scan", label: "Gate Scanner PWA" },
@@ -39,6 +40,7 @@ const COLUMNS = [
       { href: "/affiliates", label: "International Affiliate Centre (10% Comm.)" },
       { href: "/affiliates/dashboard", label: "Affiliate Partner Dashboard" },
       { href: "/press", label: "Media & Press Access" },
+      { href: "https://www.abeokutapoloclub.org.ng/register", label: "Club Membership Enquiries", external: true },
     ],
   },
   {
@@ -141,16 +143,31 @@ export function PublicFooter() {
                   {column.title}
                 </h2>
                 <ul className="mt-3 space-y-2">
-                  {column.links.map((link) => (
-                    <li key={link.href} className="min-w-0">
-                      <Link
-                        href={link.href}
-                        className="text-xs sm:text-sm font-semibold text-ivory/80 underline-offset-4 hover:text-ivory hover:underline block truncate"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
+                  {column.links.map((link) => {
+                    const isExt = Boolean("external" in link && link.external) || link.href.startsWith("http");
+                    return (
+                      <li key={link.href} className="min-w-0">
+                        {isExt ? (
+                          <a
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs sm:text-sm font-semibold text-ivory/80 underline-offset-4 hover:text-ivory hover:underline flex items-center gap-1 truncate"
+                          >
+                            <span className="truncate">{link.label}</span>
+                            <span className="text-[10px] text-gold-deep shrink-0">↗</span>
+                          </a>
+                        ) : (
+                          <Link
+                            href={link.href}
+                            className="text-xs sm:text-sm font-semibold text-ivory/80 underline-offset-4 hover:text-ivory hover:underline block truncate"
+                          >
+                            {link.label}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}

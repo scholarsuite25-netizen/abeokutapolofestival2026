@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NewsDesk } from "@/components/design/public/news-desk";
+import { SocialShareBar } from "@/components/shared/social-share-bar";
 import { FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export const metadata = {
@@ -52,8 +53,13 @@ export default function NewsPage() {
       </section>
 
       <section className="py-16 sm:py-20" aria-label="Festival notices">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
           <NewsDesk />
+          <SocialShareBar
+            title="Official News &amp; Bulletins — 2026 Abeokuta Polo Festival"
+            description="Standing Secretariat notices, media accreditation protocols, and tournament gazette dispatches for Abeokuta Polo Festival 2026."
+            url="https://www.abeokutapolofestival2026.org.ng/news"
+          />
         </div>
       </section>
     </div>

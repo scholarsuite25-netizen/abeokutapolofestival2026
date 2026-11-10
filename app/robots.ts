@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://2026abeokutapolofestival.com";
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
+      ? process.env.NEXT_PUBLIC_SITE_URL
+      : "https://www.abeokutapolofestival2026.org.ng";
 
   return {
     rules: [
@@ -14,7 +17,9 @@ export default function robots(): MetadataRoute.Robots {
           "/programme/*",
           "/royal-cup",
           "/hospitality",
+          "/tables",
           "/sponsorship",
+          "/affiliates",
           "/experiences",
           "/gallery",
           "/news",
@@ -23,6 +28,8 @@ export default function robots(): MetadataRoute.Robots {
           "/faq",
           "/visit",
           "/register",
+          "/register/*",
+          "/pass/lookup",
         ],
         disallow: [
           "/abawole",
@@ -37,7 +44,20 @@ export default function robots(): MetadataRoute.Robots {
           "/auth/*",
         ],
       },
+      {
+        userAgent: ["Googlebot", "Bingbot", "Applebot", "YandexBot", "Baiduspider"],
+        allow: "/",
+        disallow: [
+          "/abawole/*",
+          "/admin/*",
+          "/scan/*",
+          "/dashboard/*",
+          "/api/*",
+          "/auth/*",
+        ],
+      },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
+    host: siteUrl,
   };
 }

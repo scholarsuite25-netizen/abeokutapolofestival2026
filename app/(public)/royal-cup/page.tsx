@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnquiryDialog } from "@/components/design/public/enquiry-dialog";
 import { ReadMoreSection } from "@/components/shared/read-more-section";
+import { SocialShareBar } from "@/components/shared/social-share-bar";
 import { FESTIVAL_METADATA } from "@/lib/data/programme";
 
 export const metadata = {
@@ -228,6 +229,15 @@ export default function RoyalCupPage() {
                 <Button asChild size="lg" variant="outline" className="border-line text-forest hover:bg-sage">
                   <Link href="/programme">View 3-Day Programme Itinerary</Link>
                 </Button>
+              </div>
+
+              {/* Social Share Bar */}
+              <div className="pt-6">
+                <SocialShareBar
+                  title="The Royal Cup Championship — 2026 Abeokuta Polo Festival"
+                  description="Presented in honour of HRM Oba Dr. Michael Aremu Gbadebo, CFR, the Alake of Egbaland. Experience high-goal polo and cultural majesty."
+                  url="https://www.abeokutapolofestival2026.org.ng/royal-cup"
+                />
               </div>
             </div>
           </div>
