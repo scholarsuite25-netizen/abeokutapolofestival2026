@@ -755,7 +755,7 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
 
       expect(reg.success).toBe(true);
       const pass = reg.passes![0];
-      expect(pass.passCode).toMatch(/^ABK-2026-D1/);
+      expect(pass.passCode).toMatch(/^ABK-2026-D12/);
 
       // 2. Initial state: Pass is UNBOUND to laptop
       const laptopInitialCheck = await verifyPassDeviceBinding(pass.passCode, "");

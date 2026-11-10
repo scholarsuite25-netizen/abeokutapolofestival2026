@@ -78,12 +78,12 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     title: "Hospitality",
-    desc: "VIP suites & corporate hosting",
+    desc: "VIP suites, tables & corporate partnerships",
     items: [
       {
         href: "/tables",
         label: "VIP Tables",
-        desc: "Exclusive Day 3 tables of 10",
+        desc: "Day 3 VVIP tables of 10 & ₦50k option",
         icon: Crown,
         isPriority: true,
       },
@@ -95,15 +95,23 @@ const NAV_CATEGORIES: NavCategory[] = [
       },
       {
         href: "/sponsorship",
-        label: "Partnerships",
-        desc: "Brand sponsorship tiers",
+        label: "Corporate Partnerships",
+        desc: "Official brand sponsorship tiers & dossier",
         icon: Building2,
+        isPriority: true,
       },
       {
         href: "/affiliates",
-        label: "Affiliates (10%)",
-        desc: "Earn 10% on pass & table sales",
+        label: "Affiliates (10% Comm.)",
+        desc: "International affiliate referral programme",
         icon: Sparkles,
+        isPriority: true,
+      },
+      {
+        href: "/affiliates/dashboard",
+        label: "Affiliate Dashboard",
+        desc: "Track partner referrals & commission",
+        icon: ShieldCheck,
       },
     ],
   },
@@ -125,7 +133,7 @@ const NAV_CATEGORIES: NavCategory[] = [
       },
       {
         href: "/press",
-        label: "Press",
+        label: "Press & Media",
         desc: "Media accreditation protocols",
         icon: Camera,
       },
@@ -133,31 +141,38 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     title: "Guide",
-    desc: "Directions, venue maps & FAQs",
+    desc: "Directions, pass recovery & venue tools",
     items: [
       {
+        href: "/pass/lookup",
+        label: "Find My Access Card",
+        desc: "Instant digital pass lookup & recovery",
+        icon: ShieldCheck,
+        isPriority: true,
+      },
+      {
         href: "/visit",
-        label: "Visit",
+        label: "Plan Your Visit",
         desc: "Club location & travel routes",
         icon: MapPin,
       },
       {
         href: "/faq",
-        label: "FAQs",
-        desc: "Free entry & ticket rules",
+        label: "Visitor FAQs",
+        desc: "Free entry, tickets & gate protocols",
         icon: HelpCircle,
       },
       {
-        href: "/scan",
-        label: "Gate Scanner",
-        desc: "Turnstile verification PWA",
-        icon: QrCode,
+        href: "/register/poster",
+        label: "Venue QR Standee / Poster",
+        desc: "Printable gate registration signage",
+        icon: Printer,
       },
       {
-        href: "/register/poster",
-        label: "Venue QR Poster",
-        desc: "Printable registration standee",
-        icon: Printer,
+        href: "/scan",
+        label: "Gate Scanner PWA",
+        desc: "Turnstile validation app",
+        icon: QrCode,
       },
     ],
   },
@@ -323,6 +338,31 @@ export function PublicHeader() {
             asChild
             variant="outline"
             size="sm"
+            className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden xl:inline-flex"
+          >
+            <Link href="/sponsorship" className="flex items-center gap-1.5">
+              <Building2 className="size-3.5 text-gold-deep" />
+              <span>Sponsorship</span>
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden lg:inline-flex"
+          >
+            <Link href="/affiliates" className="flex items-center gap-1.5">
+              <Sparkles className="size-3.5 text-gold-deep" />
+              <span>Affiliates</span>
+              <span className="rounded bg-gold/25 px-1 py-0.2 text-[8px] font-bold text-gold uppercase">10%</span>
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
             className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden md:inline-flex"
           >
             <Link href="/tables" className="flex items-center gap-1.5">
@@ -476,6 +516,37 @@ export function PublicHeader() {
                   </div>
                 </div>
               )}
+
+              {/* Mobile Quick Action Buttons: Sponsorship, Affiliates, VIP Tables */}
+              <div className="mt-4 grid grid-cols-3 gap-1.5">
+                <SheetClose asChild>
+                  <Link
+                    href="/sponsorship"
+                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-gold/40 bg-gold/10 p-2.5 text-center text-[11px] font-semibold text-forest hover:bg-gold/20"
+                  >
+                    <Building2 className="size-4 text-gold-deep" />
+                    <span>Sponsorship</span>
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/affiliates"
+                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-gold/40 bg-gold/10 p-2.5 text-center text-[11px] font-semibold text-forest hover:bg-gold/20"
+                  >
+                    <Sparkles className="size-4 text-gold-deep" />
+                    <span>Affiliates</span>
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/tables"
+                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-gold/40 bg-gold/10 p-2.5 text-center text-[11px] font-semibold text-forest hover:bg-gold/20"
+                  >
+                    <Crown className="size-4 text-gold-deep" />
+                    <span>VIP Tables</span>
+                  </Link>
+                </SheetClose>
+              </div>
 
               {/* Grouped Submenus */}
               <div className="mt-6 space-y-4">

@@ -1027,21 +1027,21 @@ function RegisterContent() {
                         {day1 && day2 ? (
                           <span className="inline-flex items-center justify-center gap-1.5">
                             <Check className="size-3.5 stroke-[3] shrink-0" />
-                            <span className="sm:hidden">Day 1 &amp; 2 Pass Selected</span>
-                            <span className="hidden sm:inline">Day 1 &amp; Day 2 Dual Pass Selected</span>
+                            <span className="sm:hidden">Combined Day 1 &amp; 2 Pass</span>
+                            <span className="hidden sm:inline">1 Combined Day 1 &amp; Day 2 Pass Selected</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center justify-center gap-1.5">
                             <Sparkles className="size-3.5 text-gold shrink-0" />
-                            <span className="sm:hidden">Select Day 1 &amp; 2 Dual Pass</span>
-                            <span className="hidden sm:inline">Select Day 1 &amp; Day 2 Dual Pass (1-Click)</span>
+                            <span className="sm:hidden">Select Both Days</span>
+                            <span className="hidden sm:inline">Select Both Days (1 Combined Pass)</span>
                           </span>
                         )}
                       </Button>
                     </div>
 
                     <p className="text-xs text-muted-brand">
-                      Day 1 and Day 2 are never combined into a single pass; selecting both issues two distinct individual access cards (one for Friday 18 Dec and one for Saturday 19 Dec):
+                      Attendees attending <strong>Day 1 only</strong> or <strong>Day 2 only</strong> receive a gate pass for that specified day. Anyone choosing to attend <strong>Day 1 and Day 2 together</strong> receives <strong>one combined pass</strong> covering both days. Day 3 is separate.
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1117,10 +1117,10 @@ function RegisterContent() {
                       <div>
                         <div className="flex items-center gap-1.5">
                           <Badge className="bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[10px] font-bold uppercase tracking-wider">
-                            Separate Registration
+                            Separate Day 3 Pass
                           </Badge>
                           <span className="text-[11px] font-bold text-amber-950 uppercase tracking-wider">
-                            Part 2: Grand Finale
+                            Following Day 1 &amp; Day 2
                           </span>
                         </div>
                         <h3 className="font-serif text-base font-bold text-amber-950 mt-0.5 flex items-center gap-1.5">
@@ -1130,9 +1130,13 @@ function RegisterContent() {
                       </div>
 
                       <Badge variant="outline" className="border-amber-600 bg-white/90 text-amber-900 text-[10px] font-bold self-start sm:self-auto">
-                        {DAY3_VVIP_PRICE_DISPLAY} / Ticket or VIP Invite
+                        {DAY3_VVIP_PRICE_DISPLAY} / Ticket or VIP Table
                       </Badge>
                     </div>
+
+                    <p className="text-xs text-amber-900 leading-relaxed font-medium">
+                      <strong>Important Notice:</strong> Day 3 takes place after Day 1 (Fri 18 Dec) and Day 2 (Sat 19 Dec). Admission to Day 3 is completely separate and requires its own dedicated gate pass. Attendees receive their access pass according to the Day 3 option selected below (Individual VIP Table Seat or Dedicated VIP Table Enclosure).
+                    </p>
 
                     {/* Day 3 Toggle Button */}
                     <button

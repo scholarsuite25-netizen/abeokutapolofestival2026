@@ -163,12 +163,11 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
     expect(res.passes![0].paymentRef).toBeNull();
   });
 
-  it("free Day 1 and Day 2 registration still works with no payment or code (2 separate passes issued)", async () => {
+  it("free Day 1 and Day 2 registration still works with no payment or code (1 combined pass issued)", async () => {
     const res = await submitRegistration({ ...guest, day1: true, day2: true, day3: false });
     expect(res.success).toBe(true);
-    // Day 1 and Day 2 are never combined; 2 separate passes issued
-    expect(res.passes).toHaveLength(2);
+    // Anyone who chooses to attend day one and two together gets one combined pass
+    expect(res.passes).toHaveLength(1);
     expect(res.passes![0].isVvip).toBe(false);
-    expect(res.passes![1].isVvip).toBe(false);
   });
 });

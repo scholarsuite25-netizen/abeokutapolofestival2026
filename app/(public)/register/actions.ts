@@ -169,11 +169,11 @@ async function adaptiveInsert<T extends Record<string, unknown>>(
  *   Special Invitation Code from the server allow-list (VVIP_INVITATION_CODES)
  *
  * Pass issuance rules:
- * - Day 1 alone -> 1 access card for Day 1.
- * - Day 2 alone -> 1 access card for Day 2.
- * - Day 1 & Day 2 together -> 2 distinct access cards (Day 1 and Day 2 are never combined).
- * - Day 3 -> Individual VIP Table Seat / VVIP Pass (₦50,000) issued upon payment or special invite.
- * - Day 1 + Day 2 + Day 3 -> 3 distinct access cards issued (Day 1, Day 2, and Day 3 Individual VIP Table pass).
+ * - Day 1 alone -> 1 access card for Day 1 (ABK-2026-D1...).
+ * - Day 2 alone -> 1 access card for Day 2 (ABK-2026-D2...).
+ * - Days 1 & 2 selected together -> 1 single combined pass covering both days (ABK-2026-D12...).
+ * - Day 3 -> Separate distinct pass issued according to option picked (Individual VIP Option or VIP Table).
+ * - Day 1 + Day 2 + Day 3 -> 2 distinct access cards (1 combined pass for Days 1 & 2 + 1 distinct Day 3 VIP pass).
  */
 export async function submitRegistration(rawInput: unknown): Promise<RegisterResult> {
   try {
@@ -261,9 +261,44 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
   const issuedAt = new Date().toISOString();
   const passes: StoredPass[] = [];
 
-  // ── PASS 1 & 2: Free Day Passes (Never Combined) ─────────────────────────
-  if (day1) {
-    // 1 distinct pass for Day 1
+  // ── PASS 1: Free Day(s) Pass ──────────────────────────────────────────────
+  if (day1 && day2) {
+    // 1 single combined pass covering Day 1 & Day 2
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const passCode = `ABK-2026-D12${randomSuffix}`;
+    const credentialId = crypto.randomUUID();
+    const qrToken = generateSignedPassToken({
+      credentialId,
+      holderName,
+      passType: "Day 1 & Day 2 Dual Pass",
+      editionYear: 2026,
+      issuedAt: Date.parse(issuedAt),
+    });
+
+    passes.push({
+      passCode,
+      holderName,
+      category: "Day 1 & Day 2 Dual Pass",
+      affiliationType,
+      hostName: hostName || null,
+      organization: organization || null,
+      email,
+      phone,
+      qrToken,
+      registeredAt: issuedAt,
+      daysCovered: [1, 2],
+      passTier: "free_day1_2",
+      isVvip: false,
+      designTheme: "standard",
+      day1Status: "free_admitted",
+      day2Status: "free_admitted",
+      day3Status: "not_selected",
+      isBuyer: true,
+      isSponsored: false,
+      isLockedToDevice: false,
+    });
+  } else if (day1) {
+    // 1 distinct pass for Day 1 alone
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
     const passCode = `ABK-2026-D1${randomSuffix}`;
     const credentialId = crypto.randomUUID();
@@ -297,10 +332,8 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       isSponsored: false,
       isLockedToDevice: false,
     });
-  }
-
-  if (day2) {
-    // 1 distinct pass for Day 2
+  } else if (day2) {
+    // 1 distinct pass for Day 2 alone
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
     const passCode = `ABK-2026-D2${randomSuffix}`;
     const credentialId = crypto.randomUUID();
