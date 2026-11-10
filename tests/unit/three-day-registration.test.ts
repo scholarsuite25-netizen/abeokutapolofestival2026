@@ -84,7 +84,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       expect(pass.day2Status).toBe("free_admitted");
     });
 
-    it("issues a SINGLE COMBINED pass covering Day 1 & Day 2 when both are ticked", async () => {
+    it("issues TWO SEPARATE passes covering Day 1 & Day 2 when both are ticked (never combined)", async () => {
       const res = await submitRegistration({
         firstName: "Chief",
         lastName: "Ogunbiyi",
@@ -96,16 +96,22 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       });
 
       expect(res.success).toBe(true);
-      // SPECIFICATION RULE: Those who ticked day 1 and 2 should be issued with a single pass covering the two days
-      expect(res.passes).toHaveLength(1);
-      const pass = res.passes![0];
-      expect(pass.daysCovered).toEqual([1, 2]);
-      expect(pass.passCode).toMatch(/^ABK-2026-D12[A-Z0-9]+$/);
-      expect(pass.category).toBeDefined();
-      expect(pass.isVvip).toBe(false);
-      expect(pass.designTheme).toBe("standard");
-      expect(pass.day1Status).toBe("free_admitted");
-      expect(pass.day2Status).toBe("free_admitted");
+      // SPECIFICATION RULE: Day 1 and Day 2 are never combined; 2 separate passes issued
+      expect(res.passes).toHaveLength(2);
+      const pass1 = res.passes![0];
+      const pass2 = res.passes![1];
+
+      expect(pass1.daysCovered).toEqual([1]);
+      expect(pass1.passCode).toMatch(/^ABK-2026-D1[A-Z0-9]+$/);
+      expect(pass1.isVvip).toBe(false);
+      expect(pass1.designTheme).toBe("standard");
+      expect(pass1.day1Status).toBe("free_admitted");
+
+      expect(pass2.daysCovered).toEqual([2]);
+      expect(pass2.passCode).toMatch(/^ABK-2026-D2[A-Z0-9]+$/);
+      expect(pass2.isVvip).toBe(false);
+      expect(pass2.designTheme).toBe("standard");
+      expect(pass2.day2Status).toBe("free_admitted");
     });
 
     it("requires payment or special invite when Day 3 is ticked", async () => {
@@ -229,7 +235,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       expect(pass2.designTheme).toBe("gold");
     });
 
-    it("issues 2 DISTINCT passes when ALL THREE days (Day 1, 2, and 3) are ticked", async () => {
+    it("issues 3 DISTINCT passes when ALL THREE days (Day 1, 2, and 3) are ticked", async () => {
       const res = await submitRegistration({
         firstName: "Alhaji",
         lastName: "Dantata",
@@ -242,16 +248,20 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       });
 
       expect(res.success).toBe(true);
-      // SPECIFICATION RULE: Days 1 & 2 combined into 1 card, Day 3 issued as separate card = 2 cards total!
-      expect(res.passes).toHaveLength(2);
+      // SPECIFICATION RULE: Day 1 and Day 2 are never combined; 3 distinct cards total
+      expect(res.passes).toHaveLength(3);
 
-      const combinedPass = res.passes![0];
-      const vvipPass = res.passes![1];
+      const pass1 = res.passes![0];
+      const pass2 = res.passes![1];
+      const vvipPass = res.passes![2];
 
-      expect(combinedPass.daysCovered).toEqual([1, 2]);
-      expect(combinedPass.passCode).toMatch(/^ABK-2026-D12[A-Z0-9]+$/);
-      expect(combinedPass.isVvip).toBe(false);
-      expect(combinedPass.designTheme).toBe("standard");
+      expect(pass1.daysCovered).toEqual([1]);
+      expect(pass1.passCode).toMatch(/^ABK-2026-D1[A-Z0-9]+$/);
+      expect(pass1.isVvip).toBe(false);
+
+      expect(pass2.daysCovered).toEqual([2]);
+      expect(pass2.passCode).toMatch(/^ABK-2026-D2[A-Z0-9]+$/);
+      expect(pass2.isVvip).toBe(false);
 
       expect(vvipPass.daysCovered).toEqual([3]);
       expect(vvipPass.passCode).toMatch(/^ABK-2026-VVIP[A-Z0-9]+$/);
@@ -295,7 +305,7 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       });
     });
 
-    it("issues 1 Day 1/2 Combined Pass and 3 Day 3 VVIP passes (4 passes total)", async () => {
+    it("issues 2 Separate Day 1 & 2 Passes and 3 Day 3 VVIP passes (5 passes total)", async () => {
       const res = await submitRegistration({
         firstName: "Senator",
         lastName: "Amosun",
@@ -309,16 +319,19 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       });
 
       expect(res.success).toBe(true);
-      // 1 Combined Free Day 1&2 card + 3 individual Day 3 VVIP cards = 4 cards total
-      expect(res.passes).toHaveLength(4);
+      // 2 Distinct Free Day 1 & 2 cards + 3 individual Day 3 VVIP cards = 5 cards total
+      expect(res.passes).toHaveLength(5);
 
-      // Pass 1 is the complimentary combined card
-      expect(res.passes![0].daysCovered).toEqual([1, 2]);
+      // Pass 1 is Day 1
+      expect(res.passes![0].daysCovered).toEqual([1]);
       expect(res.passes![0].isVvip).toBe(false);
-      expect(res.passes![0].designTheme).toBe("standard");
 
-      // Passes 2, 3, 4 are the distinct Day 3 VVIP cards
-      const vvipPasses = res.passes!.slice(1);
+      // Pass 2 is Day 2
+      expect(res.passes![1].daysCovered).toEqual([2]);
+      expect(res.passes![1].isVvip).toBe(false);
+
+      // Passes 3, 4, 5 are the distinct Day 3 VVIP cards
+      const vvipPasses = res.passes!.slice(2);
       expect(vvipPasses).toHaveLength(3);
       vvipPasses.forEach((p, idx) => {
         expect(p.daysCovered).toEqual([3]);
@@ -363,19 +376,22 @@ describe("Three-Day Event Registration & Pass Issuance Rules", () => {
       });
 
       expect(res.success).toBe(true);
-      expect(res.passes).toHaveLength(4);
+      expect(res.passes).toHaveLength(5);
 
-      // Pass 1: Day 1 & Day 2 Complimentary Dual Pass (Forest Green / Standard)
-      const day12Pass = res.passes![0];
-      expect(day12Pass.daysCovered).toEqual([1, 2]);
-      expect(day12Pass.isVvip).toBe(false);
-      expect(day12Pass.designTheme).toBe("standard");
-      expect(day12Pass.holderName).toBe("Adebayo Balogun");
+      // Pass 1: Day 1 Free Pass
+      const day1Pass = res.passes![0];
+      expect(day1Pass.daysCovered).toEqual([1]);
+      expect(day1Pass.isVvip).toBe(false);
 
-      // Passes 2, 3, 4: Distinct Day 3 VVIP Passes personalized with individual names
-      const vvip1 = res.passes![1];
-      const vvip2 = res.passes![2];
-      const vvip3 = res.passes![3];
+      // Pass 2: Day 2 Free Pass
+      const day2Pass = res.passes![1];
+      expect(day2Pass.daysCovered).toEqual([2]);
+      expect(day2Pass.isVvip).toBe(false);
+
+      // Passes 3, 4, 5: Distinct Day 3 VVIP Passes personalized with individual names
+      const vvip1 = res.passes![2];
+      const vvip2 = res.passes![3];
+      const vvip3 = res.passes![4];
 
       expect(vvip1.holderName).toBe("Adebayo Balogun");
       expect(vvip1.isVvip).toBe(true);

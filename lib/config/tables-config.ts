@@ -7,7 +7,7 @@
  */
 
 export interface TablePackage {
-  id: "kings_table" | "royal_table" | "queens_table" | "premium_table";
+  id: "kings_table" | "royal_table" | "queens_table" | "premium_table" | "individual_vip";
   name: string;
   tagline: string;
   officialPriceNgn: number;
@@ -18,12 +18,35 @@ export interface TablePackage {
   tableCount: number;
   tablePrefix: string;
   enclosure: string;
-  themeColor: "gold" | "emerald" | "rose" | "indigo";
+  themeColor: "gold" | "emerald" | "rose" | "indigo" | "amber";
   badge: string;
   features: string[];
 }
 
 export const DAY3_TABLE_PACKAGES: Record<string, TablePackage> = {
+  individual_vip: {
+    id: "individual_vip",
+    name: "Individual VIP Table Seat",
+    tagline: "Individual VIP Table Enclosure Seating · Day 3 Grand Finale",
+    officialPriceNgn: 50_000,
+    officialPriceDisplay: "₦50,000",
+    testingPriceNgn: 100,
+    testingPriceDisplay: "₦100.00",
+    guestCapacity: 1,
+    tableCount: 200,
+    tablePrefix: "VIP Seat",
+    enclosure: "VIP Table Enclosures (Individual Option)",
+    themeColor: "gold",
+    badge: "Individual VIP · 1 Guest",
+    features: [
+      "1 distinct HMAC-256 Turnstile ID Access Card with Device-Locked Anti-Forwarding",
+      "Reserved individual seating within premium Day 3 VIP Table Enclosure",
+      "Full access to the Day 3 Royal Cup Grand Finale & 100 Kings Celebration",
+      "VIP hospitality, gourmet banquet service & champagne pairing",
+      "Priority fast-track turnstile ingress & security clearance",
+      "Access to post-match royal celebration concert with ARISTOS BAND & BERRYOLA",
+    ],
+  },
   kings_table: {
     id: "kings_table",
     name: "The Kings Table",

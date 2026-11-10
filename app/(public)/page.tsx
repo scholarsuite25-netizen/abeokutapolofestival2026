@@ -193,7 +193,7 @@ export default function HomePage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="bg-ivory py-8 sm:py-10 border-b border-line">
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 min-w-0">
-          <div className="relative overflow-hidden rounded-2xl bg-forest-deep p-4 sm:p-6 lg:p-8 text-ivory shadow-xl min-w-0">
+          <div className="relative overflow-hidden rounded-2xl bg-black border border-gold/40 p-4 sm:p-6 lg:p-8 text-ivory shadow-xl min-w-0">
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="absolute -right-20 -bottom-20 size-96 rounded-full bg-gold/10 blur-3xl" />
             </div>
@@ -207,11 +207,11 @@ export default function HomePage() {
                   Obtain Your Digital Access Card
                 </h2>
                 <p className="text-xs sm:text-sm text-ivory/80 leading-relaxed">
-                  Day 1 &amp; Day 2 are 100% Free Public Admission (issued as a single combined pass). Day 3 is Paid VVIP ({DAY3_VVIP_PRICE_DISPLAY}) or by Special Invitation, issued as a separate classic deep-gold luxury ID-card with cryptographic security features.
+                  Day 1 &amp; Day 2 are 100% Free Public Admission (issued as separate individual passes). Day 3 is the Royal Cup Grand Finale &amp; VVIP Tables / Individual VIP Option ({DAY3_VVIP_PRICE_DISPLAY}), issued with cryptographic security features.
                 </p>
 
                 {/* Mandatory Turnstile Protocol Callout */}
-                <div className="mt-2.5 rounded-xl border border-gold/50 bg-forest/80 p-2.5 flex items-start gap-2.5">
+                <div className="mt-2.5 rounded-xl border border-gold/50 bg-neutral-900 p-2.5 flex items-start gap-2.5">
                   <ShieldCheck className="size-4 text-gold shrink-0 mt-0.5" />
                   <div className="text-[11px] text-ivory">
                     <span className="font-bold text-gold uppercase tracking-wider text-[10px] block">
@@ -258,7 +258,7 @@ export default function HomePage() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-gold font-bold text-forest-deep shadow hover:bg-gold/90 text-sm py-5 px-6"
+                  className="bg-gold font-bold text-black shadow hover:bg-gold/90 text-sm py-5 px-6"
                 >
                   <Link href="/register">Register For Gate Pass</Link>
                 </Button>
@@ -284,7 +284,7 @@ export default function HomePage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 1B. OFFICIAL FESTIVAL TEASER & CINEMATIC SHOWCASE                   */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="bg-forest-deep text-ivory py-16 border-b border-gold/30">
+      <section className="bg-black text-ivory py-16 border-b border-gold/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5 space-y-4">
@@ -323,14 +323,14 @@ export default function HomePage() {
             </div>
 
             <div className="lg:col-span-7">
-              <div className="rounded-2xl border border-gold/40 bg-forest p-6 sm:p-8 text-ivory shadow-2xl relative overflow-hidden">
+              <div className="rounded-2xl border border-gold/40 bg-neutral-950 p-6 sm:p-8 text-ivory shadow-2xl relative overflow-hidden">
                 <div
                   aria-hidden
                   className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-gold/15 blur-2xl"
                 />
                 <div className="relative space-y-4">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-gold text-forest-deep text-[10px] font-bold uppercase tracking-wider">
+                    <Badge className="bg-gold text-black text-[10px] font-bold uppercase tracking-wider">
                       Official Tournament Venue
                     </Badge>
                     <span className="text-xs text-gold/90 font-medium">18–20 December 2026</span>
@@ -357,7 +357,7 @@ export default function HomePage() {
                   </div>
 
                   <div className="pt-2 flex flex-wrap gap-2.5">
-                    <Button asChild size="sm" className="bg-gold text-forest-deep font-bold hover:bg-gold/90 text-xs">
+                    <Button asChild size="sm" className="bg-gold text-black font-bold hover:bg-gold/90 text-xs">
                       <Link href="/register">Register Digital Pass →</Link>
                     </Button>
                     <Button asChild size="sm" variant="outline" className="border-gold/40 bg-white/10 text-ivory hover:bg-white/20 text-xs">
@@ -396,9 +396,9 @@ export default function HomePage() {
           </div>
 
           {/* Admission Rules Protocol Notice */}
-          <div className="mb-8 rounded-2xl border-2 border-forest/20 bg-forest p-4 sm:p-5 text-ivory flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="mb-8 rounded-2xl border-2 border-gold/40 bg-neutral-950 p-4 sm:p-5 text-ivory flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-start sm:items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-gold text-forest shrink-0">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-gold text-black shrink-0">
                 <ShieldCheck className="size-5" />
               </div>
               <div>
@@ -410,7 +410,7 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <Button asChild size="sm" className="bg-gold font-bold text-forest hover:bg-gold/90 text-xs shrink-0">
+            <Button asChild size="sm" className="bg-gold font-bold text-black hover:bg-gold/90 text-xs shrink-0">
               <Link href="/register">Register Gate Pass →</Link>
             </Button>
           </div>
@@ -554,7 +554,7 @@ export default function HomePage() {
                   <Link href="/programme">View Day 3 Schedule →</Link>
                 </Button>
                 <Button asChild size="sm" className="bg-gold font-bold text-forest hover:bg-gold/90 text-[11px] h-7 px-2.5 shadow-xs">
-                  <Link href="/register?day=3">VVIP Checkout</Link>
+                  <Link href="/tables">VIP Tables &amp; Passes →</Link>
                 </Button>
               </div>
             </div>
@@ -703,7 +703,7 @@ export default function HomePage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 4. HOSPITALITY & CULTURAL CELEBRATIONS                               */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-forest text-ivory py-20">
+      <section className="relative overflow-hidden bg-black text-ivory py-20 border-y border-gold/30">
         <div
           aria-hidden
           className="pointer-events-none absolute -bottom-32 -left-32 size-80 rounded-full bg-gold/10 blur-3xl"
@@ -729,7 +729,7 @@ export default function HomePage() {
 
           <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Market Square & Arts */}
-            <div className="rounded-2xl border border-line/20 bg-forest-deep/60 p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+            <div className="rounded-2xl border border-gold/30 bg-neutral-950/80 p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
               <div>
                 <div className="flex size-14 items-center justify-center rounded-xl bg-gold/15 text-gold">
                   <Sparkles className="size-7" />
@@ -758,14 +758,14 @@ export default function HomePage() {
                 />
               </div>
               <div className="mt-8 border-t border-line/20 pt-4">
-                <Button asChild className="w-full bg-forest text-ivory border border-gold/40 hover:bg-gold hover:text-forest font-bold text-xs shadow-sm transition-all">
+                <Button asChild className="w-full bg-neutral-900 text-ivory border border-gold/40 hover:bg-gold hover:text-black font-bold text-xs shadow-sm transition-all">
                   <Link href="/experiences">Learn More</Link>
                 </Button>
               </div>
             </div>
 
             {/* Corporate Chalets */}
-            <div className="rounded-2xl border border-line/20 bg-forest-deep/60 p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+            <div className="rounded-2xl border border-gold/30 bg-neutral-950/80 p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
               <div>
                 <div className="flex size-14 items-center justify-center rounded-xl bg-gold/15 text-gold">
                   <Wine className="size-7" />
@@ -798,13 +798,13 @@ export default function HomePage() {
                   category="hospitality"
                   tierName="Private Chalet / Corporate Suite"
                   triggerText="Inquire on Chalets"
-                  className="w-full bg-gold font-semibold text-forest-deep hover:bg-gold/90"
+                  className="w-full bg-gold font-semibold text-black hover:bg-gold/90"
                 />
               </div>
             </div>
 
             {/* Headline Musical Concerts */}
-            <div className="rounded-2xl border border-line/20 bg-forest-deep/60 p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+            <div className="rounded-2xl border border-gold/30 bg-neutral-950/80 p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
               <div>
                 <div className="flex size-14 items-center justify-center rounded-xl bg-gold/15 text-gold">
                   <Music className="size-7" />
@@ -833,7 +833,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="mt-8 border-t border-line/20 pt-4">
-                <Button asChild className="w-full bg-forest text-ivory border border-gold/40 hover:bg-gold hover:text-forest font-bold text-xs shadow-sm transition-all">
+                <Button asChild className="w-full bg-neutral-900 text-ivory border border-gold/40 hover:bg-gold hover:text-black font-bold text-xs shadow-sm transition-all">
                   <Link href="/programme">View Musical Schedule</Link>
                 </Button>
               </div>
@@ -845,7 +845,7 @@ export default function HomePage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 5. OFFICIAL TAGLINE BANNER                                          */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <section className="bg-forest-deep text-gold py-8 border-y border-gold/30">
+      <section className="bg-black text-gold py-8 border-y border-gold/30">
         <div className="mx-auto max-w-7xl px-4 text-center">
           <p className="font-display text-sm sm:text-base font-semibold tracking-widest uppercase">
             {FESTIVAL_METADATA.tagline}
@@ -892,7 +892,7 @@ export default function HomePage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       <section className="bg-ivory py-16">
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 min-w-0">
-          <div className="relative overflow-hidden rounded-3xl bg-forest-deep p-4 sm:p-8 lg:p-16 text-ivory shadow-2xl min-w-0">
+          <div className="relative overflow-hidden rounded-3xl bg-black border border-gold/40 p-4 sm:p-8 lg:p-16 text-ivory shadow-2xl min-w-0">
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="absolute -right-20 -bottom-20 size-96 rounded-full bg-gold/10 blur-3xl" />
             </div>
@@ -940,7 +940,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Pre-footer Gate Notice */}
-                <div className="mt-4 rounded-xl border border-gold/50 bg-forest/80 p-3.5 flex items-start gap-3">
+                <div className="mt-4 rounded-xl border border-gold/50 bg-neutral-900 p-3.5 flex items-start gap-3">
                   <ShieldCheck className="size-5 text-gold shrink-0 mt-0.5" />
                   <div className="text-xs text-ivory">
                     <span className="font-bold text-gold uppercase tracking-wider text-[11px] block">
@@ -958,7 +958,7 @@ export default function HomePage() {
                   title="Festival Secretariat Inquiries"
                   triggerText="Secretariat & Protocol Inquiries"
                   variant="default"
-                  className="bg-gold font-bold text-forest-deep shadow hover:bg-gold/90 text-sm py-4 px-6"
+                  className="bg-gold font-bold text-black shadow hover:bg-gold/90 text-sm py-4 px-6"
                 />
                 <Button
                   asChild

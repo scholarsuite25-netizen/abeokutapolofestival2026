@@ -177,7 +177,10 @@ export function TablesBookingClient() {
       if (effectiveEmail) {
         setLoading(true);
         // Build 10 attendees payload
-        const attendeesPayload = attendeeNames.map((name, idx) => ({
+        const capacity = selectedPkg.guestCapacity || 10;
+    const attendeesPayload = (capacity === 1)
+      ? [{ seat: 1, name: `${firstName} ${lastName}`.trim() }]
+      : attendeeNames.slice(0, capacity).map((name, idx) => ({
           seat: idx + 1,
           name: name.trim() || (idx === 0 ? `${effectiveFn} ${effectiveLn}`.trim() : `${effectiveFn} ${effectiveLn} (Guest ${idx + 1})`),
         }));
@@ -318,7 +321,7 @@ export function TablesBookingClient() {
             </h1>
             <p className="max-w-2xl mx-auto text-sm sm:text-base text-ivory/85">
               Welcome to the <strong>{bookingResult.packageName}</strong> ({bookingResult.tableSerial}). 
-              All <strong>10 distinct VIP ID access cards</strong> have been generated with cryptographic HMAC-256 signatures.
+              All <strong>{bookingResult.passes.length} distinct VIP ID access card{bookingResult.passes.length > 1 ? "s" : ""}</strong> have been generated with cryptographic HMAC-256 signatures.
             </p>
           </div>
 
@@ -392,7 +395,7 @@ export function TablesBookingClient() {
                 <Users className="size-5 text-gold" />
                 <span>10 Table Access Passes ({bookingResult.tableSerial})</span>
               </h2>
-              <Badge className="bg-gold text-forest font-bold text-xs uppercase px-2.5 py-0.5">
+              <Badge className="bg-gold text-black font-bold text-xs uppercase px-2.5 py-0.5">
                 All 10 Passes Active
               </Badge>
             </div>
@@ -420,7 +423,7 @@ export function TablesBookingClient() {
                             Seat {idx + 1} of 10
                           </span>
                           {isHost && (
-                            <Badge className="bg-forest text-gold border border-gold/40 text-[9px] font-bold uppercase">
+                            <Badge className="bg-neutral-800 text-gold border border-gold/40 text-[9px] font-bold uppercase">
                               Host Pass
                             </Badge>
                           )}
@@ -501,7 +504,7 @@ export function TablesBookingClient() {
               }}
               className="bg-gold-deep text-black font-black hover:bg-gold-light shadow-md px-6 py-3 text-sm border border-gold-deep"
             >
-              <Download className="mr-2 size-4" /> Download All 10 Offline ID Cards
+              <Download className="mr-2 size-4" /> Download All {bookingResult.passes?.length || 1} Offline ID Card{bookingResult.passes?.length === 1 ? "" : "s"}
             </Button>
 
             <Button
@@ -520,7 +523,7 @@ export function TablesBookingClient() {
   // VIEW: Interactive Table Selection & Booking Form
   // ───────────────────────────────────────────────────────────────────────────
   return (
-    <div className="w-full bg-[#001A0E] text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8">
+    <div className="w-full bg-black text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
         {/* Hero Section - Solid Black Luxury Card */}
         <div className="rounded-3xl border-2 border-gold-deep/80 bg-black p-6 sm:p-12 text-center space-y-5 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
@@ -562,10 +565,10 @@ export function TablesBookingClient() {
               <Shield className="size-5 text-gold" />
               <span>Step 1: Choose Your Enclosure Package</span>
             </h2>
-            <span className="text-xs text-gold-deep font-semibold">10 Guests Per Table</span>
+            <span className="text-xs text-gold-deep font-semibold">VIP Table Enclosures &amp; Individual Options</span>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {TABLE_PACKAGE_LIST.map((pkg) => {
               const isSelected = selectedPackageId === pkg.id;
               return (
@@ -575,11 +578,11 @@ export function TablesBookingClient() {
                   className={`rounded-2xl border-2 p-5 cursor-pointer transition-all flex flex-col justify-between relative ${
                     isSelected
                       ? "border-gold bg-[#1C1605] shadow-[0_4px_25px_rgba(201,168,76,0.3)] scale-[1.02]"
-                      : "border-line/40 bg-[#062415] hover:border-gold/50 hover:bg-[#0B2C1B]"
+                      : "border-line/40 bg-neutral-900 hover:border-gold/50 hover:bg-neutral-800"
                   }`}
                 >
                   {isSelected && (
-                    <div className="absolute -top-3 right-4 bg-gold text-forest text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
+                    <div className="absolute -top-3 right-4 bg-gold text-black text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
                       Selected
                     </div>
                   )}
@@ -589,7 +592,7 @@ export function TablesBookingClient() {
                       className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 border ${
                         isSelected
                           ? "bg-gold/20 text-gold border-gold/40"
-                          : "bg-forest text-ivory border-line/40"
+                          : "bg-neutral-800 text-ivory border-line/40"
                       }`}
                     >
                       {pkg.badge}
@@ -641,7 +644,7 @@ export function TablesBookingClient() {
         </div>
 
         {/* 2. Serial Table Number Selection */}
-        <div className="rounded-2xl border border-gold/40 bg-[#062415] p-5 sm:p-7 space-y-4">
+        <div className="rounded-2xl border border-gold/40 bg-neutral-900 p-5 sm:p-7 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="font-display text-lg sm:text-xl font-bold text-ivory flex items-center gap-2">
@@ -652,8 +655,8 @@ export function TablesBookingClient() {
                 Choose your specific numbered table for <strong>{selectedPkg.name}</strong> ({selectedPkg.enclosure})
               </p>
             </div>
-            <Badge className="bg-gold text-forest font-bold text-xs uppercase self-start sm:self-auto">
-              10 Seats Guaranteed
+            <Badge className="bg-gold text-black font-bold text-xs uppercase self-start sm:self-auto">
+              {selectedPkg.guestCapacity === 1 ? "1 Reserved Seat" : "10 Seats Guaranteed"}
             </Badge>
           </div>
 
@@ -668,7 +671,7 @@ export function TablesBookingClient() {
                   className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer border ${
                     isSerialSelected
                       ? "bg-gold-deep text-black border-gold-deep shadow-md scale-105"
-                      : "bg-[#00210E] text-ivory/90 border-line/60 hover:border-gold-deep hover:text-gold"
+                      : "bg-neutral-950 text-ivory/90 border-line/60 hover:border-gold-deep hover:text-gold"
                   }`}
                 >
                   {serial}
@@ -689,10 +692,10 @@ export function TablesBookingClient() {
           <div>
             <h2 className="font-display text-xl sm:text-2xl font-bold text-ivory flex items-center gap-2">
               <User className="size-5 text-gold" />
-              <span>Step 3: Host Details & Guest Information (10 Seats)</span>
+              <span>Step 3: {selectedPkg.guestCapacity === 1 ? "Attendee Details & VIP Table Seat (1 Guest)" : "Host Details & Guest Information (10 Seats)"}</span>
             </h2>
             <p className="text-xs text-ivory/70 mt-1">
-              At buying point, enter the names for all 10 attendees. Seat 1 is reserved for the Host/Buyer. Seats 2 to 10 are for your invited guests.
+              {selectedPkg.guestCapacity === 1 ? "At buying point, enter the primary attendee details. 1 distinct HMAC-256 signed VIP Table Turnstile ID card will be issued." : "At buying point, enter the names for all 10 attendees. Seat 1 is reserved for the Host/Buyer. Seats 2 to 10 are for your invited guests."}
             </p>
           </div>
 
@@ -718,7 +721,7 @@ export function TablesBookingClient() {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="e.g. Adeyemi"
-                  className="bg-[#00210E] border-line text-ivory focus:border-gold"
+                  className="bg-neutral-950 border-line text-ivory focus:border-gold"
                 />
               </div>
 
@@ -730,7 +733,7 @@ export function TablesBookingClient() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="e.g. Balogun"
-                  className="bg-[#00210E] border-line text-ivory focus:border-gold"
+                  className="bg-neutral-950 border-line text-ivory focus:border-gold"
                 />
               </div>
 
@@ -743,7 +746,7 @@ export function TablesBookingClient() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. balogun@estate.com"
-                  className="bg-[#00210E] border-line text-ivory focus:border-gold"
+                  className="bg-neutral-950 border-line text-ivory focus:border-gold"
                 />
               </div>
 
@@ -755,13 +758,14 @@ export function TablesBookingClient() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="e.g. 0803 123 4567"
-                  className="bg-[#00210E] border-line text-ivory focus:border-gold"
+                  className="bg-neutral-950 border-line text-ivory focus:border-gold"
                 />
               </div>
             </div>
           </div>
 
-          {/* 10 Seats Attendee List */}
+          {/* Seats Attendee List */}
+          {selectedPkg.guestCapacity > 1 && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gold/30 pb-1.5">
               <h3 className="text-xs uppercase font-bold tracking-widest text-gold">
@@ -798,7 +802,7 @@ export function TablesBookingClient() {
                       className={`text-xs h-9 ${
                         isHost
                           ? "bg-gold/10 border-gold/50 text-gold font-bold cursor-not-allowed"
-                          : "bg-[#00210E] border-line text-ivory focus:border-gold"
+                          : "bg-neutral-950 border-line text-ivory focus:border-gold"
                       }`}
                     />
                   </div>
@@ -806,6 +810,7 @@ export function TablesBookingClient() {
               })}
             </div>
           </div>
+          )}
 
           {/* Golden Demarcation Line */}
           <div className="w-full my-4">
@@ -827,7 +832,7 @@ export function TablesBookingClient() {
                 className={`rounded-xl p-4 text-left border-2 transition-all cursor-pointer ${
                   paymentChannel === "gateway"
                     ? "border-gold bg-gold/15 shadow-md"
-                    : "border-line/40 bg-[#00210E] hover:border-gold/40"
+                    : "border-line/40 bg-neutral-950 hover:border-gold/40"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -852,7 +857,7 @@ export function TablesBookingClient() {
                 className={`rounded-xl p-4 text-left border-2 transition-all cursor-pointer ${
                   paymentChannel === "bank_transfer"
                     ? "border-gold bg-gold/15 shadow-md"
-                    : "border-line/40 bg-[#00210E] hover:border-gold/40"
+                    : "border-line/40 bg-neutral-950 hover:border-gold/40"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -873,7 +878,7 @@ export function TablesBookingClient() {
 
             {/* Wema Bank Details Panel */}
             {paymentChannel === "bank_transfer" && (
-              <div className="rounded-xl border border-gold/50 bg-[#062415] p-4 space-y-2 text-xs">
+              <div className="rounded-xl border border-gold/50 bg-neutral-900 p-4 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-gold uppercase text-[10px] tracking-wider">Abeokuta Polo Club Official Account</span>
                   <span className="font-mono font-bold text-amber-300">Reference: {wemaRef}</span>
@@ -900,14 +905,14 @@ export function TablesBookingClient() {
           </div>
 
           {/* Booking Summary Box */}
-          <div className="rounded-xl border border-gold/40 bg-[#00210E] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="rounded-xl border border-gold/40 bg-neutral-950 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-0.5">
               <span className="text-[10px] uppercase font-bold text-gold-deep tracking-wider">Reservation Summary</span>
               <p className="font-display text-base font-bold text-ivory">
                 {selectedPkg.name} ({selectedSerial})
               </p>
               <p className="text-xs text-ivory/70">
-                10 VIP ID Turnstile Passes · {selectedPkg.enclosure} · Sunday 20 Dec 2026
+                {selectedPkg.guestCapacity === 1 ? "1 VIP ID Turnstile Pass" : "10 VIP ID Turnstile Passes"} · {selectedPkg.enclosure} · Sunday 20 Dec 2026
               </p>
             </div>
 
@@ -937,7 +942,7 @@ export function TablesBookingClient() {
               ) : (
                 <>
                   <Building className="size-5" />
-                  <span>Confirm Bank Transfer & Issue 10 Passes (₦100.00) →</span>
+                  <span>Confirm Bank Transfer &amp; Issue {selectedPkg.guestCapacity === 1 ? "Pass" : "10 Passes"} (₦100.00) →</span>
                 </>
               )}
             </Button>

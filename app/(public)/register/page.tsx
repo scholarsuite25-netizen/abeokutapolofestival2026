@@ -127,13 +127,8 @@ function RegisterContent() {
     const dayParam = searchParams.get("day");
     const tierParam = searchParams.get("tier");
     if (dayParam === "3" || tierParam === "vvip") {
-      setDay1(false);
-      setDay2(false);
-      setDay3(true);
-      setTimeout(() => {
-        const el = document.getElementById("day3-section");
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 150);
+      // Day 3 is strictly VVIP Tables & Individual Option -> resolve to /tables
+      window.location.href = "/tables";
     } else if (dayParam === "1") {
       setDay1(true);
       setDay2(false);
@@ -1046,7 +1041,7 @@ function RegisterContent() {
                     </div>
 
                     <p className="text-xs text-muted-brand">
-                      Ticking both days issues a single combined dual-day pass. You can also select or deselect days individually below:
+                      Day 1 and Day 2 are never combined into a single pass; selecting both issues two distinct individual access cards (one for Friday 18 Dec and one for Saturday 19 Dec):
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

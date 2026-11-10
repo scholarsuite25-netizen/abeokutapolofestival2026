@@ -169,11 +169,11 @@ async function adaptiveInsert<T extends Record<string, unknown>>(
  *   Special Invitation Code from the server allow-list (VVIP_INVITATION_CODES)
  *
  * Pass issuance rules:
- * - Days 1 & 2 selected together -> 1 single combined pass covering both days.
  * - Day 1 alone -> 1 access card for Day 1.
  * - Day 2 alone -> 1 access card for Day 2.
- * - Day 3 -> Separate distinct deep gold VVIP pass issued upon payment or special invite.
- * - Day 1 + Day 3, or Day 2 + Day 3, or Day 1 + 2 + 3 -> 2 distinct access cards issued.
+ * - Day 1 & Day 2 together -> 2 distinct access cards (Day 1 and Day 2 are never combined).
+ * - Day 3 -> Individual VIP Table Seat / VVIP Pass (₦50,000) issued upon payment or special invite.
+ * - Day 1 + Day 2 + Day 3 -> 3 distinct access cards issued (Day 1, Day 2, and Day 3 Individual VIP Table pass).
  */
 export async function submitRegistration(rawInput: unknown): Promise<RegisterResult> {
   try {
@@ -261,44 +261,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
   const issuedAt = new Date().toISOString();
   const passes: StoredPass[] = [];
 
-  // ── PASS 1: Free Day(s) Pass ──────────────────────────────────────────────
-  if (day1 && day2) {
-    // 1 single combined pass covering Day 1 & Day 2
-    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const passCode = `ABK-2026-D12${randomSuffix}`;
-    const credentialId = crypto.randomUUID();
-    const qrToken = generateSignedPassToken({
-      credentialId,
-      holderName,
-      passType: "Day 1 & Day 2 Dual Pass",
-      editionYear: 2026,
-      issuedAt: Date.parse(issuedAt),
-    });
-
-    passes.push({
-      passCode,
-      holderName,
-      category: "Day 1 & Day 2 Dual Pass",
-      affiliationType,
-      hostName: hostName || null,
-      organization: organization || null,
-      email,
-      phone,
-      qrToken,
-      registeredAt: issuedAt,
-      daysCovered: [1, 2],
-      passTier: "free_day1_2",
-      isVvip: false,
-      designTheme: "standard",
-      day1Status: "free_admitted",
-      day2Status: "free_admitted",
-      day3Status: "not_selected",
-      isBuyer: true,
-      isSponsored: false,
-      isLockedToDevice: false,
-    });
-  } else if (day1) {
-    // 1 pass for Day 1 alone
+  // ── PASS 1 & 2: Free Day Passes (Never Combined) ─────────────────────────
+  if (day1) {
+    // 1 distinct pass for Day 1
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
     const passCode = `ABK-2026-D1${randomSuffix}`;
     const credentialId = crypto.randomUUID();
@@ -332,8 +297,10 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       isSponsored: false,
       isLockedToDevice: false,
     });
-  } else if (day2) {
-    // 1 pass for Day 2 alone
+  }
+
+  if (day2) {
+    // 1 distinct pass for Day 2
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
     const passCode = `ABK-2026-D2${randomSuffix}`;
     const credentialId = crypto.randomUUID();
@@ -392,7 +359,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       const qrToken = generateSignedPassToken({
         credentialId,
         holderName: passHolderName,
-        passType: "Day 3 VVIP Grand Finale Pass",
+        passType: "Day 3 Individual VIP Table Seat Pass",
         editionYear: 2026,
         issuedAt: Date.parse(issuedAt),
       });
@@ -401,8 +368,8 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         passCode,
         holderName: passHolderName,
         category: isBankTransfer
-          ? "Day 3 VVIP Provisional Claim (Pending Bursary Verification)"
-          : "Day 3 VVIP Grand Finale Pass",
+          ? "Day 3 Individual VIP Table Provisional Claim (Pending Bursary Verification)"
+          : "Day 3 Individual VIP Table Seat Pass",
         affiliationType: isSponsored ? "guest_of" : affiliationType,
         hostName: isSponsored ? holderName : (hostName || null),
         organization: organization || null,
@@ -720,7 +687,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
 // ─────────────────────────────────────────────────────────────────────────────
 
 const tableBookingSchema = z.object({
-  packageId: z.enum(["kings_table", "royal_table", "queens_table", "premium_table"]),
+  packageId: z.enum(["individual_vip", "kings_table", "royal_table", "queens_table", "premium_table"]),
   tableSerial: z.string().trim().min(2, "Please select an available table serial number."),
   buyerFirstName: z.string().trim().min(2, "Buyer first name must be at least 2 characters."),
   buyerLastName: z.string().trim().min(2, "Buyer last name must be at least 2 characters."),
@@ -845,7 +812,7 @@ export async function initializeTablePayment(input: {
           product: `Day 3 VIP Table: ${pkg.name} (${input.tableSerial})`,
           package_id: input.packageId,
           table_serial: input.tableSerial,
-          attendees_count: 10,
+          attendees_count: pkg.guestCapacity || 10,
           buyer_name: `${input.buyerFirstName} ${input.buyerLastName}`,
           affiliate_code: input.affiliateCode || null,
         },
@@ -931,7 +898,7 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
         reference: payment.reference,
         email: buyerEmail,
         amountNgn: payment.amountNgn,
-        quantity: 10,
+        quantity: pkg.guestCapacity || 10,
       });
       if (!claim.ok) {
         return { success: false, error: claim.message };
@@ -949,6 +916,7 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
 
     // Map short code for serial pass identifiers
     const serialCodeMap: Record<string, string> = {
+      individual_vip: "IVP",
       kings_table: "KT",
       royal_table: "RT",
       queens_table: "QT",
@@ -959,10 +927,11 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
     const tableNumberMatch = tableSerial.match(/\d+/);
     const tableNum = tableNumberMatch ? tableNumberMatch[0] : "01";
 
-    // ── Generate 10 Distinct HMAC-256 Signed Access Passes ─────────────────────
+    // ── Generate Distinct HMAC-256 Signed Access Passes ─────────────────────
     const attendeesList: Array<{ seat: number; name: string; passCode: string }> = [];
+    const capacity = pkg.guestCapacity || 10;
 
-    for (let seat = 1; seat <= 10; seat++) {
+    for (let seat = 1; seat <= capacity; seat++) {
       const seatAttendee = inputAttendees?.find((a) => a.seat === seat);
       const isHost = seat === 1;
       const attendeeName = (seatAttendee?.name && seatAttendee.name.trim())

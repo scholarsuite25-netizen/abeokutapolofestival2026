@@ -17,14 +17,18 @@ describe("Bank Transfer & Turnstile Paywall Hardening", () => {
 
     expect(res.success).toBe(true);
     expect(res.passes).toBeDefined();
-    expect(res.passes!.length).toBe(1);
+    // Day 1 and Day 2 are never combined; 2 distinct passes issued
+    expect(res.passes!.length).toBe(2);
 
-    const dualPass = res.passes![0];
-    expect(dualPass.category).toBe("Day 1 & Day 2 Dual Pass");
-    expect(dualPass.daysCovered).toEqual([1, 2]);
-    expect(dualPass.isVvip).toBe(false);
-    expect(dualPass.day1Status).toBe("free_admitted");
-    expect(dualPass.day2Status).toBe("free_admitted");
+    const pass1 = res.passes![0];
+    expect(pass1.daysCovered).toEqual([1]);
+    expect(pass1.isVvip).toBe(false);
+    expect(pass1.day1Status).toBe("free_admitted");
+
+    const pass2 = res.passes![1];
+    expect(pass2.daysCovered).toEqual([2]);
+    expect(pass2.isVvip).toBe(false);
+    expect(pass2.day2Status).toBe("free_admitted");
   });
 
   it("Day 3 bank transfer registration strictly issues a provisional claim slip in pending_verification status", async () => {

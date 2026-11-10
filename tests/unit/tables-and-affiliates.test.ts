@@ -27,8 +27,15 @@ import {
 } from "@/lib/config/checkout-config";
 
 describe("Day 3 VIP Table Packages & 10 Seats Enclosures", () => {
-  it("defines all 4 official Day 3 table packages from the blueprint document", () => {
-    expect(TABLE_PACKAGE_LIST.length).toBe(4);
+  it("defines all official Day 3 table packages plus the individual VIP option", () => {
+    expect(TABLE_PACKAGE_LIST.length).toBe(5);
+
+    const individual = getTablePackage("individual_vip");
+    expect(individual).toBeDefined();
+    expect(individual?.name).toBe("Individual VIP Table Seat");
+    expect(individual?.officialPriceNgn).toBe(50_000);
+    expect(individual?.testingPriceNgn).toBe(100);
+    expect(individual?.guestCapacity).toBe(1);
 
     const kings = getTablePackage("kings_table");
     expect(kings).toBeDefined();

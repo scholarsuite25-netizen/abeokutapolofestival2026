@@ -126,7 +126,7 @@ export default function VenueRegistrationPosterPage() {
       ctx.textAlign = "center";
       ctx.fillStyle = goldColor;
       ctx.font = "bold 32px serif";
-      ctx.fillText("ABEOKUTA POLO CLUB · FOUNDED 1985", width / 2, 140);
+      ctx.fillText("ABEOKUTA POLO CLUB · FOUNDED 2025", width / 2, 140);
 
       ctx.fillStyle = primaryText;
       ctx.font = "bold 64px serif";
@@ -428,7 +428,7 @@ export default function VenueRegistrationPosterPage() {
               <div className="flex items-center justify-center gap-2 mb-1">
                 <div className="h-px w-10 sm:w-16 bg-[#C9A84C]" />
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#C9A84C]">
-                  Abeokuta Polo Club · Founded 1985
+                  Abeokuta Polo Club · Founded 2025
                 </span>
                 <div className="h-px w-10 sm:w-16 bg-[#C9A84C]" />
               </div>
