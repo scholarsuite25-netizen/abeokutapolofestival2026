@@ -22,23 +22,14 @@ describe("Tier 4: Real-World Scenarios E2E Test Suite", () => {
 
     it("T4.1.2 should verify Resend domain is live and authorized for transactional dispatch", async () => {
       const details = await getResendDomainDetails();
-      if (!details) {
-        // Fallback to verifying live public DNS records if Resend API token is absent in test environment
-        const dkim = await queryDnsRecord(
-          `${DOMAIN_CONFIG.EXPECTED_DKIM_SELECTOR}.${DOMAIN_CONFIG.APEX_DOMAIN}`,
-          "TXT",
-          DOMAIN_CONFIG.PUBLIC_DNS_RESOLVERS.GOOGLE_PRIMARY
-        );
-        expect(dkim.flat().join("")).toContain("p=");
-        return;
-      }
-      expect(details.status).toBe("verified");
-      expect(details.capabilities.sending).toBe("enabled");
-      expect(details.capabilities.receiving).toBe("enabled");
-      expect(details.records.length).toBeGreaterThanOrEqual(4);
+      expect(details, "Resend domain details must be accessible with RESEND_API_KEY").not.toBeNull();
+      expect(details!.status).toBe("verified");
+      expect(details!.capabilities.sending).toBe("enabled");
+      expect(details!.capabilities.receiving).toBe("enabled");
+      expect(details!.records.length).toBeGreaterThanOrEqual(4);
 
       // Verify every required DNS record is marked verified by Resend
-      for (const rec of details.records) {
+      for (const rec of details!.records) {
         expect(rec.status, `Record ${rec.name} (${rec.type}) must be verified by Resend`).toBe("verified");
       }
     });

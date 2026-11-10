@@ -7,18 +7,32 @@
 
 ---
 
-## 🚀 Two Easy Options for Going Live
+> ### ⚡ STRONGLY RECOMMENDED PATH: Option 1 (Fast-Track)
+> **If you want your website live right now with zero technical complexity, follow Option 1 below.**
+>
+> * **⏱️ Speed**: Takes **2 minutes** flat.
+> * **🚀 Zero Propagation Wait**: Takes effect immediately without waiting 2 to 24 hours for registry nameserver delegation.
+> * **🛡️ 100% Email Protection**: Guaranteed **zero disruption** to your active Resend transactional email system (`guests.abeokutapolofestival2026.org.ng`), ensuring ticket passes, receipt emails, and QR codes continue delivering flawlessly.
+> * **🔑 Zero API Hassle**: No Cloudflare accounts, API tokens, or command-line permissions required.
 
-You have two simple paths to connect `abeokutapolofestival2026.org.ng` to your live Vercel application. 
+---
 
-* **Option 1 (Fast-Track — Recommended)**: Update 2 DNS records directly in HarmonWeb. **Takes 2 minutes, zero propagation wait, and 100% guarantees your existing Resend email setup is unaffected.**
-* **Option 2 (Cloudflare Migration Track)**: Delegate HarmonWeb nameservers to Cloudflare for edge caching and DDoS proxying.
+## Comparison of Available Options
+
+| Feature | Option 1: Fast-Track (Recommended) | Option 2: Cloudflare Nameserver Delegation |
+|---|---|---|
+| **Where to Make Changes** | HarmonWeb Client Area only | Cloudflare Dashboard & HarmonWeb |
+| **Time to Complete** | 2 minutes | 15–30 minutes + propagation wait |
+| **Nameserver Propagation Delay** | **Zero delay** (instant) | 2 to 24 hours (.org.ng registry delay) |
+| **Resend Email Safety** | **100% Protected** (records untouched) | Requires replicating all 4 email records |
+| **Vercel SSL Encryption** | Automatic via Vercel Edge (Let's Encrypt / DigiCert) | Managed via Cloudflare Edge (SSL Mode: Full) |
+| **Technical Difficulty** | Non-coder friendly (copy-paste 2 values) | Intermediate (requires terminal & API token) |
 
 ---
 
 ## Option 1: Fast-Track (Update 2 Records in HarmonWeb — 2 Mins)
 
-HarmonWeb already hosts your DNS and your verified Resend email records (`guests.abeokutapolofestival2026.org.ng`). By updating only the web records, your site goes live immediately.
+HarmonWeb already hosts your DNS and your verified Resend email records (`guests.abeokutapolofestival2026.org.ng`). By updating only the two web records below, your official website goes live immediately.
 
 ### Step-by-Step Instructions:
 1. Log in to your **HarmonWeb Client Area**: [https://clients.harmonweb.com](https://clients.harmonweb.com).
@@ -48,13 +62,13 @@ HarmonWeb already hosts your DNS and your verified Resend email records (`guests
   ```
 
 5. Click **Save Changes** (or **Save DNS Records**).
-6. Done! Your website will immediately point to Vercel.
+6. **Done!** Your website will immediately connect to Vercel and Vercel will issue your SSL certificate automatically.
 
 ---
 
 ## Option 2: Cloudflare Nameserver Delegation Track
 
-If you prefer Cloudflare to act as your DNS provider and proxy:
+If your organization requires Cloudflare for DDoS protection and edge caching, use this track:
 
 ### Step 1: Add Site to Cloudflare
 1. Log in to Cloudflare: [https://dash.cloudflare.com](https://dash.cloudflare.com).
@@ -69,11 +83,31 @@ If you prefer Cloudflare to act as your DNS provider and proxy:
    *(Copy the exact two nameservers shown on your screen).*
 
 ### Step 2: Run the Automated Provisioning Script
-In your project terminal, run:
-```bash
+The automated provisioning script populates all 7 required records (Apex A, WWW CNAME, Resend DKIM TXT, Resend SPF CNAME 1, Resend SPF CNAME 2, Resend Inbound MX, and DMARC TXT) and configures SSL Mode to Full.
+
+Choose your operating system terminal below:
+
+#### Windows (PowerShell)
+```powershell
+$env:CLOUDFLARE_API_TOKEN="your_token_here"
 node scripts/setup-cloudflare-dns.mjs
 ```
-*Note: If using an API Token, create a token in Cloudflare with `Zone: Read, Zone: Edit, DNS: Edit` permissions and set `export CLOUDFLARE_API_TOKEN="your_token"`.*
+
+#### Windows (Command Prompt / CMD)
+```cmd
+set CLOUDFLARE_API_TOKEN="your_token_here"
+node scripts/setup-cloudflare-dns.mjs
+```
+
+#### macOS / Linux (Terminal / Bash)
+```bash
+export CLOUDFLARE_API_TOKEN="your_token_here"
+node scripts/setup-cloudflare-dns.mjs
+```
+
+> **💡 Non-Coder Tip**: Alternatively, you can simply paste `CLOUDFLARE_API_TOKEN=your_token_here` into your `.env.local` file. The script will automatically detect and load it without running terminal environment commands.
+>
+> *Note on API Token Permissions*: If creating a token in Cloudflare, ensure it has `Zone: Read, Zone: Edit, DNS: Edit` permissions.
 
 This script automatically provisions all 7 required DNS records:
 * Apex A -> `76.76.21.21` (DNS-only)
@@ -96,7 +130,7 @@ This script automatically provisions all 7 required DNS records:
 
 ## 🔍 How to Verify Everything Works
 
-You don't need any technical tools to test. Run our automated verification suite:
+You don't need any complex diagnostic tools. Our automated verification suite auto-loads your local credentials and checks all systems:
 
 ```bash
 node scripts/verify-dns-e2e.mjs

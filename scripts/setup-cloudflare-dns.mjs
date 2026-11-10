@@ -13,6 +13,44 @@ import https from 'node:https';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// --- Native & Fallback .env.local Auto-Loader ---
+function loadEnvFile(envPath) {
+  if (!fs.existsSync(envPath)) return;
+  
+  if (typeof process.loadEnvFile === 'function') {
+    try {
+      process.loadEnvFile(envPath);
+      return;
+    } catch (_) {
+      // Fall through to manual parsing if native loader encounters format issues
+    }
+  }
+
+  try {
+    const raw = fs.readFileSync(envPath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        let val = trimmed.slice(eqIdx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (key && process.env[key] === undefined) {
+          process.env[key] = val;
+        }
+      }
+    }
+  } catch (_) {
+    // Non-fatal if parsing fails
+  }
+}
+
+loadEnvFile(path.resolve(process.cwd(), '.env.local'));
+loadEnvFile(path.resolve(process.cwd(), '.env'));
+
 const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || 'aed0a3ce52c51760cd46d76d616f38ce';
 const DOMAIN_NAME = 'abeokutapolofestival2026.org.ng';
@@ -272,10 +310,11 @@ async function main() {
   };
 
   const stateDir = path.resolve('.agents/teamwork/worker_domain_cloudflare');
-  if (fs.existsSync(stateDir)) {
-    fs.writeFileSync(path.join(stateDir, 'cloudflare_zone_summary.json'), JSON.stringify(outputSummary, null, 2));
-    console.log(`Saved summary to ${path.join(stateDir, 'cloudflare_zone_summary.json')}`);
+  if (!fs.existsSync(stateDir)) {
+    fs.mkdirSync(stateDir, { recursive: true });
   }
+  fs.writeFileSync(path.join(stateDir, 'cloudflare_zone_summary.json'), JSON.stringify(outputSummary, null, 2));
+  console.log(`Saved summary to ${path.join(stateDir, 'cloudflare_zone_summary.json')}`);
 }
 
 main().catch(err => {

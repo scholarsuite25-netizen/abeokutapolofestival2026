@@ -8,6 +8,37 @@ import * as http from "node:http";
 import * as tls from "node:tls";
 import * as crypto from "node:crypto";
 import { execSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+// Defensive .env.local loader for direct vitest invocations
+try {
+  const envPath = path.resolve(process.cwd(), ".env.local");
+  if (fs.existsSync(envPath)) {
+    if (typeof process.loadEnvFile === "function") {
+      process.loadEnvFile(envPath);
+    } else {
+      const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const eqIdx = trimmed.indexOf("=");
+        if (eqIdx !== -1) {
+          const key = trimmed.slice(0, eqIdx).trim();
+          let val = trimmed.slice(eqIdx + 1).trim();
+          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+            val = val.slice(1, -1);
+          }
+          if (key && !process.env[key]) {
+            process.env[key] = val;
+          }
+        }
+      }
+    }
+  }
+} catch {
+  // Ignore if absent or unreadable
+}
 
 export const DOMAIN_CONFIG = {
   APEX_DOMAIN: "abeokutapolofestival2026.org.ng",
@@ -38,11 +69,70 @@ export const DOMAIN_CONFIG = {
   EXPECTED_DMARC_HOST: "_dmarc",
   EXPECTED_DMARC_VALUE: "v=DMARC1; p=none;",
   HARMONWEB_AUTHORITATIVE_NS: ["dns1.harmonweb.net", "dns2.harmonweb.net"],
+  HARMONWEB_PRIMARY_IP: "162.19.227.132",
+  HARMONWEB_SECONDARY_IP: "162.19.227.133",
+  HARMONWEB_AUTHORITATIVE_IPS: {
+    PRIMARY: "162.19.227.132",
+    SECONDARY: "162.19.227.133",
+  },
   PUBLIC_DNS_RESOLVERS: {
     CLOUDFLARE_PRIMARY: "1.1.1.1",
     CLOUDFLARE_SECONDARY: "1.0.0.1",
     GOOGLE_PRIMARY: "8.8.8.8",
     GOOGLE_SECONDARY: "8.8.4.4",
+  },
+  RECORDS: {
+    APEX_A: {
+      type: "A",
+      name: "@",
+      content: "76.76.21.21",
+      proxied: false,
+      ttl: 1,
+    },
+    WWW_CNAME: {
+      type: "CNAME",
+      name: "www",
+      content: "cname.vercel-dns.com",
+      proxied: false,
+      ttl: 1,
+    },
+    RESEND_DKIM: {
+      type: "TXT",
+      name: "resend._domainkey.guests",
+      content:
+        "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCuMSW9RpJ2N1KHzdz7+DtquZJhlPGJjh4exnPGNZiXB+jL1PBwnQKfJuIqAW1aBGy7fZNxAp/zlCcE1R4plnGLFnqVeA3xVh0RyYvd4IJBLp4GZmmDES9CDQzPrE8mZqIbRHNq5J4LJNXy+6tM1Fbv0wLFgQ9tRzUYWIruc7+SJwIDAQAB",
+      proxied: false,
+      ttl: 1,
+    },
+    RESEND_SPF_1: {
+      type: "CNAME",
+      name: "rsend.guests",
+      content: "rsend-euw1.forge.rmta.net",
+      proxied: false,
+      ttl: 1,
+    },
+    RESEND_SPF_2: {
+      type: "CNAME",
+      name: "send.guests",
+      content: "send.forge.rmta.net",
+      proxied: false,
+      ttl: 1,
+    },
+    RESEND_MX: {
+      type: "MX",
+      name: "guests",
+      content: "receive-euw1.forge.rmta.net",
+      priority: 10,
+      proxied: false,
+      ttl: 1,
+    },
+    DMARC: {
+      type: "TXT",
+      name: "_dmarc",
+      content: "v=DMARC1; p=none;",
+      proxied: false,
+      ttl: 1,
+    },
   },
 };
 
@@ -194,6 +284,7 @@ export async function getCloudflareZoneSetting(
 }
 
 let cachedVercelDomains: VercelDomainRecord[] | null = null;
+let vercelDomainsPromise: Promise<VercelDomainRecord[]> | null = null;
 
 /**
  * Query Vercel API for custom domains on project
@@ -202,16 +293,23 @@ export async function getVercelDomains(forceRefresh: boolean = false): Promise<V
   if (cachedVercelDomains && !forceRefresh) {
     return cachedVercelDomains;
   }
-  try {
-    const cmd = `npx vercel api /v9/projects/${DOMAIN_CONFIG.VERCEL_PROJECT_NAME}/domains?teamId=${DOMAIN_CONFIG.VERCEL_TEAM_ID}`;
-    const output = execSync(cmd, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 15000 });
-    const jsonStr = output.substring(output.indexOf("{"));
-    const parsed = JSON.parse(jsonStr);
-    cachedVercelDomains = parsed.domains || [];
-    return cachedVercelDomains!;
-  } catch (err: any) {
-    throw new Error(`Failed to query Vercel domains via CLI: ${err.message}`);
+  if (vercelDomainsPromise && !forceRefresh) {
+    return vercelDomainsPromise;
   }
+  vercelDomainsPromise = (async () => {
+    try {
+      const cmd = `npx vercel api /v9/projects/${DOMAIN_CONFIG.VERCEL_PROJECT_NAME}/domains?teamId=${DOMAIN_CONFIG.VERCEL_TEAM_ID}`;
+      const output = execSync(cmd, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 35000 });
+      const jsonStr = output.substring(output.indexOf("{"));
+      const parsed = JSON.parse(jsonStr);
+      cachedVercelDomains = parsed.domains || [];
+      return cachedVercelDomains!;
+    } catch (err: any) {
+      vercelDomainsPromise = null;
+      throw new Error(`Failed to query Vercel domains via CLI: ${err.message}`);
+    }
+  })();
+  return vercelDomainsPromise;
 }
 
 /**
@@ -239,17 +337,33 @@ export async function getResendDomainDetails(): Promise<ResendDomainDetails | nu
   }
 }
 
+export interface DnsQueryOptions {
+  /**
+   * If true (default: true), automatically falls back to primary authoritative DNS (162.19.227.132)
+   * if the target resolver fails with EREFUSED, ENOTFOUND, SERVFAIL, or ETIMEOUT.
+   */
+  fallbackToAuthoritative?: boolean;
+  /**
+   * Primary authoritative IP to fallback to (default: DOMAIN_CONFIG.HARMONWEB_PRIMARY_IP)
+   */
+  authoritativeIp?: string;
+}
+
 /**
- * Resolve DNS records using a specific DNS server
+ * Resolve DNS records using a specific DNS server with resilient fallback to primary authoritative DNS
  */
 export async function queryDnsRecord(
   name: string,
   type: "TXT" | "CNAME" | "MX" | "A" | "NS" | "SOA",
-  dnsServerIp: string
+  dnsServerIp: string,
+  options?: DnsQueryOptions
 ): Promise<any> {
-  const resolver = new Resolver();
-  resolver.setServers([dnsServerIp]);
-  try {
+  const fallbackEnabled = options?.fallbackToAuthoritative ?? true;
+  const authoritativeIp = options?.authoritativeIp ?? DOMAIN_CONFIG.HARMONWEB_PRIMARY_IP;
+
+  async function executeQuery(serverIp: string): Promise<any> {
+    const resolver = new Resolver({ timeout: 5000, tries: 3 });
+    resolver.setServers([serverIp]);
     switch (type) {
       case "TXT":
         return await resolver.resolveTxt(name);
@@ -266,11 +380,73 @@ export async function queryDnsRecord(
       default:
         throw new Error(`Unsupported DNS record type: ${type}`);
     }
+  }
+
+  try {
+    return await executeQuery(dnsServerIp);
   } catch (err: any) {
-    if (err.code === "ENOTFOUND" || err.code === "NODATA" || err.code === "ETIMEOUT" || err.code === "EREFUSED") {
+    const isFallbackEligible =
+      err.code === "EREFUSED" ||
+      err.code === "ENOTFOUND" ||
+      err.code === "SERVFAIL" ||
+      err.code === "ETIMEOUT" ||
+      err.code === "ECONNREFUSED";
+
+    // Resilient fallback to primary authoritative nameserver if initial server is not already the primary
+    if (fallbackEnabled && isFallbackEligible && dnsServerIp !== authoritativeIp) {
+      try {
+        return await executeQuery(authoritativeIp);
+      } catch (fallbackErr: any) {
+        if (
+          fallbackErr.code === "ENOTFOUND" ||
+          fallbackErr.code === "NODATA" ||
+          fallbackErr.code === "ETIMEOUT" ||
+          fallbackErr.code === "EREFUSED" ||
+          fallbackErr.code === "SERVFAIL"
+        ) {
+          return [];
+        }
+        throw fallbackErr;
+      }
+    }
+
+    if (
+      err.code === "ENOTFOUND" ||
+      err.code === "NODATA" ||
+      err.code === "ETIMEOUT" ||
+      err.code === "EREFUSED" ||
+      err.code === "SERVFAIL"
+    ) {
       return [];
     }
     throw err;
+  }
+}
+
+/**
+ * Raw DNS query utility that returns full status and error codes without swallowing exceptions
+ */
+export async function queryDnsRecordRaw(
+  name: string,
+  type: "TXT" | "CNAME" | "MX" | "A" | "NS" | "SOA",
+  dnsServerIp: string
+): Promise<{ success: boolean; data?: any; error?: string; code?: string }> {
+  const resolver = new Resolver({ timeout: 5000, tries: 3 });
+  resolver.setServers([dnsServerIp]);
+  try {
+    let data: any;
+    switch (type) {
+      case "TXT": data = await resolver.resolveTxt(name); break;
+      case "CNAME": data = await resolver.resolveCname(name); break;
+      case "MX": data = await resolver.resolveMx(name); break;
+      case "A": data = await resolver.resolve4(name); break;
+      case "NS": data = await resolver.resolveNs(name); break;
+      case "SOA": data = await resolver.resolveSoa(name); break;
+      default: throw new Error(`Unsupported DNS record type: ${type}`);
+    }
+    return { success: true, data };
+  } catch (err: any) {
+    return { success: false, error: err.message, code: err.code };
   }
 }
 

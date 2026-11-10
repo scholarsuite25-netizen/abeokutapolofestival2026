@@ -58,7 +58,7 @@ describe("Tier 3: Cross-Feature Combinations E2E Test Suite", () => {
 
       // Verify forge target resolves authoritative SPF record (include:amazonses.com)
       const { Resolver } = await import("node:dns/promises");
-      const resolver = new Resolver();
+      const resolver = new Resolver({ timeout: 5000, tries: 3 });
       resolver.setServers([DOMAIN_CONFIG.PUBLIC_DNS_RESOLVERS.GOOGLE_PRIMARY]);
       const txtRecords = await resolver.resolveTxt(DOMAIN_CONFIG.EXPECTED_SPF_1_TARGET);
       expect(txtRecords.length).toBeGreaterThan(0);

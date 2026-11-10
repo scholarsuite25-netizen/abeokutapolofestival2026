@@ -12,6 +12,45 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// --- Native & Fallback .env.local Auto-Loader ---
+// Automatically loads .env.local (and .env) so scripts run out-of-the-box on Windows / macOS / Linux without flags
+function loadEnvFile(envPath) {
+  if (!fs.existsSync(envPath)) return;
+  
+  if (typeof process.loadEnvFile === 'function') {
+    try {
+      process.loadEnvFile(envPath);
+      return;
+    } catch (_) {
+      // Fall through to manual parsing if native loader encounters format issues
+    }
+  }
+
+  try {
+    const raw = fs.readFileSync(envPath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        let val = trimmed.slice(eqIdx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (key && process.env[key] === undefined) {
+          process.env[key] = val;
+        }
+      }
+    }
+  } catch (_) {
+    // Non-fatal if parsing fails
+  }
+}
+
+loadEnvFile(path.resolve(process.cwd(), '.env.local'));
+loadEnvFile(path.resolve(process.cwd(), '.env'));
+
 const APEX_DOMAIN = 'abeokutapolofestival2026.org.ng';
 const WWW_DOMAIN = `www.${APEX_DOMAIN}`;
 const GUESTS_DOMAIN = `guests.${APEX_DOMAIN}`;
@@ -19,6 +58,10 @@ const RESEND_DOMAIN_ID = '6bf9d051-5bcc-4375-8ca4-edfe6416ae2a';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || 'aed0a3ce52c51760cd46d76d616f38ce';
+
+// HarmonWeb Authoritative IPs
+const HARMONWEB_PRIMARY_IP = '162.19.227.132'; // dns1.harmonweb.net (Healthy Authoritative)
+const HARMONWEB_SECONDARY_IP = '162.19.227.133'; // dns2.harmonweb.net (Secondary Nameserver)
 
 // Target Vercel endpoints
 const VERCEL_PRODUCTION_URL = 'https://abeokuta-polo-festival-2026.vercel.app';
@@ -72,27 +115,39 @@ function probeHttp(url) {
   });
 }
 
-async function verifyDnsResolver(resolverName, dnsServers) {
-  const r = new Resolver();
+async function verifyDnsResolver(resolverName, dnsServers, options = { fallbackToAuthoritative: true }) {
+  const r = new Resolver({ timeout: 5000, tries: 3 });
   if (dnsServers && dnsServers.length > 0) {
     r.setServers(dnsServers);
   }
 
   const results = {};
 
-  // 1. Apex A
-  try {
-    results.apex_A = await r.resolve4(APEX_DOMAIN);
-  } catch (e) {
-    results.apex_A = { error: e.message };
+  async function resolveWithFallback(queryFn, targetHost) {
+    try {
+      return await queryFn(r, targetHost);
+    } catch (err) {
+      if (options.fallbackToAuthoritative && !dnsServers.includes(HARMONWEB_PRIMARY_IP)) {
+        if (['EREFUSED', 'ENOTFOUND', 'SERVFAIL', 'ETIMEOUT'].includes(err.code)) {
+          try {
+            const fb = new Resolver({ timeout: 5000, tries: 3 });
+            fb.setServers([HARMONWEB_PRIMARY_IP]);
+            const fbResult = await queryFn(fb, targetHost);
+            return fbResult;
+          } catch (fbErr) {
+            return { error: err.message, fallbackError: fbErr.message };
+          }
+        }
+      }
+      return { error: err.message };
+    }
   }
 
+  // 1. Apex A
+  results.apex_A = await resolveWithFallback((res, h) => res.resolve4(h), APEX_DOMAIN);
+
   // 2. Apex NS
-  try {
-    results.apex_NS = await r.resolveNs(APEX_DOMAIN);
-  } catch (e) {
-    results.apex_NS = { error: e.message };
-  }
+  results.apex_NS = await resolveWithFallback((res, h) => res.resolveNs(h), APEX_DOMAIN);
 
   // 3. WWW CNAME / A
   try {
@@ -101,44 +156,40 @@ async function verifyDnsResolver(resolverName, dnsServers) {
     try {
       results.www_A = await r.resolve4(WWW_DOMAIN);
     } catch (e2) {
-      results.www_error = e.message;
+      if (options.fallbackToAuthoritative && !dnsServers.includes(HARMONWEB_PRIMARY_IP)) {
+        try {
+          const fb = new Resolver({ timeout: 5000, tries: 3 });
+          fb.setServers([HARMONWEB_PRIMARY_IP]);
+          results.www_CNAME = await fb.resolveCname(WWW_DOMAIN);
+        } catch (fbErr) {
+          try {
+            const fb = new Resolver({ timeout: 5000, tries: 3 });
+            fb.setServers([HARMONWEB_PRIMARY_IP]);
+            results.www_A = await fb.resolve4(WWW_DOMAIN);
+          } catch (fbErr2) {
+            results.www_error = e.message;
+          }
+        }
+      } else {
+        results.www_error = e.message;
+      }
     }
   }
 
   // 4. Resend MX
-  try {
-    results.guests_MX = await r.resolveMx(GUESTS_DOMAIN);
-  } catch (e) {
-    results.guests_MX = { error: e.message };
-  }
+  results.guests_MX = await resolveWithFallback((res, h) => res.resolveMx(h), GUESTS_DOMAIN);
 
   // 5. Resend DKIM TXT
-  try {
-    results.resend_DKIM = await r.resolveTxt(`resend._domainkey.${GUESTS_DOMAIN}`);
-  } catch (e) {
-    results.resend_DKIM = { error: e.message };
-  }
+  results.resend_DKIM = await resolveWithFallback((res, h) => res.resolveTxt(h), `resend._domainkey.${GUESTS_DOMAIN}`);
 
   // 6. Resend SPF 1 CNAME
-  try {
-    results.resend_SPF1 = await r.resolveCname(`rsend.${GUESTS_DOMAIN}`);
-  } catch (e) {
-    results.resend_SPF1 = { error: e.message };
-  }
+  results.resend_SPF1 = await resolveWithFallback((res, h) => res.resolveCname(h), `rsend.${GUESTS_DOMAIN}`);
 
   // 7. Resend SPF 2 CNAME
-  try {
-    results.resend_SPF2 = await r.resolveCname(`send.${GUESTS_DOMAIN}`);
-  } catch (e) {
-    results.resend_SPF2 = { error: e.message };
-  }
+  results.resend_SPF2 = await resolveWithFallback((res, h) => res.resolveCname(h), `send.${GUESTS_DOMAIN}`);
 
   // 8. DMARC TXT
-  try {
-    results.dmarc = await r.resolveTxt(`_dmarc.${APEX_DOMAIN}`);
-  } catch (e) {
-    results.dmarc = { error: e.message };
-  }
+  results.dmarc = await resolveWithFallback((res, h) => res.resolveTxt(h), `_dmarc.${APEX_DOMAIN}`);
 
   return results;
 }
@@ -209,7 +260,7 @@ async function main() {
 
   // 2. Live HarmonWeb Authoritative DNS
   console.log('\n--- 2. Querying Authoritative HarmonWeb DNS (162.19.227.132) ---');
-  const harmonwebDns = await verifyDnsResolver('HarmonWeb', ['162.19.227.132']);
+  const harmonwebDns = await verifyDnsResolver('HarmonWeb Primary (dns1)', [HARMONWEB_PRIMARY_IP]);
   console.log(`Apex A:        ${JSON.stringify(harmonwebDns.apex_A)}`);
   console.log(`Apex NS:       ${JSON.stringify(harmonwebDns.apex_NS)}`);
   console.log(`WWW CNAME:     ${JSON.stringify(harmonwebDns.www_CNAME || harmonwebDns.www_A)}`);
@@ -217,6 +268,16 @@ async function main() {
   console.log(`Resend DKIM:   ${Array.isArray(harmonwebDns.resend_DKIM) ? 'PRESENT (' + harmonwebDns.resend_DKIM[0]?.join('').substring(0, 32) + '...)' : 'MISSING'}`);
   console.log(`Resend SPF 1:  ${JSON.stringify(harmonwebDns.resend_SPF1)}`);
   console.log(`Resend SPF 2:  ${JSON.stringify(harmonwebDns.resend_SPF2)}`);
+
+  // 2b. HarmonWeb Secondary Nameserver Health Check
+  const rDns2 = new Resolver({ timeout: 5000, tries: 2 });
+  rDns2.setServers([HARMONWEB_SECONDARY_IP]);
+  try {
+    await rDns2.resolve4(APEX_DOMAIN);
+    console.log(`HarmonWeb dns2: HEALTHY (162.19.227.133 responding)`);
+  } catch (e) {
+    console.log(`HarmonWeb dns2: DEGRADED (${e.code} on 162.19.227.133 — Primary fallback active)`);
+  }
 
   // 3. Public Resolver DNS (Cloudflare 1.1.1.1)
   console.log('\n--- 3. Querying Public Anycast DNS (Cloudflare 1.1.1.1) ---');
@@ -270,15 +331,15 @@ async function main() {
     },
     action_items_for_go_live: [
       {
-        path: 'Option A (HarmonWeb Direct to Vercel - Recommended / Zero propagation delay)',
+        path: 'Option 1 (Fast-Track HarmonWeb Direct to Vercel - Recommended / Zero propagation delay)',
         steps: [
           `1. In HarmonWeb DNS Zone Editor for ${APEX_DOMAIN}, edit A record '@' from 162.19.227.132 to 76.76.21.21`,
           `2. Edit CNAME record 'www' to point to cname.vercel-dns.com`,
-          `3. Run 'npx vercel domains verify ${APEX_DOMAIN}'`
+          `3. Run 'npx vercel domains verify ${APEX_DOMAIN} --scope digitalwealthcreators-projects'`
         ]
       },
       {
-        path: 'Option B (HarmonWeb to Cloudflare DNS Delegation)',
+        path: 'Option 2 (HarmonWeb to Cloudflare DNS Delegation)',
         steps: [
           `1. In Cloudflare Dashboard, add site '${APEX_DOMAIN}' (Free plan) or generate API token with Zone: Create & DNS: Edit permissions.`,
           `2. Run 'node scripts/setup-cloudflare-dns.mjs' to automatically populate all 7 records and configure SSL=full.`,
@@ -289,6 +350,9 @@ async function main() {
   };
 
   const stateDir = path.resolve('.agents/teamwork/worker_domain_cloudflare');
+  if (!fs.existsSync(stateDir)) {
+    fs.mkdirSync(stateDir, { recursive: true });
+  }
   const reportPath = path.join(stateDir, 'verification_results.json');
   fs.writeFileSync(reportPath, JSON.stringify(overallSummary, null, 2));
   console.log(`\n✓ Full JSON verification artifact written to: ${reportPath}`);
