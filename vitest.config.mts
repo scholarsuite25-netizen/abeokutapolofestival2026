@@ -14,8 +14,10 @@ export default defineConfig({
       "tests/unit/**/*.test.tsx",
       "tests/e2e/**/*.test.ts",
       "tests/e2e/**/*.test.tsx",
+      "tests/e2e-domain/**/*.test.ts",
     ],
     environment: "node",
+    testTimeout: 15000,
     globals: false,
     coverage: {
       provider: "v8",
