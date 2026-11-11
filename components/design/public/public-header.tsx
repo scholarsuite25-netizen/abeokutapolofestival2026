@@ -132,33 +132,27 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
-    title: "Media",
-    desc: "Dispatches, schedule & press",
+    title: "Guide",
+    desc: "Dispatches, press, pass recovery & visitor guide",
     items: [
       {
         href: "/news",
-        label: "News",
+        label: "News & Dispatches",
         desc: "Secretariat dispatches & notices",
         icon: Newspaper,
       },
       {
         href: "/publications",
         label: "Publications",
-        desc: "Official schedule & publications",
+        desc: "Official schedule & festival publications",
         icon: BookOpen,
       },
       {
         href: "/press",
         label: "Press & Media",
-        desc: "Media accreditation protocols",
+        desc: "Media accreditation protocols & dossier",
         icon: Camera,
       },
-    ],
-  },
-  {
-    title: "Guide",
-    desc: "Directions, pass recovery & venue tools",
-    items: [
       {
         href: "/pass/lookup",
         label: "Find My Access Card",
