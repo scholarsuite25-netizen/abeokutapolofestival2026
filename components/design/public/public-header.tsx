@@ -212,24 +212,29 @@ export function PublicHeader() {
         {/* ── 1. Event Brand Name: Royal Heritage Crest & Typography ── */}
         <Link
           href="/"
-          className="group flex items-center gap-3 transition-opacity hover:opacity-95 shrink min-w-0"
+          className="group flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-95 shrink min-w-0"
           aria-label="Abeokuta Polo Festival 2026 - The Blueprint"
         >
-          <div className="relative flex size-10 sm:size-11 lg:size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-forest-interactive to-forest-deep text-gold border border-gold/60 shadow-md shadow-forest-deep/40 transition-transform group-hover:scale-105">
-            <Shield className="size-5 sm:size-6 text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
+          <div className="relative flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-forest-interactive to-forest-deep text-gold border border-gold/60 shadow-md shadow-forest-deep/40 transition-transform group-hover:scale-105">
+            <Shield className="size-5 sm:size-5.5 text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
             <div className="absolute inset-0 rounded-xl bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-display text-sm sm:text-base lg:text-lg font-extrabold tracking-tight text-ivory leading-tight truncate drop-shadow-xs">
-              Abeokuta Polo Festival <span className="text-gold">2026</span>
-            </span>
-            <span className="mt-0.5 font-serif text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] text-gold-light leading-none flex items-center gap-1.5">
+          <div className="flex flex-col min-w-0 justify-center">
+            <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
+              <span className="font-display text-sm sm:text-base font-bold tracking-tight text-ivory leading-tight truncate">
+                Abeokuta Polo Festival
+              </span>
+              <span className="rounded bg-gold/20 px-1.5 py-0.5 text-[10px] font-extrabold text-gold border border-gold/40 leading-none">
+                2026
+              </span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-[10px] sm:text-[11px] font-serif uppercase tracking-[0.2em] text-gold-light leading-none">
               <span>The Blueprint</span>
               <span className="inline-block size-1 rounded-full bg-gold/60" />
-              <span className="text-[10px] text-ivory/70 font-sans tracking-normal font-normal">
+              <span className="font-sans tracking-normal font-normal text-ivory/70">
                 18–20 Dec
               </span>
-            </span>
+            </div>
           </div>
         </Link>
 
@@ -246,17 +251,20 @@ export function PublicHeader() {
               >
                 <button
                   onClick={() => setActiveCategory(isOpen ? null : category.title)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 xl:px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
                     isOpen ? "bg-white/10 text-gold" : ""
                   }`}
                   aria-expanded={isOpen}
                 >
                   <span>{category.title}</span>
                   <ChevronDown
-                    className={`size-3 transition-transform duration-200 text-gold/80 ${
+                    className={`size-3.5 transition-transform duration-200 text-gold/80 ${
                       isOpen ? "rotate-180 text-gold" : ""
                     }`}
                   />
+                  <span className="ml-0.5 rounded-full bg-gold/15 px-1.5 py-0.2 text-[9px] font-mono text-gold-light border border-gold/30">
+                    {category.items.length}
+                  </span>
                 </button>
 
                 {/* Inline non-portalled dropdown with invisible hover bridge (Zero Shake!) */}
@@ -355,7 +363,7 @@ export function PublicHeader() {
             href="https://www.abeokutapoloclub.org.ng/register"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5"
+            className="flex items-center gap-1 rounded-lg px-2.5 xl:px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5"
             aria-label="Membership Enquiries at Abeokuta Polo Club (Opens in new tab)"
           >
             <span>Membership</span>
@@ -378,18 +386,6 @@ export function PublicHeader() {
               </Link>
             </Button>
           )}
-
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="border-gold/40 bg-white/5 text-ivory font-semibold text-xs hover:bg-gold/15 hover:border-gold hover:text-gold h-9 px-3.5 hidden lg:inline-flex"
-          >
-            <Link href="/sponsorship" className="flex items-center gap-1.5">
-              <Building2 className="size-3.5 text-gold" />
-              <span>Partnerships</span>
-            </Link>
-          </Button>
 
           <Button
             asChild
