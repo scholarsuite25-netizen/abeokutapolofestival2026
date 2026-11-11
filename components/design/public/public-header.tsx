@@ -207,33 +207,34 @@ export function PublicHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full overflow-x-clip border-b border-line/80 bg-ivory/95 backdrop-blur-md supports-[backdrop-filter]:bg-ivory/85 print:hidden">
-      <div className="mx-auto flex h-16 sm:h-18 lg:h-20 max-w-7xl items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 lg:px-8">
-        {/* ── 1. Event Brand Name: Clear & Visible ── */}
+    <header className="sticky top-0 z-40 w-full overflow-x-clip border-b border-gold/30 bg-forest-deep/95 backdrop-blur-xl supports-[backdrop-filter]:bg-forest-deep/90 text-ivory shadow-lg shadow-black/20 print:hidden transition-all duration-200">
+      <div className="mx-auto flex h-18 sm:h-20 lg:h-22 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        {/* ── 1. Event Brand Name: Royal Heritage Crest & Typography ── */}
         <Link
           href="/"
-          className="group flex items-center gap-2 sm:gap-3 transition-opacity hover:opacity-90 shrink min-w-0"
+          className="group flex items-center gap-3 transition-opacity hover:opacity-95 shrink min-w-0"
           aria-label="Abeokuta Polo Festival 2026 - The Blueprint"
         >
-          <div className="flex size-9 sm:size-10 lg:size-11 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/40 shadow-xs transition-transform group-hover:scale-105">
-            <Shield className="size-5 sm:size-6 text-gold" />
+          <div className="relative flex size-10 sm:size-11 lg:size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-forest-interactive to-forest-deep text-gold border border-gold/60 shadow-md shadow-forest-deep/40 transition-transform group-hover:scale-105">
+            <Shield className="size-5 sm:size-6 text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
+            <div className="absolute inset-0 rounded-xl bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="font-display text-xs sm:text-base lg:text-lg font-bold tracking-tight text-forest leading-tight truncate">
-              Abeokuta Polo Festival 2026
+            <span className="font-display text-sm sm:text-base lg:text-lg font-extrabold tracking-tight text-ivory leading-tight truncate drop-shadow-xs">
+              Abeokuta Polo Festival <span className="text-gold">2026</span>
             </span>
-            <span className="mt-0.5 font-serif text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep leading-none flex items-center gap-1.5">
+            <span className="mt-0.5 font-serif text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] text-gold-light leading-none flex items-center gap-1.5">
               <span>The Blueprint</span>
-              <span className="hidden sm:inline-block size-1 rounded-full bg-gold" />
-              <span className="hidden sm:inline-block text-[10px] text-muted-brand font-sans tracking-normal font-normal">
+              <span className="inline-block size-1 rounded-full bg-gold/60" />
+              <span className="text-[10px] text-ivory/70 font-sans tracking-normal font-normal">
                 18–20 Dec
               </span>
             </span>
           </div>
         </Link>
 
-        {/* ── 2. Unified Compact Main Menu with Stable Non-Shaking Submenus ── */}
-        <nav aria-label="Main Navigation" className="hidden lg:flex items-center gap-0.5 xl:gap-1">
+        {/* ── 2. Unified Premium Main Menu with Stable Non-Shaking Submenus ── */}
+        <nav aria-label="Main Navigation" className="hidden lg:flex items-center gap-1 xl:gap-2">
           {NAV_CATEGORIES.map((category) => {
             const isOpen = activeCategory === category.title;
             return (
@@ -245,15 +246,15 @@ export function PublicHeader() {
               >
                 <button
                   onClick={() => setActiveCategory(isOpen ? null : category.title)}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors outline-none cursor-pointer text-ink/80 hover:bg-sage/50 hover:text-forest ${
-                    isOpen ? "bg-sage/60 text-forest" : ""
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
+                    isOpen ? "bg-white/10 text-gold" : ""
                   }`}
                   aria-expanded={isOpen}
                 >
                   <span>{category.title}</span>
                   <ChevronDown
-                    className={`size-3 transition-transform duration-200 opacity-60 ${
-                      isOpen ? "rotate-180 opacity-100" : ""
+                    className={`size-3 transition-transform duration-200 text-gold/80 ${
+                      isOpen ? "rotate-180 text-gold" : ""
                     }`}
                   />
                 </button>
@@ -262,7 +263,7 @@ export function PublicHeader() {
                 <div
                   className={`absolute ${
                     category.title === "Guide" ? "right-0" : "left-0"
-                  } top-full pt-1.5 w-72 transition-all duration-150 origin-top z-50 ${
+                  } top-full pt-2 w-80 transition-all duration-150 origin-top z-50 ${
                     isOpen
                       ? "opacity-100 visible translate-y-0 pointer-events-auto"
                       : "opacity-0 invisible -translate-y-2 pointer-events-none"
@@ -271,41 +272,43 @@ export function PublicHeader() {
                   {/* Invisible Hitbox Bridge preventing mouseLeave gap */}
                   <div className="absolute -top-2 left-0 right-0 h-4 bg-transparent" />
 
-                  <div className="rounded-xl border border-line bg-card p-2.5 shadow-xl">
-                    <div className="px-2.5 pt-1 pb-1.5 border-b border-line/60">
-                      <p className="font-display text-[11px] font-bold uppercase tracking-wider text-forest">
+                  <div className="rounded-2xl border border-gold/40 bg-forest-deep/98 p-3 shadow-2xl shadow-black/80 backdrop-blur-2xl text-ivory">
+                    <div className="px-3 pt-1.5 pb-2 border-b border-gold/25">
+                      <p className="font-display text-[11px] font-bold uppercase tracking-widest text-gold">
                         {category.title}
                       </p>
-                      <p className="text-[10px] text-muted-brand">{category.desc}</p>
+                      <p className="text-[11px] text-ivory/70">{category.desc}</p>
                     </div>
 
-                    <div className="mt-1.5 space-y-0.5">
+                    <div className="mt-2 space-y-1">
                       {category.items.map((item) => {
                         const Icon = item.icon;
                         const isExt = Boolean(item.isExternal || item.href.startsWith("http"));
                         const content = (
                           <>
                             <div
-                              className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md ${
-                                item.isPriority ? "bg-forest text-gold" : "bg-sage/60 text-forest"
+                              className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border ${
+                                item.isPriority
+                                  ? "bg-gold/20 text-gold border-gold/60"
+                                  : "bg-white/5 text-ivory/90 border-white/10"
                               }`}
                             >
-                              <Icon className="size-3.5" />
+                              <Icon className="size-4" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-forest flex items-center gap-1">
+                                <span className="text-xs font-semibold text-ivory flex items-center gap-1 group-hover:text-gold transition-colors">
                                   {item.label}
-                                  {isExt && <ExternalLink className="size-2.5 opacity-60 text-gold-deep" />}
+                                  {isExt && <ExternalLink className="size-2.5 opacity-60 text-gold" />}
                                 </span>
                                 {item.isPriority && (
-                                  <Badge className="bg-forest text-gold text-[8px] px-1.5 py-0 font-bold uppercase tracking-widest border border-gold/40">
+                                  <Badge className="bg-gold text-forest-deep text-[8px] px-1.5 py-0 font-extrabold uppercase tracking-widest border border-gold/60 shadow-xs">
                                     Priority
                                   </Badge>
                                 )}
                               </div>
                               {item.desc && (
-                                <p className="text-[10px] text-muted-brand leading-tight mt-0.5 truncate">
+                                <p className="text-[10px] text-ivory/60 leading-tight mt-0.5 truncate">
                                   {item.desc}
                                 </p>
                               )}
@@ -313,10 +316,10 @@ export function PublicHeader() {
                           </>
                         );
 
-                        const itemClasses = `flex items-start gap-2.5 rounded-lg p-2 transition-colors cursor-pointer ${
+                        const itemClasses = `group flex items-start gap-3 rounded-xl p-2.5 transition-all cursor-pointer ${
                           item.isPriority
-                            ? "bg-gold/15 border border-gold/50 text-forest hover:bg-gold/25"
-                            : "hover:bg-sage/40 text-ink"
+                            ? "bg-gold/10 border border-gold/40 hover:bg-gold/20 hover:border-gold"
+                            : "hover:bg-white/10 text-ivory"
                         }`;
 
                         return isExt ? (
@@ -352,25 +355,25 @@ export function PublicHeader() {
             href="https://www.abeokutapoloclub.org.ng/register"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors outline-none cursor-pointer text-ink/80 hover:bg-sage/50 hover:text-forest"
+            className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5"
             aria-label="Membership Enquiries at Abeokuta Polo Club (Opens in new tab)"
           >
             <span>Membership</span>
-            <ExternalLink className="size-3 opacity-60 text-gold-deep" />
+            <ExternalLink className="size-3 opacity-60 text-gold" />
           </a>
         </nav>
 
-        {/* ── 3. High-Priority Registration CTA (Find My Pass removed to keep navbar clean) ── */}
-        <div className="hidden sm:flex items-center gap-2 shrink-0">
+        {/* ── 3. High-Priority Registration CTA ── */}
+        <div className="hidden sm:flex items-center gap-2.5 shrink-0">
           {storedPass && (
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 px-2.5"
+              className="border-gold/50 bg-gold/10 text-gold font-semibold text-xs hover:bg-gold/20 hover:text-gold-light h-9 px-3"
             >
               <Link href={`/pass/${storedPass.passCode}`} className="flex items-center gap-1.5">
-                <ShieldCheck className="size-3.5 text-gold-deep" />
+                <ShieldCheck className="size-3.5 text-gold" />
                 <span>My Pass</span>
               </Link>
             </Button>
@@ -380,10 +383,10 @@ export function PublicHeader() {
             asChild
             variant="outline"
             size="sm"
-            className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden lg:inline-flex"
+            className="border-gold/40 bg-white/5 text-ivory font-semibold text-xs hover:bg-gold/15 hover:border-gold hover:text-gold h-9 px-3.5 hidden lg:inline-flex"
           >
             <Link href="/sponsorship" className="flex items-center gap-1.5">
-              <Building2 className="size-3.5 text-gold-deep" />
+              <Building2 className="size-3.5 text-gold" />
               <span>Partnerships</span>
             </Link>
           </Button>
@@ -392,26 +395,22 @@ export function PublicHeader() {
             asChild
             variant="outline"
             size="sm"
-            className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden md:inline-flex"
+            className="border-gold/50 bg-forest text-gold font-semibold text-xs hover:bg-gold hover:text-forest-deep h-9 px-3.5 hidden md:inline-flex transition-all shadow-sm"
           >
             <Link href="/tables" className="flex items-center gap-1.5">
-              <Crown className="size-3.5 text-gold-deep" />
+              <Crown className="size-3.5" />
               <span>VIP Tables</span>
             </Link>
           </Button>
 
           <Button
             asChild
-            className="relative group overflow-hidden bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs px-3 sm:px-4 py-2 h-8 sm:h-9 shadow-xs border border-gold/50 transition-all hover:shadow-md hover:border-gold hover:scale-[1.01] cursor-pointer"
+            className="relative group overflow-hidden bg-gradient-to-r from-gold via-gold-light to-gold-deep text-forest-deep font-extrabold text-xs px-4 sm:px-5 py-2.5 h-9 shadow-lg shadow-gold/20 border border-gold-light/60 transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer"
           >
-            <Link href="/register" className="flex items-center gap-1.5">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-gold opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-gold" />
-              </span>
-              <Ticket className="size-3.5 text-gold shrink-0 transition-transform group-hover:rotate-12" />
-              <span className="font-semibold tracking-wide">Register for Pass</span>
-              <span className="rounded bg-gold/25 px-1.5 py-0.5 text-[8px] font-bold text-gold uppercase tracking-wider border border-gold/40">
+            <Link href="/register" className="flex items-center gap-2">
+              <Ticket className="size-4 text-forest-deep shrink-0 transition-transform group-hover:rotate-12" />
+              <span className="font-extrabold tracking-wide uppercase">Register for Pass</span>
+              <span className="rounded bg-forest-deep text-gold px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
                 Day 1 Free
               </span>
             </Link>
@@ -419,16 +418,16 @@ export function PublicHeader() {
         </div>
 
         {/* ── 4. Mobile Quick Actions & Drawer ── */}
-        <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden shrink-0">
+        <div className="flex items-center gap-2 lg:hidden shrink-0">
           {storedPass && (
             <Button
               asChild
               size="sm"
               variant="outline"
-              className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs h-8 px-2 sm:hidden"
+              className="border-gold/60 bg-gold/10 text-gold font-semibold text-xs h-8 px-2 sm:hidden"
             >
               <Link href={`/pass/${storedPass.passCode}`} className="flex items-center gap-1">
-                <ShieldCheck className="size-3.5 text-gold-deep" />
+                <ShieldCheck className="size-3.5 text-gold" />
                 <span>My Pass</span>
               </Link>
             </Button>
@@ -437,10 +436,10 @@ export function PublicHeader() {
           <Button
             asChild
             size="sm"
-            className="bg-forest text-ivory hover:bg-forest-interactive font-semibold text-xs px-2.5 sm:px-3 shadow-xs border border-gold/40 sm:hidden"
+            className="bg-gold text-forest-deep hover:bg-gold-light font-extrabold text-xs px-3 shadow-md sm:hidden"
           >
             <Link href="/register" className="flex items-center gap-1.5">
-              <Ticket className="size-3.5 text-gold" />
+              <Ticket className="size-3.5 text-forest-deep" />
               <span>Register</span>
             </Link>
           </Button>
@@ -451,25 +450,25 @@ export function PublicHeader() {
                 variant="outline"
                 size="icon"
                 aria-label="Open Navigation Menu"
-                className="border-line bg-card hover:bg-sage/40"
+                className="border-gold/40 bg-forest text-gold hover:bg-gold hover:text-forest-deep"
               >
-                <Menu className="size-5 text-forest" />
+                <Menu className="size-5" />
               </Button>
             </SheetTrigger>
 
             <SheetContent
               side="right"
-              className="w-full sm:max-w-md max-w-[100vw] overflow-y-auto overflow-x-hidden bg-ivory p-4 sm:p-6 text-ink border-l border-line min-w-0"
+              className="w-full sm:max-w-md max-w-[100vw] overflow-y-auto overflow-x-hidden bg-forest-deep p-4 sm:p-6 text-ivory border-l border-gold/30 min-w-0"
             >
-              <div className="flex items-center gap-3 border-b border-line pb-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/40">
-                  <Shield className="size-5 text-gold" />
+              <div className="flex items-center gap-3 border-b border-gold/30 pb-4">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-forest text-gold border border-gold/50 shadow-md">
+                  <Shield className="size-6 text-gold" />
                 </div>
                 <div>
-                  <SheetTitle className="font-display text-base font-bold text-forest leading-tight text-left">
+                  <SheetTitle className="font-display text-base font-bold text-ivory leading-tight text-left">
                     Abeokuta Polo Festival 2026
                   </SheetTitle>
-                  <p className="font-serif text-[11px] font-semibold uppercase tracking-widest text-gold-deep text-left">
+                  <p className="font-serif text-[11px] font-semibold uppercase tracking-widest text-gold-light text-left">
                     The Blueprint · 18–20 Dec 2026
                   </p>
                 </div>
@@ -547,39 +546,39 @@ export function PublicHeader() {
               )}
 
               {/* Mobile Quick Action Buttons: Sponsorship, Affiliates, VIP Tables, Membership */}
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <SheetClose asChild>
                   <Link
                     href="/sponsorship"
-                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-gold/40 bg-gold/10 p-2.5 text-center text-[11px] font-semibold text-forest hover:bg-gold/20"
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-white/5 p-3 text-center text-[11px] font-semibold text-ivory hover:bg-gold/15 hover:border-gold transition-colors"
                   >
-                    <Building2 className="size-4 text-gold-deep" />
-                    <span>Sponsorship</span>
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    href="/affiliates"
-                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-gold/40 bg-gold/10 p-2.5 text-center text-[11px] font-semibold text-forest hover:bg-gold/20"
-                  >
-                    <Sparkles className="size-4 text-gold-deep" />
-                    <span>Affiliates</span>
+                    <Building2 className="size-4 text-gold" />
+                    <span>Partnerships</span>
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
                     href="/tables"
-                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-gold/40 bg-gold/10 p-2.5 text-center text-[11px] font-semibold text-forest hover:bg-gold/20"
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-white/5 p-3 text-center text-[11px] font-semibold text-ivory hover:bg-gold/15 hover:border-gold transition-colors"
                   >
-                    <Crown className="size-4 text-gold-deep" />
+                    <Crown className="size-4 text-gold" />
                     <span>VIP Tables</span>
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/affiliates"
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-white/5 p-3 text-center text-[11px] font-semibold text-ivory hover:bg-gold/15 hover:border-gold transition-colors"
+                  >
+                    <Sparkles className="size-4 text-gold" />
+                    <span>Affiliates (10%)</span>
                   </Link>
                 </SheetClose>
                 <a
                   href="https://www.abeokutapoloclub.org.ng/register"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col items-center justify-center gap-1 rounded-xl border border-gold/60 bg-forest p-2.5 text-center text-[11px] font-semibold text-ivory hover:bg-forest-interactive shadow-xs"
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gold/60 bg-forest p-3 text-center text-[11px] font-semibold text-ivory hover:bg-forest-interactive shadow-sm"
                 >
                   <Award className="size-4 text-gold" />
                   <span className="text-gold">Membership</span>
@@ -589,12 +588,12 @@ export function PublicHeader() {
               {/* Grouped Submenus */}
               <div className="mt-6 space-y-4">
                 {NAV_CATEGORIES.map((category) => (
-                  <div key={category.title} className="rounded-xl border border-line bg-card p-3 shadow-xs">
-                    <div className="flex items-center justify-between border-b border-line/60 pb-1.5 mb-2 px-1">
-                      <span className="font-display text-xs font-bold uppercase tracking-wider text-forest">
+                  <div key={category.title} className="rounded-2xl border border-gold/30 bg-white/5 p-3.5 shadow-md">
+                    <div className="flex items-center justify-between border-b border-gold/20 pb-2 mb-2 px-1">
+                      <span className="font-display text-xs font-bold uppercase tracking-wider text-gold">
                         {category.title}
                       </span>
-                      <span className="text-[10px] text-muted-brand">{category.desc}</span>
+                      <span className="text-[10px] text-ivory/60">{category.desc}</span>
                     </div>
 
                     <div className="grid grid-cols-1 gap-1">
@@ -603,25 +602,25 @@ export function PublicHeader() {
                         const isExt = Boolean(item.isExternal || item.href.startsWith("http"));
                         const rowContent = (
                           <>
-                            <span className="flex items-center gap-2">
-                              <Icon className="size-3.5 text-gold-deep" />
+                            <span className="flex items-center gap-2.5">
+                              <Icon className="size-3.5 text-gold" />
                               {item.label}
-                              {isExt && <ExternalLink className="size-3 opacity-60 text-gold-deep" />}
+                              {isExt && <ExternalLink className="size-3 opacity-60 text-gold" />}
                             </span>
                             {item.isPriority ? (
-                              <Badge className="bg-forest text-gold text-[9px] px-1 py-0 font-bold uppercase">
+                              <Badge className="bg-gold text-forest-deep text-[9px] px-1.5 py-0 font-extrabold uppercase">
                                 Day 1 Free
                               </Badge>
                             ) : (
-                              <span className="text-[10px] text-muted-brand">{item.desc}</span>
+                              <span className="text-[10px] text-ivory/60">{item.desc}</span>
                             )}
                           </>
                         );
 
-                        const rowClasses = `flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
+                        const rowClasses = `flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
                           item.isPriority
-                            ? "bg-gold/15 text-forest font-semibold"
-                            : "text-ink/80 hover:bg-sage/40 hover:text-forest"
+                            ? "bg-gold/15 text-gold font-semibold border border-gold/40"
+                            : "text-ivory/85 hover:bg-white/10 hover:text-gold"
                         }`;
 
                         return isExt ? (
