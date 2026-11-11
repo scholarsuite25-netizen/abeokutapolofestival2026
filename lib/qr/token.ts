@@ -10,12 +10,29 @@ export interface PassPayload {
   issuedAt: number;
 }
 
+/**
+ * Repository-visible development/test fallback literal. Because it is committed
+ * to source control it is NOT a secret, so it must never sign or verify
+ * credentials in production — `getSigningSecret` fails closed there instead.
+ */
+const DEV_ONLY_SIGNING_SECRET = "abk-polo-2026-production-qr-signing-key-32-chars";
+
 function getSigningSecret(env: ReturnType<typeof requireServerEnv>): string {
-  return (
-    env.QR_SIGNING_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "abk-polo-2026-production-qr-signing-key-32-chars"
-  );
+  if (env.QR_SIGNING_SECRET) {
+    return env.QR_SIGNING_SECRET;
+  }
+
+  // Fail closed: production must never fall back to a shared or borrowed key.
+  // Signing with a committed literal would make every Day 3 pass forgeable by
+  // anyone with repository access.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "QR_SIGNING_SECRET is not configured. Set a 32+ character QR_SIGNING_SECRET in the server environment; refusing to fall back to a shared key in production.",
+    );
+  }
+
+  // Local development & unit tests only.
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || DEV_ONLY_SIGNING_SECRET;
 }
 
 /**

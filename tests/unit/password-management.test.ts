@@ -143,6 +143,7 @@ describe("Password Management & Evaluation Rules", () => {
       );
 
       const formData = new FormData();
+      formData.append("currentPassword", "OldSecurePolo2026!");
       formData.append("newPassword", "NewSecurePolo2026#");
       formData.append("confirmPassword", "NewSecurePolo2026#");
 
@@ -193,12 +194,47 @@ describe("Password Management & Evaluation Rules", () => {
       );
 
       const formData = new FormData();
+      formData.append("currentPassword", "OldSecurePolo2026!");
       formData.append("newPassword", "FallbackPassword2026#");
       formData.append("confirmPassword", "FallbackPassword2026#");
 
       const res = await changeOwnPasswordAction(formData);
       expect(res.ok).toBe(true);
       expect(mockUpdateUser).toHaveBeenCalledWith({ password: "FallbackPassword2026#" });
+    });
+
+    it("rejects the change when the current password is missing", async () => {
+      const { changeOwnPasswordAction } = await import(
+        "@/app/(admin)/abawole/change-password/actions"
+      );
+
+      const formData = new FormData();
+      formData.append("newPassword", "NewSecurePolo2026#");
+      formData.append("confirmPassword", "NewSecurePolo2026#");
+
+      const res = await changeOwnPasswordAction(formData);
+      expect(res.ok).toBe(false);
+      expect(res.error).toMatch(/current password is required/i);
+      expect(mockUpdateUserById).not.toHaveBeenCalled();
+    });
+
+    it("fails closed when current password verification cannot complete (network error)", async () => {
+      mockSignInWithPassword.mockRejectedValueOnce(new Error("network down"));
+
+      const { changeOwnPasswordAction } = await import(
+        "@/app/(admin)/abawole/change-password/actions"
+      );
+
+      const formData = new FormData();
+      formData.append("currentPassword", "SomeCurrentPw123!");
+      formData.append("newPassword", "NewSecurePolo2026#");
+      formData.append("confirmPassword", "NewSecurePolo2026#");
+
+      const res = await changeOwnPasswordAction(formData);
+      expect(res.ok).toBe(false);
+      expect(res.error).toMatch(/could not verify/i);
+      expect(mockUpdateUserById).not.toHaveBeenCalled();
+      expect(mockWriteAudit).not.toHaveBeenCalled();
     });
   });
 

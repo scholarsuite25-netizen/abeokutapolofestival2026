@@ -45,6 +45,16 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 /**
  * Builds the Actor from active `user_role_assignments` (authoritative once
  * granted) with `profiles.role` as the bootstrap fallback.
+ *
+ * Authority rules (ARCHITECTURE_PLAN.md §7.4):
+ *  - once a user has ANY `user_role_assignments` row — active or revoked —
+ *    that table is the sole authority. Revoked/expired rows grant nothing, and
+ *    neither `profiles.role` nor the executive email map may override a
+ *    revocation;
+ *  - `profiles.role` and the emergency executive email map apply only to
+ *    accounts with NO assignment history (legacy / emergency bootstrap) and
+ *    only when the assignments query succeeded — on query failure the actor
+ *    gets no roles (fail closed, default-deny).
  */
 export async function buildActor(
   userId: string,
@@ -53,44 +63,55 @@ export async function buildActor(
 ): Promise<Actor> {
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("user_role_assignments")
     .select("role_key, expires_at, revoked_at")
     .eq("user_id", userId);
 
+  if (error) {
+    // Fail closed: the authoritative permission source failed — grant nothing
+    // rather than falling back to profile/email roles.
+    return { userId, roles: [] };
+  }
+
+  const rows = data ?? [];
   const now = Date.now();
   const roles = new Set<Role>();
 
-  for (const row of data ?? []) {
+  for (const row of rows) {
     if (row.revoked_at) continue;
     if (row.expires_at && new Date(row.expires_at).getTime() <= now) continue;
     roles.add(row.role_key as Role);
   }
 
-  if (fallbackRole) roles.add(fallbackRole);
+  // Bootstrap path — only for accounts with no assignment history at all.
+  if (rows.length === 0) {
+    if (fallbackRole) roles.add(fallbackRole);
 
-  // Authoritative executive accounts emergency bootstrap fallback
-  if (userEmail) {
-    const normalized = userEmail.toLowerCase().trim();
-    if (normalized === "secretary@abeokutapolo2026.ng") {
-      roles.add("general_secretary");
-    } else if (normalized === "president@abeokutapolo2026.ng") {
-      roles.add("president");
-    } else if (normalized === "superadmin@abeokutapolo2026.ng" || normalized === "admin@abeokutapolo2026.ng") {
-      roles.add("super_admin");
-    } else if (
-      normalized === "bursar@abeokutapolo2026.ng" ||
-      normalized === "finsec@abeokutapolo2026.ng" ||
-      normalized === "finance@abeokutapolo2026.ng"
-    ) {
-      roles.add("finance_officer");
-    } else if (
-      normalized.startsWith("gate@") ||
-      normalized.startsWith("gate1@") ||
-      normalized.startsWith("gate2@") ||
-      normalized.startsWith("gate3@")
-    ) {
-      roles.add("security_checkin_officer");
+    // Executive accounts emergency bootstrap fallback. Never applies once a
+    // role-assignment row exists: revocation must be final.
+    if (roles.size === 0 && userEmail) {
+      const normalized = userEmail.toLowerCase().trim();
+      if (normalized === "secretary@abeokutapolo2026.ng") {
+        roles.add("general_secretary");
+      } else if (normalized === "president@abeokutapolo2026.ng") {
+        roles.add("president");
+      } else if (normalized === "superadmin@abeokutapolo2026.ng" || normalized === "admin@abeokutapolo2026.ng") {
+        roles.add("super_admin");
+      } else if (
+        normalized === "bursar@abeokutapolo2026.ng" ||
+        normalized === "finsec@abeokutapolo2026.ng" ||
+        normalized === "finance@abeokutapolo2026.ng"
+      ) {
+        roles.add("finance_officer");
+      } else if (
+        normalized.startsWith("gate@") ||
+        normalized.startsWith("gate1@") ||
+        normalized.startsWith("gate2@") ||
+        normalized.startsWith("gate3@")
+      ) {
+        roles.add("security_checkin_officer");
+      }
     }
   }
 

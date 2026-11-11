@@ -4,14 +4,23 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(req: NextRequest) {
-  // Authorization check for Vercel Cron header or Bearer CRON_SECRET
+  // Authorization: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`.
+  // Fail closed — an unconfigured or mismatched secret must never expose an
+  // open relay that lets anyone trigger reminder dispatches.
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    // Return 401 if unauthorized in production
-    if (process.env.NODE_ENV === "production") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (!cronSecret) {
+    if (isProduction) {
+      return NextResponse.json(
+        { error: "Unauthorized: CRON_SECRET is not configured." },
+        { status: 401 },
+      );
     }
+    // Local development only: allow unauthenticated invocation.
+  } else if (authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { searchParams } = new URL(req.url);

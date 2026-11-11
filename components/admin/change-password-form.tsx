@@ -124,7 +124,7 @@ export function ChangePasswordForm({ userEmail, userRole }: ChangePasswordFormPr
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="currentPassword" className="text-xs font-semibold text-forest">
-              Current Password (Optional)
+              Current Password
             </Label>
             <button
               type="button"
@@ -138,13 +138,15 @@ export function ChangePasswordForm({ userEmail, userRole }: ChangePasswordFormPr
           <Input
             id="currentPassword"
             type={showCurrent ? "text" : "password"}
-            placeholder="Enter existing password if known"
+            placeholder="Enter your existing password"
+            autoComplete="current-password"
+            required
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             className="text-sm"
           />
           <p className="text-[10px] text-muted-brand">
-            Optional verification step for extra account security.
+            Required verification step — confirm your existing password to authorize the change.
           </p>
         </div>
 

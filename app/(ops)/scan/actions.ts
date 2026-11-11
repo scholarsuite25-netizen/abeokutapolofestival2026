@@ -179,7 +179,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
       const passCategory = inviteCategory || inv.category;
       const passDesignation = inviteDesignation || inv.designation;
 
-      // Duplicate prevention for complimentary guest
+      // Duplicate prevention for complimentary guest — in-memory fast path
       const passKey = inv.invitationCode.toUpperCase();
       const history = localAttendanceCache.get(passKey) || {};
       const dayKey = eventDay === 1 ? "day1" : eventDay === 2 ? "day2" : "day3";
@@ -201,6 +201,63 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
         };
       }
 
+      // DB-backed duplicate check: the in-memory ledger is lost on cold starts
+      // and is invisible to other serverless instances, so consult persisted
+      // admission history before admitting. Invitations are stored in the
+      // `credentials` table (see lib/invitations/storage.ts), so inv.id
+      // satisfies the check_in_events FK.
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = createAdminClient();
+          const { data: priorAdmissions, error: priorError } = await supabase
+            .from("check_in_events")
+            .select("gate, event_day, details")
+            .eq("credential_id", inv.id)
+            .eq("result", "admitted")
+            .order("scanned_at", { ascending: false })
+            .limit(50);
+
+          if (priorError) {
+            console.error("Gate scan: duplicate lookup failed:", priorError.message);
+          } else {
+            const priorAdmission = (priorAdmissions ?? []).find((row: {
+              gate: string | null;
+              event_day: number | null;
+              details: { eventDay?: number } | null;
+            }) => {
+              // Prefer the day recorded in details (written by the app); the
+              // event_day column defaults to 1 and may be stale on old rows.
+              const admissionDay =
+                typeof row.details?.eventDay === "number" ? row.details.eventDay : row.event_day;
+              return admissionDay === eventDay;
+            });
+
+            if (priorAdmission) {
+              history[dayKey] = true;
+              localAttendanceCache.set(passKey, history);
+              const priorGate = priorAdmission.gate || gate;
+              return {
+                status: "duplicate",
+                result: "already_admitted",
+                holderName,
+                passType: `Complimentary (${passCategory})`,
+                affiliationType: passCategory,
+                organization: passDesignation,
+                eventDay,
+                day1CheckedIn: !!history.day1,
+                day2CheckedIn: !!history.day2,
+                day3CheckedIn: !!history.day3,
+                lastGate: priorGate,
+                message: `Notice: This complimentary invitation has already been admitted on Day ${eventDay} at ${priorGate}.`,
+              };
+            }
+          }
+        } catch (dbErr) {
+          // Non-blocking: fall through to the in-memory ledger only.
+          console.error("Gate scan: duplicate lookup error:", dbErr);
+        }
+      }
+
       // Record admission
       history[dayKey] = true;
       localAttendanceCache.set(passKey, history);
@@ -208,11 +265,12 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
       if (isSupabaseConfigured()) {
         try {
           const supabase = createAdminClient();
-          await supabase.from("check_in_events").insert({
+          const { error: logError } = await supabase.from("check_in_events").insert({
             credential_id: inv.id,
             gate,
             officer_id: officerId === "local-dev-officer" ? null : officerId,
             result: "admitted",
+            event_day: eventDay,
             details: {
               eventDay,
               passType: `Complimentary (${passCategory})`,
@@ -220,7 +278,12 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
               securitySeal: ROYAL_SECURITY_SEAL,
             },
           });
-        } catch {}
+          if (logError) {
+            console.error("Gate scan: failed to persist admission event:", logError.message);
+          }
+        } catch (err) {
+          console.error("Gate scan: failed to persist admission event:", err);
+        }
       }
 
       const dayAdmissionMessage =

@@ -20,23 +20,37 @@ export async function changeOwnPasswordAction(formData: FormData) {
     return { ok: false, error: "New passwords do not match. Please verify both fields." };
   }
 
-  // If current password was provided, verify it first against Supabase Auth
-  if (currentPassword && session.user.email) {
+  // The current password is mandatory: a valid session alone must not be
+  // enough to rotate credentials (protects against persisted access after
+  // session theft).
+  if (!currentPassword) {
+    return { ok: false, error: "Current password is required." };
+  }
+
+  // Verify the current password against Supabase Auth before any change.
+  if (session.user.email) {
+    let verifyError: { message?: string } | null = null;
     try {
       const authClient = await createClient();
-      const { error: verifyError } = await authClient.auth.signInWithPassword({
+      const res = await authClient.auth.signInWithPassword({
         email: session.user.email,
         password: currentPassword,
       });
-
-      if (verifyError) {
-        return {
-          ok: false,
-          error: "Current password is incorrect. Please check your existing password and try again.",
-        };
-      }
+      verifyError = res.error;
     } catch {
-      // In offline/mock test environments, proceed to admin update
+      // Fail closed: if the check cannot complete (network/auth outage),
+      // refuse the change instead of proceeding unverified.
+      return {
+        ok: false,
+        error: "We could not verify your current password right now. Please try again shortly.",
+      };
+    }
+
+    if (verifyError) {
+      return {
+        ok: false,
+        error: "Current password is incorrect. Please check your existing password and try again.",
+      };
     }
   }
 

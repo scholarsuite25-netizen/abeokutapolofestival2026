@@ -5,14 +5,32 @@ import { getInvitationByCodeSync } from "./storage";
 export const ROYAL_SECURITY_SEAL = "Aare Elesin" as const;
 
 /**
+ * Repository-visible development/test fallback literal. Because it is committed
+ * to source control it is NOT a secret, so it must never sign or verify
+ * credentials in production — `getSigningSecret` fails closed there instead.
+ */
+const DEV_ONLY_SIGNING_SECRET = "abk-polo-2026-production-qr-signing-key-32-chars";
+
+/**
  * Resolves the signing secret for HMAC-SHA256 tokens.
+ * Throws in production when no explicit secret is configured (fail closed).
  */
 function getSigningSecret(): string {
-  return (
-    process.env.QR_SIGNING_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "abk-polo-2026-production-qr-signing-key-32-chars"
-  );
+  if (process.env.QR_SIGNING_SECRET) {
+    return process.env.QR_SIGNING_SECRET;
+  }
+
+  // Fail closed: production must never fall back to a shared or borrowed key.
+  // Invitation seals signed with a committed literal would be forgeable by
+  // anyone with repository access.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "QR_SIGNING_SECRET is not configured. Set a 32+ character QR_SIGNING_SECRET in the server environment; refusing to fall back to a shared key in production.",
+    );
+  }
+
+  // Local development & unit tests only.
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || DEV_ONLY_SIGNING_SECRET;
 }
 
 /**
@@ -72,7 +90,13 @@ export function verifyInvitationToken(
   }
 
   const [, encodedPayload, providedSig] = parts;
-  const secret = getSigningSecret();
+  let secret: string;
+  try {
+    secret = getSigningSecret();
+  } catch (err) {
+    // Fail closed: without a valid secret we cannot verify — refuse the token.
+    return { valid: false, error: (err as Error).message };
+  }
 
   const hmac = createHmac("sha256", secret);
   hmac.update(`ABK26.${encodedPayload}`);
