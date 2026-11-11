@@ -3,8 +3,11 @@ import { z } from "zod";
 import {
   DAY3_REFERENCE_PREFIX,
   DAY3_VVIP_MAX_TICKETS,
-  DAY3_VVIP_PRICE_NGN,
+  DAY3_VVIP_OFFICIAL_PRICE_NGN,
+  DAY3_VVIP_TESTING_PRICE_NGN,
 } from "@/lib/config/checkout-config";
+import { getTestingFeeStatus } from "@/lib/config/testing-fee-mode";
+import { getEffectivePaystackSecret } from "@/lib/paystack/verify";
 
 const attendeeSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
@@ -21,13 +24,17 @@ const bodySchema = z.object({
   quantity: z.coerce.number().int().min(1).max(DAY3_VVIP_MAX_TICKETS).default(1),
   attendees: z.array(attendeeSchema).optional(),
   affiliateCode: z.string().trim().optional(),
+  useTestingFee: z.boolean().optional(),
 });
 
-function newReference(simulatedQuantity?: number): string {
+function newReference(simulatedQuantity?: number, isOfficialPrice?: boolean): string {
   const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-  return simulatedQuantity
-    ? `${DAY3_REFERENCE_PREFIX}SIM-${simulatedQuantity}-${suffix}`
-    : `${DAY3_REFERENCE_PREFIX}${suffix}`;
+  if (simulatedQuantity) {
+    return isOfficialPrice
+      ? `${DAY3_REFERENCE_PREFIX}SIM-${simulatedQuantity}-OFF-${suffix}`
+      : `${DAY3_REFERENCE_PREFIX}SIM-${simulatedQuantity}-${suffix}`;
+  }
+  return `${DAY3_REFERENCE_PREFIX}${suffix}`;
 }
 
 /**
@@ -51,10 +58,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email, firstName, lastName, phone, day1, day2, quantity, attendees, affiliateCode } = parsed.data;
-  const amountNgn = quantity * DAY3_VVIP_PRICE_NGN;
+  const { email, firstName, lastName, phone, day1, day2, quantity, attendees, affiliateCode, useTestingFee } = parsed.data;
+  const testingStatus = await getTestingFeeStatus();
+  const isTestMode = typeof useTestingFee === "boolean" ? useTestingFee : testingStatus.enabled;
+  const unitPriceNgn = isTestMode ? DAY3_VVIP_TESTING_PRICE_NGN : DAY3_VVIP_OFFICIAL_PRICE_NGN;
+  const amountNgn = quantity * unitPriceNgn;
   const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
-  const secret = process.env.PAYSTACK_SECRET_KEY;
+  const secret = getEffectivePaystackSecret();
 
   // The return URL only carries the registrant's form details. Paystack appends
   // `reference` itself; the server re-verifies it, so nothing here can grant a pass.
@@ -81,7 +91,7 @@ export async function POST(req: Request) {
         { status: 503 },
       );
     }
-    const reference = newReference(quantity);
+    const reference = newReference(quantity, !isTestMode);
     callback.searchParams.set("payment_ref", reference);
     return NextResponse.json({
       status: "success",

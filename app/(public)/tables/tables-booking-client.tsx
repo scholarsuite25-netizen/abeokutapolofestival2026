@@ -44,6 +44,8 @@ import {
   initializeTablePayment,
   submitTableRegistration,
   recordAffiliateClick,
+  getTestingFeeModeAction,
+  toggleTestingFeeModeAction,
   type TableBookingResult,
 } from "@/app/(public)/register/actions";
 import { persistRegisteredPass, forceDownloadOfflinePassCard, type StoredPass } from "@/lib/storage/pass-storage";
@@ -76,8 +78,8 @@ export function TablesBookingClient() {
   // 10 Seats: Seat 1 is Host, Seats 2 to 10 are Guests
   const [attendeeNames, setAttendeeNames] = useState<string[]>(Array(10).fill(""));
 
-  // Payment channel: 'gateway' (online card) or 'bank_transfer' (Wema Bank)
-  const [paymentChannel, setPaymentChannel] = useState<"gateway" | "bank_transfer">("gateway");
+  // Payment channel: 'bank_transfer' (Wema Bank — default until live gateway keys are supplied) or 'gateway' (online card)
+  const [paymentChannel, setPaymentChannel] = useState<"bank_transfer" | "gateway">("bank_transfer");
   const [wemaRef, setWemaRef] = useState<string>(() => generateWemaTransferReference());
 
   // UI state
@@ -85,6 +87,33 @@ export function TablesBookingClient() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [bookingResult, setBookingResult] = useState<TableBookingResult | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [useTestingFee, setUseTestingFee] = useState<boolean>(true);
+  const [testingAutoRemovedNotice, setTestingAutoRemovedNotice] = useState<boolean>(false);
+
+  // Sync testing fee mode from server on mount
+  useEffect(() => {
+    getTestingFeeModeAction()
+      .then((status) => {
+        setUseTestingFee(status.enabled);
+        if (status.autoRemovedAfterPayment) {
+          setTestingAutoRemovedNotice(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleToggleTestingFee = async (nextVal: boolean) => {
+    setUseTestingFee(nextVal);
+    if (nextVal) setTestingAutoRemovedNotice(false);
+    try {
+      await toggleTestingFeeModeAction(
+        nextVal,
+        nextVal ? "manual_enable_from_tables_ui" : "manual_disable_from_tables_ui",
+      );
+    } catch {
+      // Non-blocking
+    }
+  };
 
   // Auto-sync Seat 1 name with Host name
   useEffect(() => {
@@ -195,12 +224,17 @@ export function TablesBookingClient() {
           paymentMethod: "gateway",
           paymentRef: paymentRefParam,
           affiliateCode: refParam || affiliateRef || undefined,
+          useTestingFee: searchParams.get("tf") !== "0",
           attendees: attendeesPayload,
         })
           .then((res) => {
             setLoading(false);
             if (res.success) {
               setBookingResult(res);
+              if (res.testingFeeAutoRemoved) {
+                setUseTestingFee(false);
+                setTestingAutoRemovedNotice(true);
+              }
               if (res.passes && res.passes.length > 0) {
                 persistRegisteredPass(res.passes);
               }
@@ -234,7 +268,8 @@ export function TablesBookingClient() {
       return;
     }
 
-    const attendeesPayload = attendeeNames.map((name, idx) => ({
+    const capacity = selectedPkg.guestCapacity || 10;
+    const attendeesPayload = attendeeNames.slice(0, capacity).map((name, idx) => ({
       seat: idx + 1,
       name: name.trim() || (idx === 0 ? `${firstName} ${lastName}`.trim() : `${firstName} ${lastName} (Guest ${idx + 1})`),
     }));
@@ -249,6 +284,7 @@ export function TablesBookingClient() {
         buyerEmail: email,
         buyerPhone: phone,
         affiliateCode: affiliateRef.trim() || undefined,
+        useTestingFee,
         attendees: attendeesPayload,
       });
 
@@ -275,6 +311,7 @@ export function TablesBookingClient() {
         paymentMethod: "bank_transfer",
         bankTransferRef: wemaRef,
         affiliateCode: affiliateRef.trim() || undefined,
+        useTestingFee,
         attendees: attendeesPayload,
       });
 
@@ -383,20 +420,20 @@ export function TablesBookingClient() {
             <div className="text-xs text-ivory/90 space-y-0.5">
               <p className="font-bold text-gold">Security Protocol: Anti-Forwarding & Device-Binding</p>
               <p className="text-ivory/80 leading-relaxed">
-                As the Table Host, you hold master access to all 10 cards below. When you share a guest card via WhatsApp or link, the recipient's phone will lock to that specific ticket upon opening. Third-party forwarding is strictly blocked at the turnstiles.
+                As the Table Host, you hold master access to all {bookingResult.passes.length} card{bookingResult.passes.length === 1 ? "" : "s"} below. When you share a guest card via WhatsApp or link, the recipient&apos;s phone will lock to that specific ticket upon opening. Third-party forwarding is strictly blocked at the turnstiles.
               </p>
             </div>
           </div>
 
-          {/* Grid of 10 Passes */}
+          {/* Grid of Passes */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl sm:text-2xl font-bold text-ivory flex items-center gap-2">
                 <Users className="size-5 text-gold" />
-                <span>10 Table Access Passes ({bookingResult.tableSerial})</span>
+                <span>{bookingResult.passes.length} Hospitality Access Pass{bookingResult.passes.length === 1 ? "" : "es"} ({bookingResult.tableSerial})</span>
               </h2>
               <Badge className="bg-gold text-black font-bold text-xs uppercase px-2.5 py-0.5">
-                All 10 Passes Active
+                All {bookingResult.passes.length} Pass{bookingResult.passes.length === 1 ? "" : "es"} Active
               </Badge>
             </div>
 
@@ -404,11 +441,12 @@ export function TablesBookingClient() {
               {bookingResult.passes.map((pass, idx) => {
                 const isHost = idx === 0;
                 const guestName = pass.holderName;
+                const totalSeats = bookingResult.passes?.length || 1;
                 const passUrl = typeof window !== "undefined"
                   ? `${window.location.origin}/pass/${pass.passCode}`
                   : `https://abeokuta-polo-festival-2026.vercel.app/pass/${pass.passCode}`;
 
-                const whatsappText = `👑 *Official VIP Invitation: Abeokuta Polo Festival 2026 Grand Finale*\n\nDear ${guestName},\nYou are cordially invited to join our private VIP table enclosure:\n🏆 *${bookingResult.packageName}*\n📍 *Table:* ${bookingResult.tableSerial} (Seat ${idx + 1} of 10)\n📅 *Date:* Sunday, 20 Dec 2026\n👤 *Host:* ${hostName}\n\n🛡️ *Claim your official Gate Turnstile Access Card:*\n👉 ${passUrl}\n\n_Note: Once opened, this access pass binds to your mobile device and cannot be forwarded._`;
+                const whatsappText = `👑 *Official VIP Invitation: Abeokuta Polo Festival 2026 Grand Finale*\n\nDear ${guestName},\nYou are cordially invited to join our private VIP table enclosure:\n🏆 *${bookingResult.packageName}*\n📍 *Table:* ${bookingResult.tableSerial} (Seat ${idx + 1} of ${totalSeats})\n📅 *Date:* Sunday, 20 Dec 2026\n👤 *Host:* ${hostName}\n\n🛡️ *Claim your official Gate Turnstile Access Card:*\n👉 ${passUrl}\n\n_Note: Once opened, this access pass binds to your mobile device and cannot be forwarded._`;
                 const whatsappHref = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`;
 
                 return (
@@ -420,7 +458,7 @@ export function TablesBookingClient() {
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono text-[10px] font-bold text-gold uppercase px-1.5 py-0.5 rounded bg-gold/15 border border-gold/30">
-                            Seat {idx + 1} of 10
+                            Seat {idx + 1} of {totalSeats}
                           </span>
                           {isHost && (
                             <Badge className="bg-neutral-800 text-gold border border-gold/40 text-[9px] font-bold uppercase">
@@ -522,6 +560,10 @@ export function TablesBookingClient() {
   // ───────────────────────────────────────────────────────────────────────────
   // VIEW: Interactive Table Selection & Booking Form
   // ───────────────────────────────────────────────────────────────────────────
+  const activePayableDisplay = useTestingFee
+    ? selectedPkg.testingPriceDisplay
+    : selectedPkg.officialPriceDisplay;
+
   return (
     <div className="w-full bg-black text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
@@ -529,25 +571,61 @@ export function TablesBookingClient() {
         <div className="rounded-3xl border-2 border-gold-deep/80 bg-black p-6 sm:p-12 text-center space-y-5 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
           <div className="inline-flex items-center gap-2 rounded-full border border-gold-deep/80 bg-gold-deep/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold shadow-sm">
             <Crown className="size-4 text-gold" />
-            <span>Day 3 Grand Finale · Sunday 20 December 2026</span>
+            <span>18–20 DECEMBER 2026 · ABEOKUTA, OGUN STATE · GRAND FINALE 20 DEC</span>
           </div>
 
           <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-black text-ivory tracking-tight leading-tight">
-            Exclusive VIP Table Packages
+            Exclusive Table &amp; Hospitality Packages
           </h1>
 
-          <p className="text-sm sm:text-base text-ivory/80 leading-relaxed max-w-2xl mx-auto">
-            Reserve a dedicated, serial-numbered private table for 10 guests. Experience pitch-side championship polo, royal hospitality, fine dining, and live musical headline concerts in Abeokuta.
+          <p className="text-sm sm:text-base text-ivory/80 leading-relaxed max-w-3xl mx-auto">
+            Experience an exceptional fusion of heritage, royalty, sporting excellence and luxury hospitality at the Abeokuta Polo Festival 2026 – <strong>THE BLUEPRINT</strong>. Designed for distinguished personalities, corporate organisations, families and individual guests, our five carefully curated hospitality categories offer different levels of comfort, exclusivity and access to the festival’s grand finale.
           </p>
 
-          {/* Active Pilot Testing Mode Banner */}
-          <div className="rounded-xl border border-gold-deep/80 bg-[#0d0d0d] p-4 text-center shadow-lg max-w-2xl mx-auto">
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-black text-gold uppercase tracking-wider">
-              <Sparkles className="size-4 text-gold shrink-0 animate-pulse" />
-              <span>Active Pilot Testing Mode — ₦100.00 Checkout</span>
+          {/* Auto-Removal Notice Banner (shown after a ₦100 test payment succeeds) */}
+          {testingAutoRemovedNotice && !useTestingFee && (
+            <div className="rounded-xl border-2 border-emerald-500 bg-emerald-950/90 p-3.5 text-center shadow-lg max-w-2xl mx-auto">
+              <p className="text-xs sm:text-sm font-bold text-emerald-300">
+                ✅ ₦100.00 Test Payment Verified! The Pilot Testing Fee has been automatically removed — Live Official Brochure Pricing is now active.
+              </p>
             </div>
-            <p className="text-[11px] sm:text-xs text-ivory/90 mt-1 leading-snug">
-              Official package values (₦10,000,000 to ₦1,500,000) are preserved on all credentials and hospitality enclosures. For live end-to-end testing, transactions are charged at a nominal <strong>₦100.00</strong> fee.
+          )}
+
+          {/* Smart ₦100 Pilot Testing Fee Toggle Control */}
+          <div className="rounded-xl border border-gold-deep/80 bg-[#0d0d0d] p-4 text-center shadow-lg max-w-2xl mx-auto space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/20 pb-2.5">
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-black text-gold uppercase tracking-wider">
+                <Sparkles className="size-4 text-gold shrink-0 animate-pulse" />
+                <span>
+                  {useTestingFee
+                    ? "₦100.00 Pilot Testing Mode Active"
+                    : "Official Brochure Pricing Mode Active"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggleTestingFee(!useTestingFee)}
+                className={`rounded-full px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider transition-all cursor-pointer border ${
+                  useTestingFee
+                    ? "bg-emerald-500 text-black border-emerald-400 hover:bg-emerald-400"
+                    : "bg-gold-deep text-black border-gold hover:bg-gold-light"
+                }`}
+              >
+                {useTestingFee
+                  ? "Switch to Official Prices (₦5M – ₦50k)"
+                  : "Enable ₦100.00 Testing Fee"}
+              </button>
+            </div>
+            <p className="text-[11px] sm:text-xs text-ivory/90 leading-snug text-left">
+              {useTestingFee ? (
+                <>
+                  <strong>Pilot Testing Provision:</strong> Official brochure prices (<strong>₦5,000,000</strong> Kings Table, <strong>₦3,000,000</strong> Royal Table, <strong>₦2,000,000</strong> Queens Table, <strong>₦500,000</strong> Premium Table, <strong>₦50,000</strong> Regular Section) are preserved on your credentials. Checkout is currently set to <strong>₦100.00</strong> for live verification and will <strong>automatically remove itself and revert to the official brochure amounts</strong> immediately after a successful ₦100 payment.
+                </>
+              ) : (
+                <>
+                  <strong>Live Official Brochure Pricing:</strong> Checkout charges the official brochure package price (<strong>{selectedPkg.officialPriceDisplay}</strong> for {selectedPkg.name}). You can toggle the ₦100.00 testing fee above at any time if needed.
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -560,12 +638,12 @@ export function TablesBookingClient() {
 
         {/* 1. Category Selection Cards */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h2 className="font-display text-xl sm:text-2xl font-bold text-ivory flex items-center gap-2">
               <Shield className="size-5 text-gold" />
-              <span>Step 1: Choose Your Enclosure Package</span>
+              <span>Step 1: Choose Your Hospitality Category (Grand Finale — 20 Dec 2026)</span>
             </h2>
-            <span className="text-xs text-gold-deep font-semibold">VIP Table Enclosures &amp; Individual Options</span>
+            <span className="text-xs text-gold-deep font-semibold">5 Official Brochure Categories</span>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -595,28 +673,33 @@ export function TablesBookingClient() {
                           : "bg-neutral-800 text-ivory border-line/40"
                       }`}
                     >
-                      {pkg.badge}
+                      {pkg.categoryNumber}. {pkg.badge}
                     </Badge>
 
                     <div>
                       <h3 className="font-display text-lg font-bold text-ivory">{pkg.name}</h3>
-                      <p className="text-[11px] text-ivory/70 leading-tight mt-0.5">{pkg.tagline}</p>
+                      <p className="text-[11px] text-gold/90 font-semibold leading-tight mt-0.5">{pkg.tagline}</p>
                     </div>
 
-                    <div className="pt-2 border-t border-line/30 space-y-0.5">
+                    <div className="pt-2 border-t border-line/30 space-y-1">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-gold-deep block">
-                        Official Value
+                        Package Price {pkg.guestCapacity === 1 ? "(Per Person)" : `(${pkg.guestCapacity} Guests)`}
                       </span>
                       <p className="font-display text-xl font-black text-gold">
                         {pkg.officialPriceDisplay}
+                        {pkg.guestCapacity === 1 && (
+                          <span className="text-[10px] font-normal text-ivory/80 block">PER PERSON</span>
+                        )}
                       </p>
-                      <div className="inline-block bg-emerald-950/80 border border-emerald-500/50 rounded px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
-                        Test Fee: {pkg.testingPriceDisplay}
-                      </div>
+                      {useTestingFee && (
+                        <div className="inline-block bg-emerald-950/80 border border-emerald-500/50 rounded px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
+                          Active Test Fee: {pkg.testingPriceDisplay}
+                        </div>
+                      )}
                     </div>
 
-                    <ul className="space-y-1.5 pt-2 text-[11px] text-ivory/80">
-                      {pkg.features.slice(0, 3).map((f, i) => (
+                    <ul className="space-y-1.5 pt-2 text-[11px] text-ivory/85">
+                      {pkg.features.map((f, i) => (
                         <li key={i} className="flex items-start gap-1.5 leading-snug">
                           <CheckCircle2 className="size-3 text-gold shrink-0 mt-0.5" />
                           <span>{f}</span>
@@ -626,7 +709,9 @@ export function TablesBookingClient() {
                   </div>
 
                   <div className="pt-4 border-t border-line/20 mt-4 flex items-center justify-between text-xs">
-                    <span className="text-ivory/60 font-medium">{pkg.tableCount} Available Tables</span>
+                    <span className="text-ivory/60 font-medium">
+                      {pkg.guestCapacity === 1 ? "Individual Pass" : `${pkg.guestCapacity} Guests / Table`}
+                    </span>
                     <span className="font-bold text-gold flex items-center gap-1">
                       {isSelected ? "Active ✓" : "Select →"}
                     </span>
@@ -649,19 +734,23 @@ export function TablesBookingClient() {
             <div>
               <h2 className="font-display text-lg sm:text-xl font-bold text-ivory flex items-center gap-2">
                 <Crown className="size-5 text-gold" />
-                <span>Step 2: Select Serial Table Number</span>
+                <span>
+                  Step 2: Select {selectedPkg.guestCapacity === 1 ? "Pass Serial Allocation" : "Serial Table Number"}
+                </span>
               </h2>
               <p className="text-xs text-ivory/70">
-                Choose your specific numbered table for <strong>{selectedPkg.name}</strong> ({selectedPkg.enclosure})
+                Choose your specific allocation for <strong>{selectedPkg.name}</strong> ({selectedPkg.enclosure})
               </p>
             </div>
             <Badge className="bg-gold text-black font-bold text-xs uppercase self-start sm:self-auto">
-              {selectedPkg.guestCapacity === 1 ? "1 Reserved Seat" : "10 Seats Guaranteed"}
+              {selectedPkg.guestCapacity === 1
+                ? "1 Guest Pass (Per Person)"
+                : `${selectedPkg.guestCapacity} Guests Guaranteed${selectedPkg.parkingVehicles ? ` · ${selectedPkg.parkingVehicles} VIP Parking` : ""}`}
             </Badge>
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
-            {serials.map((serial) => {
+          <div className="flex flex-wrap gap-2 pt-1 max-h-48 overflow-y-auto">
+            {serials.slice(0, 30).map((serial) => {
               const isSerialSelected = selectedSerial === serial;
               return (
                 <button
@@ -687,15 +776,22 @@ export function TablesBookingClient() {
           <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
-        {/* 3. Attendee Personalization (10 Seats) & Checkout Form */}
+        {/* 3. Attendee Personalization & Checkout Form */}
         <form onSubmit={handleSubmitBooking} className="rounded-2xl border-2 border-gold/50 bg-[#1C1605] p-5 sm:p-8 space-y-8 shadow-2xl">
           <div>
             <h2 className="font-display text-xl sm:text-2xl font-bold text-ivory flex items-center gap-2">
               <User className="size-5 text-gold" />
-              <span>Step 3: {selectedPkg.guestCapacity === 1 ? "Attendee Details & VIP Table Seat (1 Guest)" : "Host Details & Guest Information (10 Seats)"}</span>
+              <span>
+                Step 3:{" "}
+                {selectedPkg.guestCapacity === 1
+                  ? "Attendee Details — The Regular Section (1 Guest)"
+                  : `Host Details & Guest Information (${selectedPkg.guestCapacity} Guests)`}
+              </span>
             </h2>
             <p className="text-xs text-ivory/70 mt-1">
-              {selectedPkg.guestCapacity === 1 ? "At buying point, enter the primary attendee details. 1 distinct HMAC-256 signed VIP Table Turnstile ID card will be issued." : "At buying point, enter the names for all 10 attendees. Seat 1 is reserved for the Host/Buyer. Seats 2 to 10 are for your invited guests."}
+              {selectedPkg.guestCapacity === 1
+                ? "Enter your details below. 1 distinct HMAC-256 signed Turnstile ID card will be issued and emailed to you."
+                : `Enter the primary Host details and optionally personalize all ${selectedPkg.guestCapacity} seats for ${selectedPkg.name}. Seat 1 is reserved for the Host/Buyer; Seats 2 to ${selectedPkg.guestCapacity} are for your invited guests.`}
             </p>
           </div>
 
@@ -738,7 +834,7 @@ export function TablesBookingClient() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="em" className="text-xs font-semibold text-ivory">Email Address (For Confirmation & Receipts) *</Label>
+                <Label htmlFor="em" className="text-xs font-semibold text-ivory">Email Address (For Confirmation &amp; Digital Passes) *</Label>
                 <Input
                   id="em"
                   type="email"
@@ -769,7 +865,7 @@ export function TablesBookingClient() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gold/30 pb-1.5">
               <h3 className="text-xs uppercase font-bold tracking-widest text-gold">
-                Table Seating List (10 Passes Issued)
+                Table Seating List ({selectedPkg.guestCapacity} Passes Issued)
               </h3>
               <span className="text-[11px] text-ivory/60">
                 You can personalize now or share blank guest invitations later
@@ -777,14 +873,14 @@ export function TablesBookingClient() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              {attendeeNames.map((name, idx) => {
+              {attendeeNames.slice(0, selectedPkg.guestCapacity).map((name, idx) => {
                 const isHost = idx === 0;
                 return (
                   <div key={idx} className="space-y-1">
                     <Label className="text-[11px] font-semibold text-ivory/90 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <span className="font-mono text-[10px] px-1 rounded bg-gold/20 text-gold">
-                          Seat {idx + 1}
+                          Seat {idx + 1} of {selectedPkg.guestCapacity}
                         </span>
                         <span>{isHost ? "Table Host (You)" : `Invited Guest ${idx + 1}`}</span>
                       </span>
@@ -820,37 +916,23 @@ export function TablesBookingClient() {
 
           {/* Payment Method Selector */}
           <div className="space-y-4 pt-2">
-            <h3 className="text-xs uppercase font-bold tracking-widest text-gold border-b border-gold/30 pb-1.5">
-              Step 4: Select Payment Channel (Pilot Testing Fee: ₦100.00)
-            </h3>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {/* Option 1: Online Gateway */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/30 pb-1.5">
+              <h3 className="text-xs uppercase font-bold tracking-widest text-gold">
+                Step 4: Select Payment Channel ({useTestingFee ? `Pilot Testing Fee: ${selectedPkg.testingPriceDisplay}` : `Official Price: ${selectedPkg.officialPriceDisplay}`})
+              </h3>
               <button
                 type="button"
-                onClick={() => setPaymentChannel("gateway")}
-                className={`rounded-xl p-4 text-left border-2 transition-all cursor-pointer ${
-                  paymentChannel === "gateway"
-                    ? "border-gold bg-gold/15 shadow-md"
-                    : "border-line/40 bg-neutral-950 hover:border-gold/40"
-                }`}
+                onClick={() => handleToggleTestingFee(!useTestingFee)}
+                className="text-[11px] font-bold text-emerald-400 underline hover:text-gold cursor-pointer"
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-ivory flex items-center gap-2">
-                    <CreditCard className="size-4 text-gold" />
-                    <span>Instant Online Payment</span>
-                  </span>
-                  {paymentChannel === "gateway" && <CheckCircle2 className="size-4 text-gold" />}
-                </div>
-                <p className="text-xs text-ivory/70 mt-1.5">
-                  Debit / Credit Card, Bank Transfer, Apple Pay, USSD. Instant activation and immediate issuance of all 10 turnstile passes.
-                </p>
-                <span className="inline-block mt-2 font-mono text-xs font-bold text-gold">
-                  Charged: ₦100.00 (Pilot Testing)
-                </span>
+                {useTestingFee
+                  ? `Switch to Official Price (${selectedPkg.officialPriceDisplay})`
+                  : "Use ₦100.00 Pilot Testing Fee"}
               </button>
+            </div>
 
-              {/* Option 2: WEMA Bank Direct Wire */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {/* Option 1 (Default): WEMA Bank Direct Wire */}
               <button
                 type="button"
                 onClick={() => setPaymentChannel("bank_transfer")}
@@ -863,15 +945,40 @@ export function TablesBookingClient() {
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-sm text-ivory flex items-center gap-2">
                     <Building className="size-4 text-gold" />
-                    <span>Direct WEMA Bank Transfer</span>
+                    <span>1. Direct WEMA Bank Transfer (Default)</span>
                   </span>
                   {paymentChannel === "bank_transfer" && <CheckCircle2 className="size-4 text-gold" />}
                 </div>
                 <p className="text-xs text-ivory/70 mt-1.5">
-                  Direct wire to Abeokuta Polo Club ({CLUB_BANK_DETAILS.accountNumber}). Issues Provisional Claim Slips with turnstiles activated upon Bursary verification.
+                  Direct payment to Abeokuta Polo Club ({CLUB_BANK_DETAILS.accountNumber}). Issues Provisional Claim Slips with turnstiles activated upon Bursary verification.
                 </p>
                 <span className="inline-block mt-2 font-mono text-xs font-bold text-gold">
-                  Transfer Amount: ₦100.00
+                  Transfer Amount: {activePayableDisplay} {useTestingFee ? "(Pilot Testing — Auto-removes after verification)" : "(Official Brochure Rate)"}
+                </span>
+              </button>
+
+              {/* Option 2: Online Gateway (Demo / Testing Mode) */}
+              <button
+                type="button"
+                onClick={() => setPaymentChannel("gateway")}
+                className={`rounded-xl p-4 text-left border-2 transition-all cursor-pointer ${
+                  paymentChannel === "gateway"
+                    ? "border-gold bg-gold/15 shadow-md"
+                    : "border-line/40 bg-neutral-950 hover:border-gold/40"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm text-ivory flex items-center gap-2">
+                    <CreditCard className="size-4 text-gold" />
+                    <span>2. Online Payment Gateway (Demo Testing)</span>
+                  </span>
+                  {paymentChannel === "gateway" && <CheckCircle2 className="size-4 text-gold" />}
+                </div>
+                <p className="text-xs text-ivory/70 mt-1.5">
+                  Debit / Credit Card, USSD (Demo Testing Mode until live gateway keys are supplied). Instant simulation &amp; email issuance of {selectedPkg.guestCapacity === 1 ? "your turnstile pass" : `all ${selectedPkg.guestCapacity} turnstile passes`}.
+                </p>
+                <span className="inline-block mt-2 font-mono text-xs font-bold text-gold">
+                  Charged: {activePayableDisplay} {useTestingFee ? "(Pilot Testing — Auto-removes after payment)" : "(Official Brochure Rate)"}
                 </span>
               </button>
             </div>
@@ -912,16 +1019,23 @@ export function TablesBookingClient() {
                 {selectedPkg.name} ({selectedSerial})
               </p>
               <p className="text-xs text-ivory/70">
-                {selectedPkg.guestCapacity === 1 ? "1 VIP ID Turnstile Pass" : "10 VIP ID Turnstile Passes"} · {selectedPkg.enclosure} · Sunday 20 Dec 2026
+                {selectedPkg.guestCapacity === 1
+                  ? "1 Turnstile Pass (Per Person)"
+                  : `${selectedPkg.guestCapacity} VIP ID Turnstile Passes`}{" "}
+                · {selectedPkg.enclosure} · Sunday 20 Dec 2026
               </p>
             </div>
 
             <div className="text-right sm:text-right space-y-0.5">
-              <span className="text-[10px] uppercase font-bold text-ivory/60 block">Amount Payable (Testing)</span>
-              <span className="font-display text-2xl font-black text-gold">₦100.00</span>
-              <span className="text-[10px] text-ivory/60 block line-through">
-                Official: {selectedPkg.officialPriceDisplay}
+              <span className="text-[10px] uppercase font-bold text-ivory/60 block">
+                {useTestingFee ? "Amount Payable (Pilot Testing)" : "Amount Payable (Official Brochure Price)"}
               </span>
+              <span className="font-display text-2xl font-black text-gold">{activePayableDisplay}</span>
+              {useTestingFee && (
+                <span className="text-[10px] text-ivory/60 block line-through">
+                  Official Brochure Price: {selectedPkg.officialPriceDisplay}
+                </span>
+              )}
             </div>
           </div>
 
@@ -933,21 +1047,40 @@ export function TablesBookingClient() {
               className="w-full bg-gold-deep text-black hover:bg-gold-light font-display text-base font-black py-6 rounded-xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 border-2 border-gold-deep"
             >
               {loading ? (
-                <span>Processing Table Reservation...</span>
+                <span>Processing Hospitality Reservation...</span>
               ) : paymentChannel === "gateway" ? (
                 <>
                   <CreditCard className="size-5" />
-                  <span>Proceed to Online Checkout (₦100.00) →</span>
+                  <span>Proceed to Online Checkout ({activePayableDisplay}) →</span>
                 </>
               ) : (
                 <>
                   <Building className="size-5" />
-                  <span>Confirm Bank Transfer &amp; Issue {selectedPkg.guestCapacity === 1 ? "Pass" : "10 Passes"} (₦100.00) →</span>
+                  <span>
+                    Confirm Bank Transfer &amp; Issue{" "}
+                    {selectedPkg.guestCapacity === 1 ? "Pass" : `${selectedPkg.guestCapacity} Passes`} ({activePayableDisplay}) →
+                  </span>
                 </>
               )}
             </Button>
           </div>
         </form>
+
+        {/* Official Brochure Closing Statement */}
+        <div className="rounded-2xl border border-gold/30 bg-neutral-950 p-6 sm:p-8 text-center space-y-3 max-w-4xl mx-auto">
+          <span className="text-xs uppercase font-bold tracking-widest text-gold block">
+            Experience The Blueprint
+          </span>
+          <p className="text-xs sm:text-sm text-ivory/80 leading-relaxed max-w-2xl mx-auto">
+            The Abeokuta Polo Festival 2026 is more than a sporting event. It is a celebration of our heritage, a gathering of royalty, an exhibition of sporting excellence and a premium platform for networking, business relationships and cultural diplomacy.
+          </p>
+          <p className="font-display text-sm sm:text-base font-bold text-gold italic">
+            THE BLUEPRINT: BUILDING THE FUTURE FROM OUR HERITAGE.
+          </p>
+          <p className="text-[11px] uppercase tracking-widest text-ivory/60 font-semibold">
+            ABEOKUTA POLO CLUB · Organisers, Abeokuta Polo Festival 2026
+          </p>
+        </div>
 
         {/* Golden Demarcation Line */}
         <div className="w-full my-6">
@@ -958,11 +1091,11 @@ export function TablesBookingClient() {
         {/* Individual Pass Fallback link */}
         <div className="text-center pt-2 space-y-3">
           <p className="text-xs text-ivory/80">
-            Looking for individual tickets instead of a table for 10?
+            Also registering for Free Complimentary Day 1 &amp; Day 2 Passes or Regular Section passes?
           </p>
           <Button asChild className="bg-gold-deep hover:bg-gold-light text-black font-bold border border-gold-deep text-xs px-6 py-2.5 shadow-md">
             <Link href="/register">
-              Go to General Registration & Individual Day 3 VVIP Passes (₦50,000 / ₦100) →
+              Go to General Registration &amp; Day 3 Regular Section (₦50,000 Per Person) →
             </Link>
           </Button>
         </div>

@@ -52,7 +52,7 @@ loadEnvFile(path.resolve(process.cwd(), '.env.local'));
 loadEnvFile(path.resolve(process.cwd(), '.env'));
 
 const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
-const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || 'aed0a3ce52c51760cd46d76d616f38ce';
+const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '50da885c8d068c1cc389512e6c8e33c7';
 const DOMAIN_NAME = 'abeokutapolofestival2026.org.ng';
 
 const DESIRED_DNS_RECORDS = [

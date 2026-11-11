@@ -50,7 +50,7 @@ export const DOMAIN_CONFIG = {
   VERCEL_PROJECT_NAME: "abeokuta-polo-festival-2026",
   VERCEL_TEAM_ID: "team_KO2A4taoxmCSQgmB3vbao42B",
   VERCEL_SCOPE: "digitalwealthcreators-projects",
-  CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || "aed0a3ce52c51760cd46d76d616f38ce",
+  CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || "50da885c8d068c1cc389512e6c8e33c7",
   CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN || "",
   RESEND_DOMAIN_ID: "6bf9d051-5bcc-4375-8ca4-edfe6416ae2a",
   RESEND_API_KEY: process.env.RESEND_API_KEY || "",

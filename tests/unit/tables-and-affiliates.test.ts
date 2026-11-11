@@ -25,48 +25,57 @@ import {
   DAY3_VVIP_OFFICIAL_PRICE_NGN,
   DAY3_VVIP_TESTING_PRICE_NGN,
 } from "@/lib/config/checkout-config";
+import {
+  getTestingFeeStatus,
+  setTestingFeeMode,
+  autoDisableTestingFeeAfterPayment,
+  resetTestingFeeModeForTests,
+} from "@/lib/config/testing-fee-mode";
 
-describe("Day 3 VIP Table Packages & 10 Seats Enclosures", () => {
-  it("defines all official Day 3 table packages plus the individual VIP option", () => {
+describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
+  it("defines all 5 official Day 3 hospitality categories matching the official brochure", () => {
     expect(TABLE_PACKAGE_LIST.length).toBe(5);
 
-    const individual = getTablePackage("individual_vip");
-    expect(individual).toBeDefined();
-    expect(individual?.name).toBe("Individual VIP Table Seat");
-    expect(individual?.officialPriceNgn).toBe(50_000);
-    expect(individual?.testingPriceNgn).toBe(100);
-    expect(individual?.guestCapacity).toBe(1);
+    const regular = getTablePackage("individual_vip");
+    expect(regular).toBeDefined();
+    expect(regular?.name).toBe("The Regular Section");
+    expect(regular?.officialPriceNgn).toBe(50_000);
+    expect(regular?.testingPriceNgn).toBe(100);
+    expect(regular?.guestCapacity).toBe(1);
+    expect(getTablePackage("regular_section")?.id).toBe("individual_vip");
 
     const kings = getTablePackage("kings_table");
     expect(kings).toBeDefined();
     expect(kings?.name).toBe("The Kings Table");
-    expect(kings?.officialPriceNgn).toBe(10_000_000);
+    expect(kings?.officialPriceNgn).toBe(5_000_000);
     expect(kings?.testingPriceNgn).toBe(100);
     expect(kings?.guestCapacity).toBe(10);
+    expect(kings?.parkingVehicles).toBe(10);
     expect(kings?.tableCount).toBe(5);
 
     const royal = getTablePackage("royal_table");
     expect(royal).toBeDefined();
     expect(royal?.name).toBe("The Royal Table");
-    expect(royal?.officialPriceNgn).toBe(5_000_000);
+    expect(royal?.officialPriceNgn).toBe(3_000_000);
     expect(royal?.testingPriceNgn).toBe(100);
-    expect(royal?.guestCapacity).toBe(10);
+    expect(royal?.guestCapacity).toBe(8);
+    expect(royal?.parkingVehicles).toBe(5);
     expect(royal?.tableCount).toBe(10);
 
     const queens = getTablePackage("queens_table");
     expect(queens).toBeDefined();
     expect(queens?.name).toBe("The Queens Table");
-    expect(queens?.officialPriceNgn).toBe(3_000_000);
+    expect(queens?.officialPriceNgn).toBe(2_000_000);
     expect(queens?.testingPriceNgn).toBe(100);
-    expect(queens?.guestCapacity).toBe(10);
+    expect(queens?.guestCapacity).toBe(6);
     expect(queens?.tableCount).toBe(10);
 
     const premium = getTablePackage("premium_table");
     expect(premium).toBeDefined();
     expect(premium?.name).toBe("The Premium Table");
-    expect(premium?.officialPriceNgn).toBe(1_500_000);
+    expect(premium?.officialPriceNgn).toBe(500_000);
     expect(premium?.testingPriceNgn).toBe(100);
-    expect(premium?.guestCapacity).toBe(10);
+    expect(premium?.guestCapacity).toBe(5);
     expect(premium?.tableCount).toBe(20);
   });
 
@@ -160,7 +169,7 @@ describe("Day 3 VIP Table Packages & 10 Seats Enclosures", () => {
       buyerEmail: `dantata.${Date.now()}@test.ng`,
       buyerPhone: "+234 818 188 8884",
       paymentMethod: "bank_transfer",
-      attendees: Array.from({ length: 10 }, (_, i) => ({
+      attendees: Array.from({ length: 8 }, (_, i) => ({
         seat: i + 1,
         name: `Guest ${i + 1}`,
       })),
@@ -168,29 +177,57 @@ describe("Day 3 VIP Table Packages & 10 Seats Enclosures", () => {
 
     expect(result.success).toBe(true);
     expect(result.status).toBe("pending_bank_verification");
+    expect(result.passes?.length).toBe(8);
     expect(result.passes?.[0].status).toBe("pending_verification");
     expect(result.passes?.[0].day3Status).toBe("pending_verification");
     expect(result.secretariatNotification).toBeDefined();
   });
+
+  it("supports toggling the ₦100 pilot testing fee and automatically removes it after a successful ₦100 payment", async () => {
+    resetTestingFeeModeForTests(true);
+    const initial = await getTestingFeeStatus();
+    expect(initial.enabled).toBe(true);
+    expect(initial.autoRemovedAfterPayment).toBe(false);
+
+    // Manually toggle off -> Official brochure pricing
+    const manualOff = await setTestingFeeMode(false, { reason: "manual_test_off" });
+    expect(manualOff.enabled).toBe(false);
+    expect(manualOff.autoRemovedAfterPayment).toBe(false);
+
+    // Manually toggle back on -> ₦100 testing mode
+    const manualOn = await setTestingFeeMode(true, { reason: "manual_test_on" });
+    expect(manualOn.enabled).toBe(true);
+
+    // Simulate a successful ₦100 payment -> auto-removes the testing fee and reverts to official brochure pricing
+    const didAutoDisable = await autoDisableTestingFeeAfterPayment("ABK-VVIP-TEST-100", 100);
+    expect(didAutoDisable).toBe(true);
+    const afterPayment = await getTestingFeeStatus();
+    expect(afterPayment.enabled).toBe(false);
+    expect(afterPayment.autoRemovedAfterPayment).toBe(true);
+    expect(afterPayment.lastPaymentRef).toBe("ABK-VVIP-TEST-100");
+
+    // Reset back to default for subsequent tests
+    resetTestingFeeModeForTests(true);
+  });
 });
 
 describe("International Affiliate Centre (10% Commission)", () => {
-  it("enforces guaranteed 10% commission across all confirmed packages", () => {
+  it("enforces guaranteed 10% commission across all confirmed brochure packages", () => {
     expect(AFFILIATE_COMMISSION_RATE).toBe(0.10);
 
     const kingsCommission = AFFILIATE_COMMISSION_TIERS.find((t) => t.categoryName.includes("Kings Table"));
-    expect(kingsCommission?.officialCommissionNgn).toBe(1_000_000); // 10% of 10M
+    expect(kingsCommission?.officialCommissionNgn).toBe(500_000); // 10% of 5M
 
     const royalCommission = AFFILIATE_COMMISSION_TIERS.find((t) => t.categoryName.includes("Royal Table"));
-    expect(royalCommission?.officialCommissionNgn).toBe(500_000); // 10% of 5M
+    expect(royalCommission?.officialCommissionNgn).toBe(300_000); // 10% of 3M
 
     const queensCommission = AFFILIATE_COMMISSION_TIERS.find((t) => t.categoryName.includes("Queens Table"));
-    expect(queensCommission?.officialCommissionNgn).toBe(300_000); // 10% of 3M
+    expect(queensCommission?.officialCommissionNgn).toBe(200_000); // 10% of 2M
 
     const premiumCommission = AFFILIATE_COMMISSION_TIERS.find((t) => t.categoryName.includes("Premium Table"));
-    expect(premiumCommission?.officialCommissionNgn).toBe(150_000); // 10% of 1.5M
+    expect(premiumCommission?.officialCommissionNgn).toBe(50_000); // 10% of 500k
 
-    const vvipCommission = AFFILIATE_COMMISSION_TIERS.find((t) => t.categoryName.includes("Day 3 Individual"));
+    const vvipCommission = AFFILIATE_COMMISSION_TIERS.find((t) => t.categoryName.includes("Regular Section"));
     expect(vvipCommission?.officialCommissionNgn).toBe(5_000); // 10% of 50k
   });
 

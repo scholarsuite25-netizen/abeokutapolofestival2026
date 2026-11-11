@@ -20,43 +20,43 @@ export interface CommissionTier {
 export const AFFILIATE_COMMISSION_TIERS: CommissionTier[] = [
   {
     categoryName: "The Kings Table (10 Guests)",
-    officialPackageValueNgn: 10_000_000,
-    officialCommissionNgn: 1_000_000,
-    testingPriceNgn: 100,
-    testingCommissionNgn: 10,
-    description: "Ultra-exclusive private table enclosure at Kings Arena with vintage champagne banquet.",
-  },
-  {
-    categoryName: "The Royal Table (10 Guests)",
     officialPackageValueNgn: 5_000_000,
     officialCommissionNgn: 500_000,
     testingPriceNgn: 100,
     testingCommissionNgn: 10,
-    description: "Pitch-side Royal Pavilion luxury table with 10 VIP turnstile accreditation cards.",
+    description: "Ultra-Exclusive VIP Experience within the Kings Arena (10 Guests, 10 VIP parking vehicles).",
   },
   {
-    categoryName: "The Queens Table (10 Guests)",
+    categoryName: "The Royal Table (8 Guests)",
     officialPackageValueNgn: 3_000_000,
     officialCommissionNgn: 300_000,
     testingPriceNgn: 100,
     testingCommissionNgn: 10,
-    description: "Signature Society & Ladies Pavilion experience with floral gifting & cocktail service.",
+    description: "Luxury Hospitality Experience within the VVIP Hospitality Section (8 Guests, 5 VIP parking vehicles).",
   },
   {
-    categoryName: "The Premium Table (10 Guests)",
-    officialPackageValueNgn: 1_500_000,
-    officialCommissionNgn: 150_000,
+    categoryName: "The Queens Table (6 Guests)",
+    officialPackageValueNgn: 2_000_000,
+    officialCommissionNgn: 200_000,
     testingPriceNgn: 100,
     testingCommissionNgn: 10,
-    description: "Elevated Clubhouse Terrace reserved table for 10 with gourmet hospitality.",
+    description: "Signature Ladies’ Experience with premium dining and Queens Polo access (6 Guests).",
   },
   {
-    categoryName: "Day 3 Individual VVIP Pass",
+    categoryName: "The Premium Table (5 Guests)",
+    officialPackageValueNgn: 500_000,
+    officialCommissionNgn: 50_000,
+    testingPriceNgn: 100,
+    testingCommissionNgn: 10,
+    description: "Premium Festival Experience with reserved seating and food & beverage package (5 Guests).",
+  },
+  {
+    categoryName: "The Regular Section (Day 3 Individual Pass)",
     officialPackageValueNgn: 50_000,
     officialCommissionNgn: 5_000,
     testingPriceNgn: 100,
     testingCommissionNgn: 10,
-    description: "Individual VIP grand finale entry pass with royal grandstand seating.",
+    description: "General Festival Experience — ₦50,000 Per Person admission to the festival viewing area.",
   },
 ];
 
@@ -281,17 +281,18 @@ export function getPromoTemplates(affiliateCode: string, siteUrl: string): Promo
       title: "WhatsApp VIP Table Broadcast",
       channel: "WhatsApp",
       copyText: `👑 *ABEOKUTA POLO FESTIVAL 2026 — THE BLUEPRINT*
-*Dates:* 18–20 December 2026 | Abeokuta Polo Club
+*Dates:* 18–20 December 2026 | Abeokuta, Ogun State
 
-Experience the pinnacle of royal heritage, pitch-side glamour, and championship polo. 
+Experience an exceptional fusion of heritage, royalty, sporting excellence and luxury hospitality at the Abeokuta Polo Festival 2026 — THE BLUEPRINT.
 
-🌟 *Exclusive Day 3 VIP Table Packages (10 Guests Each):*
-• *The Kings Table* — Kings Arena & Royal Dais front-row luxury
-• *The Royal Table* — Prime Royal Pavilion & champagne service
-• *The Queens Table* — Signature Society & Ladies Pavilion
-• *The Premium Table* — Clubhouse Terrace reserved hospitality
+🌟 *Grand Finale (20 Dec 2026) Exclusive Table & Hospitality Packages:*
+• *The Kings Table* (10 Guests · 10 VIP Parking Vehicles) — ₦5,000,000
+• *The Royal Table* (8 Guests · 5 VIP Parking Vehicles) — ₦3,000,000
+• *The Queens Table* (6 Guests · Signature Ladies’ Experience) — ₦2,000,000
+• *The Premium Table* (5 Guests · Premium Festival Experience) — ₦500,000
+• *The Regular Section* (General Festival Experience) — ₦50,000 Per Person
 
-🛡️ Reserve your table of 10 with verified device-locked turnstile passes:
+🛡️ Reserve your hospitality package with verified device-locked turnstile passes:
 👉 ${tableLink}
 
 Complimentary Day 1 & Day 2 passes available here:
@@ -304,15 +305,14 @@ _Inquiries & Reservations: Abeokuta Polo Club Secretariat_`,
       channel: "LinkedIn",
       copyText: `Prestigious networking meets world-class equestrian tradition: The 2026 Abeokuta Polo Festival — "The Blueprint" (18–20 December 2026).
 
-Corporate organisations and executive leaders can now secure exclusive pitch-side Table Enclosures for 10 guests at the Day 3 Grand Finale:
-- The Kings Table (Royal Dais Enclosure)
-- The Royal Table (Pitch-side Marquee Seating)
-- The Queens Table (High-Fashion Society Pavilion)
-- The Premium Table (Elevated Clubhouse Terrace)
+Corporate organisations, families, and distinguished personalities can now secure Exclusive Table & Hospitality Packages for the Grand Finale (20 December 2026):
+- The Kings Table (Ultra-Exclusive VIP Experience · 10 Guests · ₦5,000,000)
+- The Royal Table (Luxury Hospitality Experience · 8 Guests · ₦3,000,000)
+- The Queens Table (Signature Ladies’ Experience · 6 Guests · ₦2,000,000)
+- The Premium Table (Premium Festival Experience · 5 Guests · ₦500,000)
+- The Regular Section (General Festival Experience · ₦50,000 Per Person)
 
-Each package includes 10 encrypted digital turnstile credentials with anti-forwarding security.
-
-Reserve your table allocation: ${tableLink}
+Reserve your allocation: ${tableLink}
 
 #AbeokutaPolo2026 #CorporateHospitality #PoloFestival #TheBlueprint #ExecutiveLeadership`,
     },
@@ -321,7 +321,7 @@ Reserve your table allocation: ${tableLink}
       channel: "X / Twitter",
       copyText: `The grandest polo spectacle in Ogun State history is here: 2026 Abeokuta Polo Festival (18–20 Dec)! 🐎✨
 
-Day 1 & Day 2 Free Passes are open. Exclusive Day 3 VIP Tables of 10 (Kings, Royal, Queens & Premium Tables) now available.
+Day 1 & Day 2 Free Passes are open. Grand Finale Hospitality Packages (Kings, Royal, Queens, Premium Tables & Regular Section) now available.
 
 Lock in your table before allocations close:
 ${tableLink}
@@ -331,16 +331,17 @@ ${tableLink}
     {
       title: "Instagram Caption & Bio Copy",
       channel: "Instagram",
-      copyText: `Heritage. High Fashion. Royalty. 🐎🏆
+      copyText: `Heritage. Royalty. Sporting Excellence. 🐎🏆
 Welcome to the 2026 Abeokuta Polo Festival — "The Blueprint" (18–20 December 2026).
 
-Day 3 Grand Finale VIP Tables (10 Guests) are now open for reservation:
-✨ The Kings Table · Kings Arena
-✨ The Royal Table · Royal Pavilion
-✨ The Queens Table · Society Pavilion
-✨ The Premium Table · Clubhouse Terrace
+Grand Finale (20 Dec) Exclusive Hospitality Packages are now open:
+✨ The Kings Table (10 Guests · ₦5,000,000)
+✨ The Royal Table (8 Guests · ₦3,000,000)
+✨ The Queens Table (6 Guests · ₦2,000,000)
+✨ The Premium Table (5 Guests · ₦500,000)
+✨ The Regular Section (₦50,000 Per Person)
 
-Link in bio to reserve your VIP Table or claim complimentary Day 1 & 2 Passes! 
+Link in bio to reserve your hospitality package or claim complimentary Day 1 & 2 Passes! 
 🔗 ${tableLink}
 
 #AbeokutaPolo #PoloFestival2026 #RoyalCup #LuxuryLifestyle #Abeokuta`,

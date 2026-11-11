@@ -5,7 +5,9 @@ export interface SendEmailOptions {
   to: string | string[];
   subject: string;
   html: string;
+  text?: string;
   from?: string;
+  replyTo?: string;
 }
 
 export interface SendEmailResult {
@@ -14,14 +16,38 @@ export interface SendEmailResult {
   error?: string;
 }
 
+function stripHtmlToPlainText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<\/(p|div|h1|h2|h3|h4|li|tr|br)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n\s*\n+/g, "\n\n")
+    .trim();
+}
+
 /**
  * Dispatches transactional email through Resend or EmailBump API.
  */
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   const env = requireServerEnv();
-  const resendApiKey = env.RESEND_API_KEY;
-  const emailBumpApiKey = env.EMAILBUMP_API_KEY;
-  const defaultFrom = env.EMAIL_FROM || "tickets@guests.abeokutapolofestival2026.org.ng";
+  const resendApiKey = env.RESEND_API_KEY || process.env.RESEND_API_KEY;
+  const emailBumpApiKey = env.EMAILBUMP_API_KEY || process.env.EMAILBUMP_API_KEY;
+  const defaultFrom =
+    env.EMAIL_FROM ||
+    process.env.EMAIL_FROM ||
+    "tickets@guests.abeokutapolofestival2026.org.ng";
+  const replyTo =
+    options.replyTo || process.env.EMAIL_REPLY_TO || "abeokutapolo@gmail.com";
+  const plainText = options.text || stripHtmlToPlainText(options.html);
 
   // 1. Try Resend if configured
   if (resendApiKey) {
@@ -36,12 +62,15 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: fromSender.includes("@") && !fromSender.includes("<")
-            ? `Abeokuta Polo Festival 2026 <${fromSender}>`
-            : fromSender,
+          from:
+            fromSender.includes("@") && !fromSender.includes("<")
+              ? `Abeokuta Polo Festival 2026 <${fromSender}>`
+              : fromSender,
           to: recipients,
+          reply_to: replyTo,
           subject: options.subject,
           html: options.html,
+          text: plainText,
         }),
       });
 

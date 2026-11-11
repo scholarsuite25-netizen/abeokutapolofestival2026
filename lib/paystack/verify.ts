@@ -3,6 +3,8 @@ import {
   DAY3_REFERENCE_PREFIX,
   DAY3_VVIP_MAX_TICKETS,
   DAY3_VVIP_PRICE_NGN,
+  DAY3_VVIP_OFFICIAL_PRICE_NGN,
+  DAY3_VVIP_TESTING_PRICE_NGN,
 } from "@/lib/config/checkout-config";
 
 /**
@@ -58,14 +60,20 @@ function fail(reason: PaymentFailureReason): PaymentVerification {
   return { ok: false, reason, message: MESSAGES[reason] };
 }
 
+export function getEffectivePaystackSecret(): string {
+  const raw = (process.env.PAYSTACK_SECRET_KEY ?? "").trim();
+  if (!raw || raw.startsWith("sk_test_demo")) return "";
+  return raw;
+}
+
 /** Simulated payments are allowed in development or when explicitly enabled via PAYSTACK_DEMO_MODE=true. */
 export function isSimulationAllowed(): boolean {
-  if (Boolean(process.env.PAYSTACK_SECRET_KEY)) return false;
+  if (Boolean(getEffectivePaystackSecret())) return false;
   return process.env.NODE_ENV !== "production" || process.env.PAYSTACK_DEMO_MODE === "true";
 }
 
 export function isPaystackConfigured(): boolean {
-  return Boolean(process.env.PAYSTACK_SECRET_KEY);
+  return Boolean(getEffectivePaystackSecret());
 }
 
 interface PaystackVerifyBody {
@@ -81,23 +89,27 @@ interface PaystackVerifyBody {
 
 export async function verifyDay3Payment(
   referenceInput: string | null | undefined,
-  options: { expectedEmail?: string } = {},
+  options: { expectedEmail?: string; expectedMinAmountNgn?: number } = {},
 ): Promise<PaymentVerification> {
   const reference = (referenceInput ?? "").trim();
   if (!REFERENCE_PATTERN.test(reference) || !reference.startsWith(DAY3_REFERENCE_PREFIX)) {
     return fail("invalid_reference");
   }
 
-  const secret = process.env.PAYSTACK_SECRET_KEY;
+  const secret = getEffectivePaystackSecret();
   if (!secret) {
     if (!isSimulationAllowed()) return fail("not_configured");
     const match = SIMULATED_PATTERN.exec(reference);
     if (!match) return fail("invalid_reference");
     const quantity = Math.min(DAY3_VVIP_MAX_TICKETS, Math.max(1, Number(match[1])));
+    const isOfficialSim = reference.includes("-OFF-");
+    const unitPrice = isOfficialSim ? DAY3_VVIP_OFFICIAL_PRICE_NGN : DAY3_VVIP_PRICE_NGN;
     return {
       ok: true,
       reference,
-      amountNgn: quantity * DAY3_VVIP_PRICE_NGN,
+      amountNgn: options.expectedMinAmountNgn && isOfficialSim
+        ? options.expectedMinAmountNgn
+        : quantity * unitPrice,
       quantity,
       simulated: true,
     };
@@ -127,7 +139,17 @@ export async function verifyDay3Payment(
 
   const amountKobo = Number(data.amount);
   if (!Number.isFinite(amountKobo) || amountKobo <= 0) return fail("amount_too_low");
-  const quantity = Math.floor(amountKobo / (DAY3_VVIP_PRICE_NGN * 100));
+
+  const minAmountKobo = (options.expectedMinAmountNgn ?? DAY3_VVIP_TESTING_PRICE_NGN) * 100;
+  if (amountKobo < minAmountKobo) return fail("amount_too_low");
+
+  // Support both Official Brochure Rate (₦50,000/pass) and Pilot Testing Fee Rate (₦100/pass)
+  const unitPriceKobo =
+    amountKobo >= DAY3_VVIP_OFFICIAL_PRICE_NGN * 100
+      ? DAY3_VVIP_OFFICIAL_PRICE_NGN * 100
+      : DAY3_VVIP_TESTING_PRICE_NGN * 100;
+
+  const quantity = Math.floor(amountKobo / unitPriceKobo);
   if (quantity < 1) return fail("amount_too_low");
 
   if (options.expectedEmail) {

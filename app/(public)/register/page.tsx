@@ -29,7 +29,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { submitRegistration, recordAffiliateClick, type RegisterResult } from "./actions";
+import {
+  submitRegistration,
+  recordAffiliateClick,
+  getTestingFeeModeAction,
+  toggleTestingFeeModeAction,
+  type RegisterResult,
+} from "./actions";
 import {
   persistRegisteredPass,
   useStoredPasses,
@@ -45,6 +51,8 @@ import {
   generateWemaTransferReference,
   DAY3_VVIP_PRICE_NGN,
   DAY3_VVIP_PRICE_DISPLAY,
+  DAY3_VVIP_OFFICIAL_PRICE_NGN,
+  DAY3_VVIP_TESTING_PRICE_NGN,
   DAY3_VVIP_OFFICIAL_PRICE_DISPLAY,
   DAY3_VVIP_TESTING_PRICE_DISPLAY,
 } from "@/lib/config/checkout-config";
@@ -99,6 +107,39 @@ function RegisterContent() {
   const [hasInviteCode, setHasInviteCode] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
   const [affiliateCode, setAffiliateCode] = useState<string>("");
+  const [useTestingFee, setUseTestingFee] = useState<boolean>(true);
+  const [testingAutoRemovedNotice, setTestingAutoRemovedNotice] = useState<boolean>(false);
+
+  const activeDay3UnitPriceNgn = useTestingFee
+    ? DAY3_VVIP_TESTING_PRICE_NGN
+    : DAY3_VVIP_OFFICIAL_PRICE_NGN;
+  const activeDay3UnitPriceDisplay = useTestingFee
+    ? DAY3_VVIP_TESTING_PRICE_DISPLAY
+    : DAY3_VVIP_OFFICIAL_PRICE_DISPLAY;
+
+  useEffect(() => {
+    getTestingFeeModeAction()
+      .then((status) => {
+        setUseTestingFee(status.enabled);
+        if (status.autoRemovedAfterPayment) {
+          setTestingAutoRemovedNotice(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleToggleTestingFee = async (nextVal: boolean) => {
+    setUseTestingFee(nextVal);
+    if (nextVal) setTestingAutoRemovedNotice(false);
+    try {
+      await toggleTestingFeeModeAction(
+        nextVal,
+        nextVal ? "manual_enable_from_register_ui" : "manual_disable_from_register_ui",
+      );
+    } catch {
+      // Non-blocking
+    }
+  };
 
   // Track affiliate referral code from URL search param e.g. /register?ref=AFF-...
   useEffect(() => {
@@ -267,6 +308,10 @@ function RegisterContent() {
       if (res.success && res.passes && res.passes.length > 0) {
         setResult(res);
         setIssuedPasses(res.passes);
+        if (res.testingFeeAutoRemoved) {
+          setUseTestingFee(false);
+          setTestingAutoRemovedNotice(true);
+        }
         if (isMobileBrowser()) {
           persistRegisteredPass(res.passes);
           forceDownloadAllPasses(res.passes);
@@ -388,6 +433,7 @@ function RegisterContent() {
             day3: true,
             quantity: day3TicketCount,
             affiliateCode: affiliateCode || undefined,
+            useTestingFee,
             attendees: attendeesToSubmit,
           }),
         });
@@ -1130,7 +1176,7 @@ function RegisterContent() {
                       </div>
 
                       <Badge variant="outline" className="border-amber-600 bg-white/90 text-amber-900 text-[10px] font-bold self-start sm:self-auto">
-                        {DAY3_VVIP_PRICE_DISPLAY} / Ticket or VIP Table
+                        {activeDay3UnitPriceDisplay} / Ticket or VIP Table
                       </Badge>
                     </div>
 
@@ -1183,21 +1229,40 @@ function RegisterContent() {
                           </Badge>
                         </div>
 
-                        {/* Prestige Value & Pilot Testing Fee Banner */}
-                        <div className="rounded-xl border border-gold/40 bg-gradient-to-r from-[#1B1608] via-[#2A2007] to-[#1B1608] p-3 text-ivory space-y-1.5">
+                        {/* Prestige Value & Pilot Testing Fee Toggle Banner */}
+                        <div className="rounded-xl border border-gold/40 bg-gradient-to-r from-[#1B1608] via-[#2A2007] to-[#1B1608] p-3 text-ivory space-y-2">
                           <div className="flex flex-wrap items-center justify-between gap-1.5">
-                            <span className="font-display font-bold text-xs text-gold">Official Day 3 VVIP Value: {DAY3_VVIP_OFFICIAL_PRICE_DISPLAY}</span>
-                            <Badge className="bg-emerald-500 text-black font-extrabold text-[9px] uppercase px-2 py-0.5">
-                              Active Pilot Testing Fee: {DAY3_VVIP_TESTING_PRICE_DISPLAY}
-                            </Badge>
+                            <span className="font-display font-bold text-xs text-gold">
+                              Official Regular Section Price: {DAY3_VVIP_OFFICIAL_PRICE_DISPLAY} Per Person
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleTestingFee(!useTestingFee)}
+                              className={`rounded-full px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider cursor-pointer transition-all ${
+                                useTestingFee
+                                  ? "bg-emerald-500 text-black hover:bg-emerald-400"
+                                  : "bg-gold text-black hover:bg-gold/90"
+                              }`}
+                            >
+                              {useTestingFee
+                                ? `Testing Fee Active (${DAY3_VVIP_TESTING_PRICE_DISPLAY}) · Click for Official ₦50,000`
+                                : "Official Price Active (₦50,000) · Click for ₦100 Test Fee"}
+                            </button>
                           </div>
+                          {testingAutoRemovedNotice && !useTestingFee && (
+                            <p className="text-[10px] text-emerald-300 font-bold leading-tight">
+                              ✅ ₦100 Test Payment Verified! The testing fee has been automatically removed — Official Brochure Price ({DAY3_VVIP_OFFICIAL_PRICE_DISPLAY}) is now active.
+                            </p>
+                          )}
                           <p className="text-[10px] text-ivory/80 leading-tight">
-                            For pilot simulation, all Day 3 passes are charged at the test rate of {DAY3_VVIP_TESTING_PRICE_DISPLAY} per ticket while maintaining official prestige credentials.
+                            {useTestingFee
+                              ? `Pilot Testing Mode is active: checkout charges ${DAY3_VVIP_TESTING_PRICE_DISPLAY} per ticket and automatically reverts to the official ${DAY3_VVIP_OFFICIAL_PRICE_DISPLAY} brochure rate immediately after your test payment succeeds.`
+                              : `Live Official Brochure Rate is active: checkout charges ${DAY3_VVIP_OFFICIAL_PRICE_DISPLAY} per person for The Regular Section (General Festival Experience).`}
                           </p>
                           <div className="pt-1 border-t border-gold/20 flex items-center justify-between">
-                            <span className="text-[10px] text-gold/90 font-medium">Looking for VIP Table Enclosures (10 Guests)?</span>
+                            <span className="text-[10px] text-gold/90 font-medium">Looking for Exclusive Table Packages (10, 8, 6, or 5 Guests)?</span>
                             <Link href="/tables" className="text-[10px] font-bold text-gold underline hover:text-white flex items-center gap-1">
-                              Explore Tables (₦10M, ₦5M, ₦3M, ₦1.5M) <ArrowRight className="size-2.5" />
+                              Explore Tables (₦5M, ₦3M, ₦2M, ₦500k) <ArrowRight className="size-2.5" />
                             </Link>
                           </div>
                         </div>
@@ -1297,8 +1362,8 @@ function RegisterContent() {
                           <WemaBankPaymentCard
                             flow="vvip"
                             referenceCode={wemaRef}
-                            amountNgn={day3TicketCount * DAY3_VVIP_PRICE_NGN}
-                            itemName={`Day 3 VVIP Admission (${day3TicketCount} Ticket${day3TicketCount > 1 ? "s" : ""})`}
+                            amountNgn={day3TicketCount * activeDay3UnitPriceNgn}
+                            itemName={`Day 3 Regular Section / VVIP Admission (${day3TicketCount} Ticket${day3TicketCount > 1 ? "s" : ""})`}
                             buyerName={`${formData.firstName} ${formData.lastName}`.trim() || "VVIP Buyer"}
                             phone={formData.phone}
                             email={formData.email}
@@ -1311,7 +1376,7 @@ function RegisterContent() {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <div>
                                 <Label htmlFor="ticketQty" className="text-xs font-bold text-amber-950 block">
-                                  Number of Day 3 VVIP Tickets ({DAY3_VVIP_PRICE_DISPLAY} each)
+                                  Number of Day 3 Tickets ({activeDay3UnitPriceDisplay} each)
                                 </Label>
                                 <span className="text-[11px] text-amber-800">
                                   Purchase for yourself, invitees, or delegation
@@ -1345,7 +1410,7 @@ function RegisterContent() {
                             <div className="pt-2 border-t border-amber-200/80 flex items-center justify-between text-xs">
                               <span className="font-bold text-amber-900">Total Amount Payable:</span>
                               <span className="font-mono font-extrabold text-lg text-amber-950">
-                                ₦{(day3TicketCount * DAY3_VVIP_PRICE_NGN).toLocaleString()}
+                                ₦{(day3TicketCount * activeDay3UnitPriceNgn).toLocaleString()}
                               </span>
                             </div>
 
@@ -1539,7 +1604,7 @@ function RegisterContent() {
                         <CreditCard className="size-4 sm:size-5 shrink-0" />
                         <span>Proceed to Paystack Payment</span>
                         <span className="text-xs sm:text-sm opacity-95">
-                          ({day3TicketCount === 1 ? DAY3_VVIP_PRICE_DISPLAY : `${day3TicketCount} Tickets · ₦${(day3TicketCount * DAY3_VVIP_PRICE_NGN).toLocaleString()}`}) →
+                          ({day3TicketCount === 1 ? activeDay3UnitPriceDisplay : `${day3TicketCount} Tickets · ₦${(day3TicketCount * activeDay3UnitPriceNgn).toLocaleString()}`}) →
                         </span>
                       </span>
                     ) : (

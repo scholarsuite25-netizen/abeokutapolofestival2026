@@ -8,8 +8,13 @@ drop policy if exists "committee documents officer insert" on storage.objects;
 drop policy if exists "committee documents officer update" on storage.objects;
 drop policy if exists "committee documents officer delete" on storage.objects;
 
--- Delete storage bucket if exists
-delete from storage.buckets where id = 'committee-documents';
+-- Delete storage bucket if exists (wrapped in exception block for Supabase Storage trigger compatibility)
+do $$
+begin
+  delete from storage.buckets where id = 'committee-documents';
+exception when others then
+  null;
+end $$;
 
 -- Drop committee tables in reverse dependency order
 drop table if exists public.committee_activity_logs cascade;

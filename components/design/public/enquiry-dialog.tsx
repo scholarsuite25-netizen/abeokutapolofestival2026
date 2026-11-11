@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Phone, Mail, CheckCircle2 } from "lucide-react";
+import { MessageSquare, Phone, Mail, CheckCircle2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { submitEnquiryAction } from "@/app/(public)/register/actions";
 
 interface EnquiryDialogProps {
   title?: string;
@@ -30,12 +33,47 @@ export function EnquiryDialog({
   className,
 }: EnquiryDialogProps) {
   const [open, setOpen] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [customMessage, setCustomMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentNotice, setSentNotice] = useState<string | null>(null);
+  const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
   const defaultMessage = tierName
     ? `Hello Secretariat, I would like to inquire about ${category === "sponsorship" ? "the sponsorship package: " : "hospitality enclosure: "}${tierName} for the 2026 Abeokuta Polo Festival.`
     : `Hello Secretariat, I would like to inquire about ${category} protocols for the 2026 Abeokuta Polo Festival.`;
 
   const whatsappUrl = `https://wa.me/2348181888884?text=${encodeURIComponent(defaultMessage)}`;
+
+  const handleDirectEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSending(true);
+    setErrorNotice(null);
+    setSentNotice(null);
+    const res = await submitEnquiryAction({
+      fullName,
+      email,
+      phone,
+      organization,
+      category,
+      tierName,
+      message: customMessage.trim() || defaultMessage,
+    });
+    setSending(false);
+    if (res.success) {
+      setSentNotice(res.message || "Enquiry sent! Check your email for confirmation.");
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setOrganization("");
+      setCustomMessage("");
+    } else {
+      setErrorNotice(res.error || "Could not send enquiry.");
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -144,6 +182,75 @@ export function EnquiryDialog({
               </span>
             </a>
           </div>
+
+          {/* Direct Automated Email Inquiry Form (Dispatched via Resend) */}
+          <form onSubmit={handleDirectEmailSubmit} className="space-y-2.5 border-t border-line pt-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-forest">
+              Or Send Direct Instant Email Inquiry:
+            </p>
+            {sentNotice && (
+              <div className="rounded-lg bg-emerald-50 border border-emerald-400 p-2.5 text-xs text-emerald-900 font-medium">
+                ✅ {sentNotice}
+              </div>
+            )}
+            {errorNotice && (
+              <div className="rounded-lg bg-red-50 border border-red-400 p-2.5 text-xs text-red-900 font-medium">
+                {errorNotice}
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[11px] text-forest">Full Name *</Label>
+                <Input
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Your Name"
+                  className="h-8 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] text-forest">Email Address *</Label>
+                <Input
+                  required
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  className="h-8 text-xs bg-white"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[11px] text-forest">Phone / WhatsApp *</Label>
+                <Input
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0803 123 4567"
+                  className="h-8 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] text-forest">Organization (Optional)</Label>
+                <Input
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                  placeholder="Company / Title"
+                  className="h-8 text-xs bg-white"
+                />
+              </div>
+            </div>
+            <Button
+              type="submit"
+              disabled={sending}
+              className="w-full bg-forest text-ivory hover:bg-forest-interactive text-xs font-semibold h-9 cursor-pointer"
+            >
+              <Send className="mr-1.5 size-3.5" />
+              {sending ? "Sending Inquiry & Confirmation Email..." : "Dispatch Inquiry & Receive Instant Email Copy"}
+            </Button>
+          </form>
         </div>
       </DialogContent>
     </Dialog>

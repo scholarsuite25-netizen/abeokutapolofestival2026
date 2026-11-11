@@ -57,7 +57,7 @@ const GUESTS_DOMAIN = `guests.${APEX_DOMAIN}`;
 const RESEND_DOMAIN_ID = '6bf9d051-5bcc-4375-8ca4-edfe6416ae2a';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
-const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || 'aed0a3ce52c51760cd46d76d616f38ce';
+const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '50da885c8d068c1cc389512e6c8e33c7';
 
 // HarmonWeb Authoritative IPs
 const HARMONWEB_PRIMARY_IP = '162.19.227.132'; // dns1.harmonweb.net (Healthy Authoritative)

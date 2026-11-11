@@ -147,7 +147,7 @@ export function AffiliatesCentreClient() {
 
           <p className="text-sm sm:text-base text-ivory/80 leading-relaxed max-w-2xl mx-auto">
             Welcome to the official <strong>Abeokuta Polo Festival 2026 International Affiliate Centre</strong>. 
-            Partner with Nigeria's most prestigious cultural and sporting showcase. Monetize your diaspora network, corporate relationships, and social audience with guaranteed 10% payouts.
+            Partner with Nigeria&apos;s most prestigious cultural and sporting showcase. Monetize your diaspora network, corporate relationships, and social audience with guaranteed 10% payouts.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">

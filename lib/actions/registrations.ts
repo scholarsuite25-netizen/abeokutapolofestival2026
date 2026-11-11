@@ -9,6 +9,10 @@ import { generateSignedPassToken, hashPassToken } from "@/lib/qr/token";
 import { sendEmail } from "@/lib/email/client";
 import { writeAudit } from "@/lib/supabase/audit";
 import { DAY3_VVIP_PRICE_NGN } from "@/lib/config/checkout-config";
+import {
+  getTestingFeeStatus,
+  autoDisableTestingFeeAfterPayment,
+} from "@/lib/config/testing-fee-mode";
 import { markPassVerified } from "@/lib/storage/unverified-passes";
 import {
   buildVvipPassReleaseWhatsAppMessage,
@@ -375,6 +379,19 @@ export async function approveRegistrationAction(registrationId: string): Promise
 
   if (regError) return { ok: false, error: "Could not update the registration." };
 
+  // If this was a pending bank verification during ₦100 pilot testing mode, auto-remove the testing fee
+  if (reg.status === "pending_bank_verification" || reg.status === "pending_verification") {
+    const testingState = await getTestingFeeStatus();
+    if (testingState.enabled) {
+      await autoDisableTestingFeeAfterPayment(
+        (reg as { bank_transfer_ref?: string }).bank_transfer_ref || passCode || reg.id,
+        100,
+      );
+      revalidatePath("/tables");
+      revalidatePath("/register");
+    }
+  }
+
   await writeAudit({
     action: "registration.approve",
     entityType: "registration",
@@ -549,9 +566,16 @@ export async function approveBankTransferAction(identifier: string): Promise<{
             })
             .eq("id", commitment.id);
 
+          const testingState = await getTestingFeeStatus();
+          if (testingState.enabled || (commitment.proposed_amount && commitment.proposed_amount <= 1000)) {
+            await autoDisableTestingFeeAfterPayment(cleanId, commitment.proposed_amount || 100);
+          }
+
           revalidatePath("/abawole/finance");
           revalidatePath("/abawole/registrations");
           revalidatePath("/abawole");
+          revalidatePath("/tables");
+          revalidatePath("/register");
 
           return {
             ok: true,
@@ -568,8 +592,13 @@ export async function approveBankTransferAction(identifier: string): Promise<{
       const holderName = `${reg.first_name} ${reg.last_name}`.trim();
       const transferRef = reg.bank_transfer_ref || reg.day3_ticket_ref || cleanId || "WEMA-TRANSFER";
       const quantity = Math.max(1, reg.group_size || 1);
-      const amountNgn = quantity * DAY3_VVIP_PRICE_NGN;
+      const testingState = await getTestingFeeStatus();
+      const amountNgn = testingState.enabled ? quantity * 100 : quantity * DAY3_VVIP_PRICE_NGN;
       const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://abeokuta-polo-festival-2026.vercel.app";
+
+      if (testingState.enabled) {
+        await autoDisableTestingFeeAfterPayment(transferRef, amountNgn);
+      }
 
       // 1. Mark registration confirmed
       await supabase

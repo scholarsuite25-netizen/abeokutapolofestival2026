@@ -204,8 +204,61 @@ export default function HospitalityPage() {
             ))}
           </div>
 
+          {/* Official Brochure Day 3 Exclusive Table & Hospitality Packages */}
+          <div className="mt-16 rounded-2xl border-2 border-gold bg-forest p-8 text-ivory sm:p-10 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gold/30 pb-5">
+              <div>
+                <Badge variant="outline" className="border-gold text-gold text-[11px] uppercase tracking-widest">
+                  Grand Finale · 20 December 2026
+                </Badge>
+                <h3 className="mt-2 font-display text-2xl sm:text-3xl font-semibold text-ivory">
+                  Exclusive Table &amp; Hospitality Packages
+                </h3>
+                <p className="mt-1 text-sm text-ivory/80 max-w-2xl">
+                  Designed for distinguished personalities, corporate organisations, families and individual guests, our five curated hospitality categories offer different levels of comfort, exclusivity and access to the festival’s grand finale.
+                </p>
+              </div>
+              <Button asChild size="lg" className="bg-gold font-semibold text-forest-deep hover:bg-gold/90 shadow-md shrink-0">
+                <Link href="/tables">Book Day 3 Table Package →</Link>
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 text-xs">
+              <div className="rounded-xl border border-gold/40 bg-forest-deep/80 p-4 space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gold">1. Ultra-Exclusive VIP</span>
+                <h4 className="font-display text-lg font-bold text-ivory">The Kings Table</h4>
+                <p className="text-gold font-mono text-base font-extrabold">₦5,000,000</p>
+                <p className="text-ivory/80">10 Guests · Kings Arena · 10 VIP Parking Vehicles</p>
+              </div>
+              <div className="rounded-xl border border-gold/40 bg-forest-deep/80 p-4 space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gold">2. Luxury Hospitality</span>
+                <h4 className="font-display text-lg font-bold text-ivory">The Royal Table</h4>
+                <p className="text-gold font-mono text-base font-extrabold">₦3,000,000</p>
+                <p className="text-ivory/80">8 Guests · VVIP Hospitality Section · 5 VIP Parking Vehicles</p>
+              </div>
+              <div className="rounded-xl border border-gold/40 bg-forest-deep/80 p-4 space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gold">3. Signature Ladies’</span>
+                <h4 className="font-display text-lg font-bold text-ivory">The Queens Table</h4>
+                <p className="text-gold font-mono text-base font-extrabold">₦2,000,000</p>
+                <p className="text-ivory/80">6 Guests · Queens Polo Experiences &amp; Premium Dining</p>
+              </div>
+              <div className="rounded-xl border border-gold/40 bg-forest-deep/80 p-4 space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gold">4. Premium Festival</span>
+                <h4 className="font-display text-lg font-bold text-ivory">The Premium Table</h4>
+                <p className="text-gold font-mono text-base font-extrabold">₦500,000</p>
+                <p className="text-ivory/80">5 Guests · Reserved Premium Seating &amp; F&amp;B Package</p>
+              </div>
+              <div className="rounded-xl border border-gold/40 bg-forest-deep/80 p-4 space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gold">5. General Festival</span>
+                <h4 className="font-display text-lg font-bold text-ivory">The Regular Section</h4>
+                <p className="text-gold font-mono text-base font-extrabold">₦50,000 / Person</p>
+                <p className="text-ivory/80">General Viewing Area &amp; Designated Public Seating</p>
+              </div>
+            </div>
+          </div>
+
           {/* General Admission Notice */}
-          <div className="mt-16 rounded-2xl border border-gold/40 bg-forest p-8 text-ivory text-center sm:text-left sm:flex sm:items-center sm:justify-between sm:p-10">
+          <div className="mt-8 rounded-2xl border border-gold/40 bg-forest p-8 text-ivory text-center sm:text-left sm:flex sm:items-center sm:justify-between sm:p-10">
             <div>
               <Badge variant="outline" className="border-gold text-gold text-[11px] uppercase tracking-widest">
                 Official Festival Admission

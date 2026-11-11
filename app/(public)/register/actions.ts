@@ -25,11 +25,28 @@ import {
 } from "@/lib/config/affiliates-config";
 import { isValidSpecialInvitation } from "@/lib/invitations/validate";
 import { attachClaimToRegistration, claimPaymentReference } from "@/lib/paystack/claims";
-import { verifyDay3Payment } from "@/lib/paystack/verify";
+import { verifyDay3Payment, getEffectivePaystackSecret } from "@/lib/paystack/verify";
 import type { StoredPass } from "@/lib/storage/pass-storage";
 import { validateWhatsAppPhone } from "@/lib/utils/phone";
 import { notifySecretariatOfBankPayment } from "@/lib/notifications/secretariat";
 import { registerUnverifiedPasses } from "@/lib/storage/unverified-passes";
+import {
+  getTestingFeeStatus,
+  setTestingFeeMode,
+  autoDisableTestingFeeAfterPayment,
+  type TestingFeeStatus,
+} from "@/lib/config/testing-fee-mode";
+
+export async function getTestingFeeModeAction(): Promise<TestingFeeStatus> {
+  return getTestingFeeStatus();
+}
+
+export async function toggleTestingFeeModeAction(
+  enabled: boolean,
+  reason?: string,
+): Promise<TestingFeeStatus> {
+  return setTestingFeeMode(enabled, { reason });
+}
 
 const registrationSchema = z.object({
   firstName: z.string().trim().min(2, "First name must be at least 2 characters."),
@@ -64,6 +81,7 @@ const registrationSchema = z.object({
   sendWhatsappReminders: z.boolean().default(true),
   reminderCadence: z.enum(["weekly_and_daily", "weekly_only", "event_week_only"]).default("weekly_and_daily"),
   affiliateCode: z.string().trim().optional(),
+  useTestingFee: z.boolean().optional(),
   attendees: z
     .array(
       z.object({
@@ -100,6 +118,7 @@ export interface RegisterResult {
   day3Status?: "vvip_admitted" | "payment_verified" | "ticket_required" | "ticket_verified" | "not_selected" | "pending_verification" | "pending_bank_verification";
   ticketRefDay2?: string;
   ticketRefDay3?: string;
+  testingFeeAutoRemoved?: boolean;
 }
 
 /** Escapes user-supplied text before it is placed in the confirmation email HTML. */
@@ -218,6 +237,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
   let usedInvitationCode: string | null = null;
   let isBankTransfer = false;
   let bankTransferRef: string | null = null;
+  let testingFeeAutoRemoved = false;
 
   if (day3) {
     if (isValidSpecialInvitation(day3InvitationCode)) {
@@ -248,6 +268,12 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       verifiedPaymentRef = payment.reference;
       // The amount Paystack confirmed decides how many passes were bought.
       day3TicketCount = payment.quantity;
+
+      // Auto-remove the ₦100 pilot testing fee once a ₦100 test payment succeeds
+      testingFeeAutoRemoved = await autoDisableTestingFeeAfterPayment(
+        payment.reference,
+        payment.amountNgn,
+      );
     } else {
       return {
         success: false,
@@ -701,8 +727,11 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       day1Status: day1 ? "free_admitted" : "not_selected",
       day2Status: day2 ? "free_admitted" : "not_selected",
       day3Status: day3 ? (isBankTransfer ? "pending_verification" : "vvip_admitted") : "not_selected",
+      testingFeeAutoRemoved,
       message: isBankTransfer
         ? "Bank transfer registered! Please submit your payment receipt to the Secretariat via WhatsApp to activate your Day 3 VVIP access credentials."
+        : testingFeeAutoRemoved
+        ? "Registration confirmed! The ₦100 Pilot Testing Fee has now been automatically removed and reverted to Official Brochure Pricing."
         : "Registration confirmed and access card(s) issued successfully!",
     };
   } catch (error) {
@@ -715,12 +744,19 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Day 3 Exclusive Table Packages (Grand Finale — 20 Dec 2026)
-// 10 Seats per Table · Serial Numbering · Anti-Forwarding Turnstile Credentials
+// Day 3 Exclusive Table & Hospitality Packages (Grand Finale — 20 Dec 2026)
+// Brochure Capacities (10, 8, 6, 5, 1) · Serial Numbering · Anti-Forwarding
 // ─────────────────────────────────────────────────────────────────────────────
 
 const tableBookingSchema = z.object({
-  packageId: z.enum(["individual_vip", "kings_table", "royal_table", "queens_table", "premium_table"]),
+  packageId: z.enum([
+    "individual_vip",
+    "regular_section",
+    "kings_table",
+    "royal_table",
+    "queens_table",
+    "premium_table",
+  ]),
   tableSerial: z.string().trim().min(2, "Please select an available table serial number."),
   buyerFirstName: z.string().trim().min(2, "Buyer first name must be at least 2 characters."),
   buyerLastName: z.string().trim().min(2, "Buyer last name must be at least 2 characters."),
@@ -737,6 +773,7 @@ const tableBookingSchema = z.object({
   paymentRef: z.string().trim().optional(),
   bankTransferRef: z.string().trim().optional(),
   affiliateCode: z.string().trim().optional(),
+  useTestingFee: z.boolean().optional(),
   attendees: z
     .array(
       z.object({
@@ -761,6 +798,7 @@ export interface TableBookingResult {
   bankTransferRef?: string;
   officialValueNgn?: number;
   amountNgn?: number;
+  testingFeeAutoRemoved?: boolean;
   passes?: StoredPass[];
   secretariatNotification?: {
     message: string;
@@ -772,7 +810,8 @@ export interface TableBookingResult {
 }
 
 /**
- * Initializes online Paystack gateway checkout for a Day 3 Table Package (charged at pilot testing fee ₦100.00).
+ * Initializes online Paystack gateway checkout for a Day 3 Table Package.
+ * Supports both the toggleable ₦100.00 pilot testing fee and the official brochure price.
  */
 export async function initializeTablePayment(input: {
   packageId: string;
@@ -782,6 +821,7 @@ export async function initializeTablePayment(input: {
   buyerEmail: string;
   buyerPhone: string;
   affiliateCode?: string;
+  useTestingFee?: boolean;
   attendees?: Array<{ seat: number; name?: string }>;
 }) {
   try {
@@ -790,20 +830,24 @@ export async function initializeTablePayment(input: {
       return { success: false, error: "Invalid table package selected." };
     }
 
-    const testingAmountNgn = pkg.testingPriceNgn; // ₦100
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const secret = process.env.PAYSTACK_SECRET_KEY;
+    const testingStatus = await getTestingFeeStatus();
+    const isTestMode =
+      typeof input.useTestingFee === "boolean" ? input.useTestingFee : testingStatus.enabled;
+    const chargeAmountNgn = isTestMode ? pkg.testingPriceNgn : pkg.officialPriceNgn;
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.abeokutapolofestival2026.org.ng";
+    const secret = getEffectivePaystackSecret();
 
     const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const reference = `${DAY3_REFERENCE_PREFIX}TBL-${suffix}`;
 
     const callback = new URL("/tables", origin);
-    callback.searchParams.set("pkg", input.packageId);
+    callback.searchParams.set("pkg", pkg.id);
     callback.searchParams.set("serial", input.tableSerial);
     callback.searchParams.set("fn", input.buyerFirstName);
     callback.searchParams.set("ln", input.buyerLastName);
     callback.searchParams.set("em", input.buyerEmail);
     callback.searchParams.set("ph", input.buyerPhone);
+    callback.searchParams.set("tf", isTestMode ? "1" : "0");
     if (input.affiliateCode) {
       callback.searchParams.set("ref", input.affiliateCode);
     }
@@ -819,13 +863,15 @@ export async function initializeTablePayment(input: {
           error: "Online payment gateway is temporarily unavailable. Please use Direct Bank Transfer.",
         };
       }
-      const simRef = `${DAY3_REFERENCE_PREFIX}SIM-10-${suffix}`;
+      const simRef = isTestMode
+        ? `${DAY3_REFERENCE_PREFIX}SIM-${pkg.guestCapacity || 10}-${suffix}`
+        : `${DAY3_REFERENCE_PREFIX}SIM-${pkg.guestCapacity || 10}-OFF-${suffix}`;
       callback.searchParams.set("payment_ref", simRef);
       return {
         success: true,
         authorization_url: callback.toString(),
         reference: simRef,
-        amount: testingAmountNgn,
+        amount: chargeAmountNgn,
         simulated: true,
       };
     }
@@ -838,16 +884,17 @@ export async function initializeTablePayment(input: {
       },
       body: JSON.stringify({
         email: input.buyerEmail,
-        amount: testingAmountNgn * 100, // Paystack kobo
+        amount: chargeAmountNgn * 100, // Paystack kobo
         reference,
         callback_url: callback.toString(),
         metadata: {
           product: `Day 3 VIP Table: ${pkg.name} (${input.tableSerial})`,
-          package_id: input.packageId,
+          package_id: pkg.id,
           table_serial: input.tableSerial,
           attendees_count: pkg.guestCapacity || 10,
           buyer_name: `${input.buyerFirstName} ${input.buyerLastName}`,
           affiliate_code: input.affiliateCode || null,
+          testing_fee_mode: isTestMode,
         },
       }),
     });
@@ -864,7 +911,7 @@ export async function initializeTablePayment(input: {
       success: true,
       authorization_url: data.data.authorization_url,
       reference,
-      amount: testingAmountNgn,
+      amount: chargeAmountNgn,
       simulated: false,
     };
   } catch (err) {
@@ -877,10 +924,11 @@ export async function initializeTablePayment(input: {
 
 /**
  * Submits and confirms a Day 3 Table Package booking:
- * - Generates 10 distinct HMAC-256 signed ID access cards (one for each seat).
+ * - Generates N distinct HMAC-256 signed ID access cards (10, 8, 6, 5, or 1 based on brochure capacity).
  * - Enforces anti-forwarding device-locking on guest invitations.
  * - Records 10% affiliate commission when booked via affiliate link.
- * - Handles both verified Paystack payment and Abeokuta Polo Club WEMA Bank transfers.
+ * - Automatically removes the ₦100 testing fee mode after a successful ₦100 test payment.
+ * - Dispatches confirmation email via Resend to buyer and Secretariat.
  */
 export async function submitTableRegistration(rawInput: unknown): Promise<TableBookingResult> {
   try {
@@ -893,7 +941,7 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
     }
 
     const {
-      packageId,
+      packageId: rawPackageId,
       tableSerial,
       buyerFirstName,
       buyerLastName,
@@ -903,26 +951,37 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       paymentRef,
       bankTransferRef: inputBankRef,
       affiliateCode,
+      useTestingFee,
       attendees: inputAttendees,
     } = parsed.data;
 
-    const pkg = getTablePackage(packageId);
+    const pkg = getTablePackage(rawPackageId);
     if (!pkg) {
       return { success: false, error: "Invalid table package specified." };
     }
+    const packageId = pkg.id;
 
     const phoneValidation = validateWhatsAppPhone(rawPhone);
     const buyerPhone = phoneValidation.isValid ? phoneValidation.formatted : rawPhone;
     const buyerFullName = `${buyerFirstName} ${buyerLastName}`.trim();
     const isBankTransfer = paymentMethod === "bank_transfer";
 
+    const testingStatus = await getTestingFeeStatus();
+    const isTestMode =
+      typeof useTestingFee === "boolean" ? useTestingFee : testingStatus.enabled;
+
     let verifiedPaymentRef: string | null = null;
     let bankTransferRef: string | null = null;
+    let paidAmountNgn: number = isTestMode ? pkg.testingPriceNgn : pkg.officialPriceNgn;
+    let testingFeeAutoRemoved = false;
 
     if (isBankTransfer) {
       bankTransferRef = (inputBankRef || generateWemaTransferReference()).trim().toUpperCase();
     } else if (paymentRef) {
-      const payment = await verifyDay3Payment(paymentRef, { expectedEmail: buyerEmail });
+      const payment = await verifyDay3Payment(paymentRef, {
+        expectedEmail: buyerEmail,
+        expectedMinAmountNgn: isTestMode ? pkg.testingPriceNgn : pkg.officialPriceNgn,
+      });
       if (!payment.ok) {
         return { success: false, error: payment.message };
       }
@@ -937,6 +996,13 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
         return { success: false, error: claim.message };
       }
       verifiedPaymentRef = payment.reference;
+      paidAmountNgn = payment.amountNgn;
+
+      // Auto-remove the ₦100 pilot testing fee once a ₦100 test payment succeeds
+      testingFeeAutoRemoved = await autoDisableTestingFeeAfterPayment(
+        payment.reference,
+        payment.amountNgn,
+      );
     } else {
       return {
         success: false,
@@ -1020,13 +1086,13 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
         ticketRefDay3: verifiedPaymentRef || bankTransferRef || "TABLE-CONFIRMED",
         securityHash: hashPassToken(qrToken),
         ticketIndex: seat,
-        totalTickets: 10,
-        serialLabel: `${tableSerial} · Seat ${seat} of 10`,
+        totalTickets: capacity,
+        serialLabel: `${tableSerial} · Seat ${seat} of ${capacity}`,
         isSponsored: !isHost,
         sponsorName: !isHost ? buyerFullName : null,
         isBuyer: isHost,
         // Anti-forwarding device-locking:
-        // Seat 1 belongs to buyer; seats 2-10 lock automatically to the recipient's phone upon opening
+        // Seat 1 belongs to buyer; seats 2-N lock automatically to the recipient's phone upon opening
         isLockedToDevice: !isHost,
         claimedByRecipient: isHost,
         claimedRecipientName: isHost ? buyerFullName : null,
@@ -1054,7 +1120,7 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
           buyer_name: buyerFullName,
           buyer_email: buyerEmail,
           buyer_phone: buyerPhone,
-          amount_ngn: pkg.testingPriceNgn,
+          amount_ngn: paidAmountNgn,
           official_value_ngn: pkg.officialPriceNgn,
           payment_method: isBankTransfer ? "bank_transfer" : "paystack",
           payment_ref: verifiedPaymentRef,
@@ -1074,7 +1140,7 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
           category: affiliateCode
             ? `${pkg.name} (${tableSerial}) · Sold by: ${affiliateCode}`
             : `${pkg.name} (${tableSerial})`,
-          group_size: 10,
+          group_size: capacity,
           status: bookingStatus,
           has_day2_ticket: false,
           has_day3_ticket: true,
@@ -1108,14 +1174,14 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
 
         // 4. Record 10% Affiliate Commission if referral code is present
         if (affiliateCode) {
-          const officialCommissionNgn = pkg.officialPriceNgn * AFFILIATE_COMMISSION_RATE; // e.g. ₦1,000,000
+          const officialCommissionNgn = pkg.officialPriceNgn * AFFILIATE_COMMISSION_RATE;
           await adaptiveInsert(supabase, "affiliate_referrals", {
             affiliate_code: affiliateCode.trim().toUpperCase(),
             item_type: "table",
             category: `${pkg.name} (${tableSerial})`,
             order_ref: verifiedPaymentRef || bankTransferRef || `TBL-${Date.now()}`,
             buyer_name: buyerFullName,
-            sale_amount_ngn: pkg.testingPriceNgn,
+            sale_amount_ngn: paidAmountNgn,
             official_value_ngn: pkg.officialPriceNgn,
             commission_rate: AFFILIATE_COMMISSION_RATE,
             commission_amount_ngn: officialCommissionNgn,
@@ -1135,7 +1201,10 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
             paymentMethod,
             isBankTransfer,
             affiliateCode: affiliateCode || null,
-            passesIssued: 10,
+            passesIssued: capacity,
+            paidAmountNgn,
+            officialValueNgn: pkg.officialPriceNgn,
+            testingFeeAutoRemoved,
           },
         });
       } catch (dbErr) {
@@ -1149,12 +1218,12 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       registerUnverifiedPasses(passes.map((p) => p.passCode));
       try {
         const notif = await notifySecretariatOfBankPayment({
-          amountNgn: pkg.testingPriceNgn,
+          amountNgn: paidAmountNgn,
           buyerName: buyerFullName,
           email: buyerEmail,
           phone: buyerPhone,
           ref: bankTransferRef,
-          ticketCount: 10,
+          ticketCount: capacity,
           flow: "hospitality",
           tierName: `${pkg.name} (${tableSerial})`,
         });
@@ -1166,6 +1235,97 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       } catch {
         // Non-blocking
       }
+    }
+
+    // ── Transactional Resend Email to Table Buyer + Secretariat Copy ──────────
+    const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.abeokutapolofestival2026.org.ng";
+    try {
+      const safeBuyerName = escapeHtml(buyerFullName);
+      const safePkgName = escapeHtml(pkg.name);
+      const safeSerial = escapeHtml(tableSerial);
+      const refDisplay = escapeHtml(verifiedPaymentRef || bankTransferRef || "TABLE-CONFIRMED");
+
+      const passCardsHtml = passes
+        .map((p, idx) => {
+          const safeHolder = escapeHtml(p.holderName);
+          const passUrl = `${siteOrigin}/pass/${encodeURIComponent(p.passCode)}`;
+          return `
+            <div style="background-color: #1A1500; border: 2px solid #D4AF37; border-radius: 10px; padding: 16px; margin: 12px 0; color: #FCF9F8;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #F5D77F; font-size: 11px; text-transform: uppercase; font-weight: 700;">
+                  Seat ${idx + 1} of ${capacity} · ${idx === 0 ? "Table Host" : "Invited Guest"}
+                </span>
+                <span style="color: #D4AF37; font-size: 11px;">${safeSerial}</span>
+              </div>
+              <h3 style="font-size: 22px; color: #F5D77F; margin: 6px 0; font-family: monospace; letter-spacing: 0.08em;">${p.passCode}</h3>
+              <p style="font-size: 13px; color: #E5E7EB; margin: 2px 0;">Holder: <strong>${safeHolder}</strong></p>
+              <p style="font-size: 12px; margin: 8px 0 0 0;">
+                <a href="${passUrl}" style="color: #F5D77F; font-weight: bold; text-decoration: underline;">Open Digital Pass (${passUrl}) →</a>
+              </p>
+            </div>
+          `;
+        })
+        .join("");
+
+      const statusBanner = isBankTransfer
+        ? `<div style="background-color: #FEF3C7; border: 2px solid #F59E0B; border-radius: 8px; padding: 14px; margin: 16px 0; color: #78350F; font-size: 13px;">
+            <strong>⏳ Provisional Table Reservation (Pending Bank Transfer Verification):</strong><br/>
+            Please transfer <strong>₦${paidAmountNgn.toLocaleString()}</strong> to <strong>${CLUB_BANK_DETAILS.bankName} — ${CLUB_BANK_DETAILS.accountNumber} (${CLUB_BANK_DETAILS.accountName})</strong> with reference <strong>${refDisplay}</strong>. Your ${capacity} turnstile pass${capacity > 1 ? "es" : ""} will activate immediately upon Bursary confirmation.
+          </div>`
+        : `<div style="background-color: #ECFDF5; border: 2px solid #10B981; border-radius: 8px; padding: 14px; margin: 16px 0; color: #065F46; font-size: 13px;">
+            <strong>✅ Online Payment Verified (Ref: ${refDisplay}):</strong><br/>
+            Your reservation for <strong>${safePkgName} (${safeSerial})</strong> is confirmed and all ${capacity} turnstile access card${capacity > 1 ? "s are" : " is"} active for Sunday, 20 December 2026.
+          </div>`;
+
+      await sendEmail({
+        to: buyerEmail,
+        subject: isBankTransfer
+          ? `Provisional Reservation: ${pkg.name} (${tableSerial}) — 2026 Abeokuta Polo Festival`
+          : `Confirmed Hospitality Package: ${pkg.name} (${tableSerial}) — 2026 Abeokuta Polo Festival`,
+        html: `
+          <div style="font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #1B1C1C; background-color: #FCF9F8; border-radius: 16px; border: 1px solid #C1C9BF;">
+            <div style="background-color: #1A1500; padding: 24px; border-radius: 12px; text-align: center; color: #FCF9F8; border: 2px solid #D4AF37;">
+              <p style="color: #F5D77F; font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; margin: 0 0 6px 0; font-weight: bold;">Grand Finale Hospitality · 20 December 2026</p>
+              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #F5D77F;">${safePkgName}</h1>
+              <p style="margin: 6px 0 0 0; font-size: 13px; color: #DCD5C2;">Allocation: ${safeSerial} · ${capacity} Guest${capacity > 1 ? "s" : ""} · Official Value: ${pkg.officialPriceDisplay}</p>
+            </div>
+            <div style="padding: 20px 0;">
+              <p style="font-size: 15px;">Dear <strong>${safeBuyerName}</strong>,</p>
+              <p style="font-size: 14px; line-height: 1.6; color: #414843;">
+                Thank you for reserving <strong>${safePkgName} (${safeSerial})</strong> for the Grand Finale of the <strong>Abeokuta Polo Festival 2026 — THE BLUEPRINT</strong>.
+              </p>
+              ${statusBanner}
+              <h3 style="font-size: 15px; color: #002F1A; margin: 20px 0 8px 0;">Your ${capacity} Digital Gate Pass${capacity > 1 ? "es" : ""}:</h3>
+              ${passCardsHtml}
+            </div>
+            <div style="border-top: 1px solid #C1C9BF; padding-top: 16px; font-size: 11px; color: #55635A; text-align: center;">
+              <p style="margin: 0;">Abeokuta Polo Club · Kobape, Abeokuta, Ogun State · Helpline: +234 818 188 8884</p>
+            </div>
+          </div>
+        `,
+      });
+
+      // If paid via Paystack, also notify the Secretariat by email
+      if (!isBankTransfer) {
+        const secretariatEmail = process.env.SECRETARIAT_EMAIL || "abeokutapolo@gmail.com";
+        await sendEmail({
+          to: secretariatEmail,
+          replyTo: buyerEmail,
+          subject: `[CONFIRMED TABLE BOOKING] ${pkg.name} (${tableSerial}) — ${buyerFullName}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #D4AF37; border-radius: 12px;">
+              <h2 style="color: #002F1A; margin-top: 0;">Confirmed Day 3 Hospitality Booking</h2>
+              <p><strong>Package:</strong> ${safePkgName} (${safeSerial})</p>
+              <p><strong>Buyer:</strong> ${safeBuyerName} (${escapeHtml(buyerEmail)} · ${escapeHtml(buyerPhone)})</p>
+              <p><strong>Amount Paid:</strong> ₦${paidAmountNgn.toLocaleString()} (Official Value: ${pkg.officialPriceDisplay})</p>
+              <p><strong>Paystack Reference:</strong> ${refDisplay}</p>
+              <p><strong>Passes Issued:</strong> ${capacity}</p>
+            </div>
+          `,
+        });
+      }
+    } catch (emailErr) {
+      console.warn("Table booking email dispatch notice:", emailErr);
     }
 
     return {
@@ -1181,12 +1341,15 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       paymentRef: verifiedPaymentRef || undefined,
       bankTransferRef: bankTransferRef || undefined,
       officialValueNgn: pkg.officialPriceNgn,
-      amountNgn: pkg.testingPriceNgn,
+      amountNgn: paidAmountNgn,
+      testingFeeAutoRemoved,
       passes,
       secretariatNotification,
       message: isBankTransfer
         ? "Provisional Table Claim Slip issued. Please forward proof of transfer to Secretariat via WhatsApp to confirm turnstile activation."
-        : "Table reservation confirmed! All 10 distinct VIP ID access cards are ready to share.",
+        : testingFeeAutoRemoved
+        ? `Table reservation confirmed! All ${capacity} distinct VIP ID access card${capacity > 1 ? "s are" : " is"} ready. The ₦100 testing fee has now been automatically removed and reverted to Official Brochure Pricing.`
+        : `Table reservation confirmed! All ${capacity} distinct VIP ID access card${capacity > 1 ? "s are" : " is"} ready to share.`,
     };
   } catch (err) {
     console.error("submitTableRegistration error:", err);
@@ -1289,6 +1452,57 @@ export async function submitAffiliateRegistration(rawInput: unknown) {
       }
     }
 
+    // Send Welcome Email via Resend to the Affiliate + Secretariat Copy
+    const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.abeokutapolofestival2026.org.ng";
+    try {
+      const safeFullName = escapeHtml(fullName);
+      const safeCountry = escapeHtml(country);
+      const tableRefLink = `${siteOrigin}/tables?ref=${encodeURIComponent(affiliateCode)}`;
+      const regRefLink = `${siteOrigin}/register?ref=${encodeURIComponent(affiliateCode)}`;
+      const dashLink = `${siteOrigin}/affiliates/dashboard?code=${encodeURIComponent(affiliateCode)}`;
+
+      await sendEmail({
+        to: email,
+        subject: `Welcome Affiliate Partner (${affiliateCode}) — Abeokuta Polo Festival 2026`,
+        html: `
+          <div style="font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #1B1C1C; background-color: #FCF9F8; border-radius: 16px; border: 1px solid #C1C9BF;">
+            <div style="background-color: #002F1A; padding: 24px; border-radius: 12px; text-align: center; color: #FCF9F8;">
+              <p style="color: #D4AF37; font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; margin: 0 0 6px 0; font-weight: bold;">International Affiliate Centre · 10% Commission</p>
+              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #D4AF37;">Welcome, ${safeFullName}</h1>
+              <p style="margin: 6px 0 0 0; font-size: 13px; color: #C1C9BF;">Partner Code: <strong>${affiliateCode}</strong> · Region: ${safeCountry}</p>
+            </div>
+            <div style="padding: 20px 0;">
+              <p style="font-size: 14px; line-height: 1.6; color: #414843;">
+                Your official affiliate partner account for the <strong>Abeokuta Polo Festival 2026 — THE BLUEPRINT</strong> is now active. You earn a guaranteed <strong>10% commission</strong> on all confirmed Grand Finale Table & Hospitality Packages and Regular Section tickets sold through your unique referral links:
+              </p>
+              <div style="background-color: #FFFFFF; border: 2px dashed #002F1A; border-radius: 10px; padding: 16px; margin: 16px 0;">
+                <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: bold; color: #002F1A;">Your Unique Referral Code:</p>
+                <p style="margin: 0 0 12px 0; font-size: 22px; font-family: monospace; font-weight: 800; color: #C9A84C;">${affiliateCode}</p>
+                <p style="margin: 4px 0; font-size: 12px;"><strong>Table Packages Link:</strong> <a href="${tableRefLink}" style="color: #002F1A;">${tableRefLink}</a></p>
+                <p style="margin: 4px 0; font-size: 12px;"><strong>General & Regular Section Link:</strong> <a href="${regRefLink}" style="color: #002F1A;">${regRefLink}</a></p>
+                <p style="margin: 8px 0 0 0; font-size: 12px;"><strong>Partner Dashboard:</strong> <a href="${dashLink}" style="color: #002F1A; font-weight: bold;">${dashLink}</a></p>
+              </div>
+              <div style="background-color: #F4F4F0; border-radius: 8px; padding: 14px; font-size: 12px; color: #414843;">
+                <strong style="color: #002F1A;">Official 2026 Commission Schedule (10%):</strong>
+                <ul style="margin: 6px 0 0 0; padding-left: 18px; line-height: 1.6;">
+                  <li><strong>The Kings Table (10 Guests · ₦5,000,000):</strong> ₦500,000 commission</li>
+                  <li><strong>The Royal Table (8 Guests · ₦3,000,000):</strong> ₦300,000 commission</li>
+                  <li><strong>The Queens Table (6 Guests · ₦2,000,000):</strong> ₦200,000 commission</li>
+                  <li><strong>The Premium Table (5 Guests · ₦500,000):</strong> ₦50,000 commission</li>
+                  <li><strong>The Regular Section (Per Person · ₦50,000):</strong> ₦5,000 commission</li>
+                </ul>
+              </div>
+            </div>
+            <div style="border-top: 1px solid #C1C9BF; padding-top: 16px; font-size: 11px; color: #55635A; text-align: center;">
+              <p style="margin: 0;">Abeokuta Polo Club · Secretariat Helpline: +234 818 188 8884</p>
+            </div>
+          </div>
+        `,
+      });
+    } catch (emailErr) {
+      console.warn("Affiliate welcome email notice:", emailErr);
+    }
+
     return {
       success: true,
       affiliateCode,
@@ -1383,15 +1597,15 @@ export async function getAffiliateDashboardData(affiliateCodeInput: string) {
           item_type: "table",
           order_ref: "ABK-VVIP-TBL-8821",
           buyer_name: "Chief T. Adebayo",
-          official_value_ngn: 10000000,
-          commission_amount_ngn: 1000000,
+          official_value_ngn: 5000000,
+          commission_amount_ngn: 500000,
           commission_rate: 0.10,
           status: "confirmed",
         },
         {
           id: "demo-ref-2",
           created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-          category: "Day 3 Individual VVIP Pass",
+          category: "The Regular Section (Day 3 Pass)",
           item_type: "ticket",
           order_ref: "ABK-VVIP-6741",
           buyer_name: "Dr. K. Williams",
@@ -1449,6 +1663,13 @@ export async function requestAffiliatePayout(affiliateCode: string, amountNgn: n
         metadata: { affiliateCode, amountNgn, requestedAt: new Date().toISOString() },
       });
     }
+    const secretariatEmail = process.env.SECRETARIAT_EMAIL || "abeokutapolo@gmail.com";
+    await sendEmail({
+      to: secretariatEmail,
+      subject: `[AFFILIATE PAYOUT REQUEST] ${affiliateCode} — ₦${amountNgn.toLocaleString()}`,
+      html: `<p>Affiliate partner <strong>${escapeHtml(affiliateCode)}</strong> requested a commission payout of <strong>₦${amountNgn.toLocaleString()}</strong>.</p>`,
+    }).catch(() => undefined);
+
     return {
       success: true,
       message: `Payout request of ₦${amountNgn.toLocaleString()} received. The Secretariat Bursary reconciles and remits payouts weekly on Tuesdays and Fridays.`,
@@ -1457,6 +1678,103 @@ export async function requestAffiliatePayout(affiliateCode: string, amountNgn: n
     return {
       success: true,
       message: "Payout request recorded. The Secretariat will process your remittance shortly.",
+    };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sponsorship, Hospitality & General Enquiries (Resend Automated Dispatch)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const enquirySchema = z.object({
+  fullName: z.string().trim().min(2, "Please enter your name."),
+  email: z.string().trim().email("Please enter a valid email address."),
+  phone: z.string().trim().min(7, "Please enter a valid phone number."),
+  organization: z.string().trim().optional(),
+  category: z.enum(["hospitality", "sponsorship", "general"]).default("general"),
+  tierName: z.string().trim().optional(),
+  message: z.string().trim().min(5, "Please include a brief inquiry message."),
+});
+
+export async function submitEnquiryAction(rawInput: unknown) {
+  try {
+    const parsed = enquirySchema.safeParse(rawInput);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.issues.map((i) => i.message).join(". "),
+      };
+    }
+
+    const { fullName, email, phone, organization, category, tierName, message } = parsed.data;
+    const safeName = escapeHtml(fullName);
+    const safeOrg = escapeHtml(organization || "Individual / Private");
+    const safeTier = escapeHtml(tierName || category.toUpperCase());
+    const safeMsg = escapeHtml(message);
+    const secretariatEmail = process.env.SECRETARIAT_EMAIL || "abeokutapolo@gmail.com";
+
+    // 1. Send instant acknowledgement email to the enquirer via Resend
+    await sendEmail({
+      to: email,
+      subject: `Enquiry Received: ${tierName || "Abeokuta Polo Festival 2026"} — Secretariat Liaison`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1B1C1C; background-color: #FCF9F8; border-radius: 14px; border: 1px solid #C1C9BF;">
+          <div style="background-color: #002F1A; padding: 20px; border-radius: 10px; text-align: center; color: #FCF9F8;">
+            <p style="color: #D4AF37; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 4px 0; font-weight: bold;">Official Secretariat Acknowledgement</p>
+            <h2 style="margin: 0; font-size: 22px; color: #D4AF37;">Abeokuta Polo Festival 2026 — The Blueprint</h2>
+          </div>
+          <div style="padding: 20px 0; font-size: 14px; line-height: 1.6; color: #414843;">
+            <p>Dear <strong>${safeName}</strong>,</p>
+            <p>Thank you for contacting the <strong>Abeokuta Polo Club Secretariat</strong> regarding <strong>${safeTier}</strong>.</p>
+            <p>Your inquiry has been logged and assigned to our Protocol &amp; Hospitality Liaison Desk. A representative will reach out to you shortly via phone/WhatsApp (<strong>${escapeHtml(phone)}</strong>) or email.</p>
+            <div style="background-color: #FFFFFF; border-left: 4px solid #D4AF37; padding: 12px 16px; margin: 16px 0; font-size: 13px;">
+              <strong>Your Message Summary:</strong><br/>
+              ${safeMsg}
+            </div>
+            <p style="font-size: 13px;">For urgent assistance, you may also reach the Secretariat directly on WhatsApp or telephone at <strong>+234 818 188 8884</strong> or <strong>0803 681 8916</strong>.</p>
+          </div>
+          <div style="border-top: 1px solid #C1C9BF; padding-top: 12px; font-size: 11px; color: #55635A; text-align: center;">
+            Abeokuta Polo Club Secretariat · 4th Floor, Conference Hotel, Presidential Boulevard, Oke-Mosan, Abeokuta
+          </div>
+        </div>
+      `,
+    });
+
+    // 2. Send alert email to Secretariat
+    await sendEmail({
+      to: secretariatEmail,
+      replyTo: email,
+      subject: `[NEW ${category.toUpperCase()} ENQUIRY] ${tierName || category} — ${fullName}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #002F1A; border-radius: 12px;">
+          <h2 style="color: #002F1A; margin-top: 0;">New ${escapeHtml(category.toUpperCase())} Enquiry</h2>
+          <p><strong>Package / Tier:</strong> ${safeTier}</p>
+          <p><strong>Full Name:</strong> ${safeName}</p>
+          <p><strong>Organization:</strong> ${safeOrg}</p>
+          <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+          <p><strong>Phone / WhatsApp:</strong> ${escapeHtml(phone)}</p>
+          <p><strong>Message:</strong><br/>${safeMsg}</p>
+        </div>
+      `,
+    });
+
+    if (isSupabaseConfigured()) {
+      await writeAudit({
+        action: `enquiry.${category}`,
+        entityType: "enquiry",
+        entityId: email,
+        metadata: { fullName, email, phone, organization, category, tierName, message },
+      }).catch(() => undefined);
+    }
+
+    return {
+      success: true,
+      message: "Your enquiry has been sent to the Secretariat and a confirmation email has been dispatched to your inbox.",
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: (err as Error)?.message || "Could not submit enquiry. Please try again.",
     };
   }
 }

@@ -50,20 +50,21 @@ export function StructuredData() {
             "availability": "https://schema.org/InStock",
             "validFrom": "2026-01-01",
             "url": "https://www.abeokutapolofestival2026.org.ng/register",
-            "description": "100% Free Public Admission with Prior Accreditation Pass"
+            "description": "100% Free Public Admission with Prior Accreditation Pass (18 Dec 2026)"
           },
           {
             "@type": "Offer",
-            "name": "Day 2 Pass — Royal Cup Tournament Semi-Finals",
-            "price": "5000",
+            "name": "Day 2 Pass — Tournament Semi-Finals & Polo Village",
+            "price": "0",
             "priceCurrency": "NGN",
             "availability": "https://schema.org/InStock",
             "validFrom": "2026-01-01",
-            "url": "https://www.abeokutapolofestival2026.org.ng/register"
+            "url": "https://www.abeokutapolofestival2026.org.ng/register",
+            "description": "100% Free Public Admission with Prior Accreditation Pass (19 Dec 2026)"
           },
           {
             "@type": "Offer",
-            "name": "Day 3 VVIP Royal Cup Grand Finale Pass",
+            "name": "Day 3 VVIP Royal Cup Grand Finale Pass — The Regular Section (General Festival Experience)",
             "price": "50000",
             "priceCurrency": "NGN",
             "availability": "https://schema.org/InStock",
@@ -72,8 +73,35 @@ export function StructuredData() {
           },
           {
             "@type": "Offer",
-            "name": "VIP Table Enclosure (10 Guests Package)",
+            "name": "The Premium Table — Premium Festival Experience (5 Guests)",
             "price": "500000",
+            "priceCurrency": "NGN",
+            "availability": "https://schema.org/InStock",
+            "validFrom": "2026-01-01",
+            "url": "https://www.abeokutapolofestival2026.org.ng/tables"
+          },
+          {
+            "@type": "Offer",
+            "name": "The Queens Table — Signature Ladies' Experience (6 Guests)",
+            "price": "2000000",
+            "priceCurrency": "NGN",
+            "availability": "https://schema.org/InStock",
+            "validFrom": "2026-01-01",
+            "url": "https://www.abeokutapolofestival2026.org.ng/tables"
+          },
+          {
+            "@type": "Offer",
+            "name": "The Royal Table — Luxury Hospitality Experience (8 Guests, 5 VIP Parking)",
+            "price": "3000000",
+            "priceCurrency": "NGN",
+            "availability": "https://schema.org/InStock",
+            "validFrom": "2026-01-01",
+            "url": "https://www.abeokutapolofestival2026.org.ng/tables"
+          },
+          {
+            "@type": "Offer",
+            "name": "The Kings Table — Ultra-Exclusive VIP Experience (10 Guests, 10 VIP Parking)",
+            "price": "5000000",
             "priceCurrency": "NGN",
             "availability": "https://schema.org/InStock",
             "validFrom": "2026-01-01",
