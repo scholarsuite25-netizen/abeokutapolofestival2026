@@ -8,6 +8,11 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Building2, Landmark, CheckCircle2, Clock, Crown, Users, Sparkles, Award } from "lucide-react";
+import { getTestingFeeStatus } from "@/lib/config/testing-fee-mode";
+import {
+  FinanceTestingFeePanel,
+  VerifyTableTransferButton,
+} from "@/components/admin/finance-testing-fee-panel";
 
 export const metadata = {
   title: "Offline Finance & Commitments Ledger | 2026 Abeokuta Polo Festival",
@@ -58,9 +63,11 @@ async function FinanceContent() {
   const { data: tableBookingsData } = await supabase
     .from("table_bookings")
     .select(
-      "id, package_id, package_name, table_serial, buyer_name, buyer_email, buyer_phone, amount_ngn, official_value_ngn, status, payment_method, affiliate_code, created_at",
+      "id, package_id, package_name, table_serial, buyer_name, buyer_email, buyer_phone, amount_ngn, official_value_ngn, status, payment_method, bank_transfer_ref, payment_ref, affiliate_code, created_at",
     )
     .order("created_at", { ascending: false });
+
+  const testingFeeStatus = await getTestingFeeStatus();
 
   const { data: affiliateReferralsData } = await supabase
     .from("affiliate_referrals")
@@ -101,6 +108,9 @@ async function FinanceContent() {
           ← Command Centre
         </Link>
       </div>
+
+      {/* Explicit Admin Toggle for Day 3 ₦100 Pilot Testing Fee Mode vs Official Brochure Pricing */}
+      <FinanceTestingFeePanel initialStatus={testingFeeStatus} />
 
       <div className="rounded-xl border border-gold/40 bg-card p-5 shadow-xs">
         <div className="flex items-start gap-3.5">
@@ -323,11 +333,20 @@ async function FinanceContent() {
                       ₦{(tbl.official_value_ngn ?? 0).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <StatusBadge
-                        tone={tbl.status === "confirmed" ? "success" : "warning"}
-                      >
-                        {tbl.status === "confirmed" ? "Confirmed ✓" : "Pending Verification"}
-                      </StatusBadge>
+                      <div className="flex flex-col items-center gap-1.5">
+                        <StatusBadge
+                          tone={tbl.status === "confirmed" ? "success" : "warning"}
+                        >
+                          {tbl.status === "confirmed" ? "Confirmed ✓" : "Pending Verification"}
+                        </StatusBadge>
+                        {tbl.status !== "confirmed" &&
+                          (tbl.bank_transfer_ref || tbl.payment_ref) && (
+                            <VerifyTableTransferButton
+                              reference={tbl.bank_transfer_ref || tbl.payment_ref}
+                              isConfirmed={tbl.status === "confirmed"}
+                            />
+                          )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 font-mono text-[11px] text-muted-brand uppercase">
                       {tbl.payment_method ?? "gateway"}

@@ -8,7 +8,10 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { generateSignedPassToken, hashPassToken } from "@/lib/qr/token";
 import { sendEmail } from "@/lib/email/client";
 import { writeAudit } from "@/lib/supabase/audit";
-import { DAY3_VVIP_PRICE_NGN } from "@/lib/config/checkout-config";
+import {
+  DAY3_VVIP_PRICE_NGN,
+  DAY3_VVIP_OFFICIAL_PRICE_NGN,
+} from "@/lib/config/checkout-config";
 import {
   getTestingFeeStatus,
   autoDisableTestingFeeAfterPayment,
@@ -305,7 +308,7 @@ export async function approveRegistrationAction(registrationId: string): Promise
 
   const { data: reg, error: fetchError } = await supabase
     .from("registrations")
-    .select("id, first_name, last_name, email, phone, category, status")
+    .select("*")
     .eq("id", registrationId)
     .maybeSingle();
 
@@ -317,6 +320,9 @@ export async function approveRegistrationAction(registrationId: string): Promise
   }
 
   const holderName = `${reg.first_name} ${reg.last_name}`.trim();
+  const bankTransferRef = (reg as { bank_transfer_ref?: string | null; day3_ticket_ref?: string | null }).bank_transfer_ref ||
+    (reg as { day3_ticket_ref?: string | null }).day3_ticket_ref ||
+    null;
   let passCode = "";
   const issuedAt = new Date().toISOString();
 
@@ -368,8 +374,20 @@ export async function approveRegistrationAction(registrationId: string): Promise
   if (existingCreds) {
     existingCreds.forEach((c) => markPassVerified(c.pass_code));
   }
-  if ((reg as any).bank_transfer_ref) {
-    markPassVerified((reg as any).bank_transfer_ref);
+  if (bankTransferRef) {
+    markPassVerified(bankTransferRef);
+    await supabase
+      .from("table_bookings")
+      .update({ status: "confirmed" })
+      .or(`bank_transfer_ref.eq.${bankTransferRef},payment_ref.eq.${bankTransferRef}`);
+    await supabase
+      .from("offline_commitments")
+      .update({ status: "bank_wire_confirmed" })
+      .eq("reference_code", bankTransferRef);
+    await supabase
+      .from("affiliate_referrals")
+      .update({ status: "confirmed" })
+      .eq("order_ref", bankTransferRef);
   }
 
   const { error: regError } = await supabase
@@ -384,7 +402,7 @@ export async function approveRegistrationAction(registrationId: string): Promise
     const testingState = await getTestingFeeStatus();
     if (testingState.enabled) {
       await autoDisableTestingFeeAfterPayment(
-        (reg as { bank_transfer_ref?: string }).bank_transfer_ref || passCode || reg.id,
+        bankTransferRef || passCode || reg.id,
         100,
       );
       revalidatePath("/tables");
@@ -550,25 +568,48 @@ export async function approveBankTransferAction(identifier: string): Promise<{
       const { data: reg, error: fetchError } = await query.maybeSingle();
 
       if (fetchError || !reg) {
-        // If not found in registrations, check offline_commitments table
+        // Check table_bookings and offline_commitments if not found directly in registrations
+        const { data: tableBookingOnly } = await supabase
+          .from("table_bookings")
+          .select("id, buyer_name, amount_ngn, bank_transfer_ref, payment_ref")
+          .or(`bank_transfer_ref.eq.${cleanId},payment_ref.eq.${cleanId}`)
+          .maybeSingle();
+
         const { data: commitment } = await supabase
           .from("offline_commitments")
           .select("id, sponsor_name, reference_code, proposed_amount")
           .eq("reference_code", cleanId)
           .maybeSingle();
 
-        if (commitment) {
-          await supabase
-            .from("offline_commitments")
-            .update({
-              status: "bank_wire_confirmed",
-              confirmed_amount: commitment.proposed_amount,
-            })
-            .eq("id", commitment.id);
+        if (tableBookingOnly || commitment) {
+          if (tableBookingOnly) {
+            await supabase
+              .from("table_bookings")
+              .update({ status: "confirmed" })
+              .eq("id", tableBookingOnly.id);
+          }
 
+          if (commitment) {
+            await supabase
+              .from("offline_commitments")
+              .update({
+                status: "bank_wire_confirmed",
+                confirmed_amount: commitment.proposed_amount,
+              })
+              .eq("id", commitment.id);
+          }
+
+          await supabase
+            .from("affiliate_referrals")
+            .update({ status: "confirmed" })
+            .eq("order_ref", cleanId);
+
+          markPassVerified(cleanId);
+
+          const verifiedAmount = tableBookingOnly?.amount_ngn || commitment?.proposed_amount || 100;
           const testingState = await getTestingFeeStatus();
-          if (testingState.enabled || (commitment.proposed_amount && commitment.proposed_amount <= 1000)) {
-            await autoDisableTestingFeeAfterPayment(cleanId, commitment.proposed_amount || 100);
+          if (testingState.enabled || verifiedAmount <= 1000) {
+            await autoDisableTestingFeeAfterPayment(cleanId, verifiedAmount);
           }
 
           revalidatePath("/abawole/finance");
@@ -579,8 +620,8 @@ export async function approveBankTransferAction(identifier: string): Promise<{
 
           return {
             ok: true,
-            holderName: commitment.sponsor_name,
-            amountNgn: commitment.proposed_amount,
+            holderName: tableBookingOnly?.buyer_name || commitment?.sponsor_name || "VVIP Patron",
+            amountNgn: verifiedAmount,
             transferRef: cleanId,
             passCodes: [`ABK-2026-VVIP-${cleanId.replace("ABK-WEMA-", "")}`],
           };
@@ -593,12 +634,34 @@ export async function approveBankTransferAction(identifier: string): Promise<{
       const transferRef = reg.bank_transfer_ref || reg.day3_ticket_ref || cleanId || "WEMA-TRANSFER";
       const quantity = Math.max(1, reg.group_size || 1);
       const testingState = await getTestingFeeStatus();
-      const amountNgn = testingState.enabled ? quantity * 100 : quantity * DAY3_VVIP_PRICE_NGN;
+
+      // Check if there is an associated table booking or offline commitment with the exact amount
+      const { data: linkedTableBooking } = await supabase
+        .from("table_bookings")
+        .select("id, amount_ngn")
+        .or(`bank_transfer_ref.eq.${transferRef},payment_ref.eq.${transferRef}`)
+        .maybeSingle();
+
+      const amountNgn =
+        linkedTableBooking?.amount_ngn ||
+        (testingState.enabled ? quantity * 100 : quantity * DAY3_VVIP_OFFICIAL_PRICE_NGN);
       const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://abeokuta-polo-festival-2026.vercel.app";
 
-      if (testingState.enabled) {
+      if (testingState.enabled || amountNgn <= 1000) {
         await autoDisableTestingFeeAfterPayment(transferRef, amountNgn);
       }
+
+      if (linkedTableBooking) {
+        await supabase
+          .from("table_bookings")
+          .update({ status: "confirmed" })
+          .eq("id", linkedTableBooking.id);
+      }
+
+      await supabase
+        .from("affiliate_referrals")
+        .update({ status: "confirmed" })
+        .eq("order_ref", transferRef);
 
       // 1. Mark registration confirmed
       await supabase

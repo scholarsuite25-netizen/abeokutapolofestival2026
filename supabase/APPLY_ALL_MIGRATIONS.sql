@@ -1810,7 +1810,7 @@ create table if not exists public.table_bookings (
   buyer_email         citext not null,
   buyer_phone         text not null,
   amount_ngn          integer not null default 100, -- Testing fee charged
-  official_value_ngn  bigint not null default 10000000, -- Official prestige value
+  official_value_ngn  bigint not null default 5000000, -- Official prestige value
   payment_method      text not null default 'paystack', -- 'paystack' | 'bank_transfer'
   payment_ref         text,
   bank_transfer_ref   text,

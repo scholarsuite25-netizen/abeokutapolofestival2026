@@ -206,6 +206,48 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
     expect(afterPayment.autoRemovedAfterPayment).toBe(true);
     expect(afterPayment.lastPaymentRef).toBe("ABK-VVIP-TEST-100");
 
+    // Verify table booking and Day 3 registration use official brochure prices when testing mode is disabled
+    const officialTableRes = await submitTableRegistration({
+      packageId: "royal_table",
+      tableSerial: "Royal Table 07",
+      buyerFirstName: "Otunba",
+      buyerLastName: "Adekunle",
+      buyerEmail: `otunba.${Date.now()}@test.ng`,
+      buyerPhone: "+234 803 555 0199",
+      paymentMethod: "bank_transfer",
+      useTestingFee: false,
+      attendees: Array.from({ length: 8 }, (_, i) => ({
+        seat: i + 1,
+        name: `Royal Guest ${i + 1}`,
+      })),
+    });
+    expect(officialTableRes.success).toBe(true);
+    expect(officialTableRes.amountNgn).toBe(3_000_000);
+    expect(officialTableRes.officialValueNgn).toBe(3_000_000);
+    expect(officialTableRes.secretariatNotification?.message).toContain("₦3,000,000");
+
+    const officialRegRes = await submitRegistration({
+      firstName: "Adebayo",
+      lastName: "Williams",
+      email: `adebayo.${Date.now()}@test.ng`,
+      phone: "+234 803 555 0299",
+      affiliationType: "individual",
+      day1: false,
+      day2: false,
+      day3: true,
+      paymentMethod: "bank_transfer",
+      day3TicketCount: 2,
+      useTestingFee: false,
+      attendees: [
+        { firstName: "Adebayo", lastName: "Williams" },
+        { firstName: "Guest", lastName: "Two" },
+      ],
+    });
+    expect(officialRegRes.success).toBe(true);
+    expect(officialRegRes.secretariatNotification?.message).toContain(
+      `₦${(DAY3_VVIP_OFFICIAL_PRICE_NGN * 2).toLocaleString()}`,
+    );
+
     // Reset back to default for subsequent tests
     resetTestingFeeModeForTests(true);
   });

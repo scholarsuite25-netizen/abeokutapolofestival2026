@@ -205,14 +205,20 @@ export function TablesBookingClient() {
 
       if (effectiveEmail) {
         setLoading(true);
-        // Build 10 attendees payload
-        const capacity = selectedPkg.guestCapacity || 10;
-    const attendeesPayload = (capacity === 1)
-      ? [{ seat: 1, name: `${firstName} ${lastName}`.trim() }]
-      : attendeeNames.slice(0, capacity).map((name, idx) => ({
-          seat: idx + 1,
-          name: name.trim() || (idx === 0 ? `${effectiveFn} ${effectiveLn}`.trim() : `${effectiveFn} ${effectiveLn} (Guest ${idx + 1})`),
-        }));
+        // Build attendees payload for the effective package capacity
+        const effectivePkg = getTablePackage(effectivePkgId) || selectedPkg;
+        const capacity = effectivePkg.guestCapacity || 10;
+        const attendeesPayload =
+          capacity === 1
+            ? [{ seat: 1, name: `${effectiveFn} ${effectiveLn}`.trim() }]
+            : attendeeNames.slice(0, capacity).map((name, idx) => ({
+                seat: idx + 1,
+                name:
+                  name.trim() ||
+                  (idx === 0
+                    ? `${effectiveFn} ${effectiveLn}`.trim()
+                    : `${effectiveFn} ${effectiveLn} (Guest ${idx + 1})`),
+              }));
 
         submitTableRegistration({
           packageId: effectivePkgId,
@@ -379,7 +385,7 @@ export function TablesBookingClient() {
                   </h3>
                   <p className="text-xs sm:text-sm text-amber-200/90 leading-relaxed">
                     Transfer reference: <strong className="font-mono text-amber-300">{bookingResult.bankTransferRef}</strong>. 
-                    Please send your transfer receipt (₦{CLUB_BANK_DETAILS.feePerTicketNgn} testing amount) to the Secretariat Bursary via WhatsApp to activate all 10 turnstile credentials before the gates open on 20 Dec 2026.
+                    Please send your transfer receipt (₦{(bookingResult.amountNgn ?? selectedPkg.testingPriceNgn).toLocaleString()}) to the Secretariat Bursary via WhatsApp to activate {bookingResult.passes.length === 1 ? "your turnstile credential" : `all ${bookingResult.passes.length} turnstile credentials`} before the gates open on 20 Dec 2026.
                   </p>
                   {bookingResult.secretariatNotification?.whatsappUrl && (
                     <div className="pt-2">
@@ -400,7 +406,9 @@ export function TablesBookingClient() {
             <div className="space-y-1">
               <span className="text-[10px] uppercase font-bold tracking-widest text-gold-deep">Reserved Enclosure</span>
               <p className="font-display text-lg font-bold text-ivory">{bookingResult.packageName}</p>
-              <p className="text-xs text-gold font-semibold">{bookingResult.tableSerial} · 10 Reserved Seats</p>
+              <p className="text-xs text-gold font-semibold">
+                {bookingResult.tableSerial} · {bookingResult.passes.length} Reserved {bookingResult.passes.length === 1 ? "Pass" : "Seats"}
+              </p>
             </div>
             <div className="space-y-1">
               <span className="text-[10px] uppercase font-bold tracking-widest text-gold-deep">Table Host</span>

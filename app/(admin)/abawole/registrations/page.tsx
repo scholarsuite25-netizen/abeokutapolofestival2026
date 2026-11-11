@@ -37,24 +37,9 @@ async function RegistrationsContent() {
       const { data, error } = await supabase
         .from("registrations")
         .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          category,
-          group_size,
-          status,
-          created_at,
+          *,
           credentials (
-            id,
-            pass_code,
-            pass_type,
-            status,
-            check_in_count,
-            first_checked_in_at,
-            last_checked_in_at,
-            last_check_in_gate
+            *
           )
         `)
         .order("created_at", { ascending: false });
@@ -64,24 +49,42 @@ async function RegistrationsContent() {
           const cat = r.category || "";
           const isGuestOf = cat.toLowerCase().includes("guest of");
           const isCorporate = cat.toLowerCase().includes("corporate") || cat.toLowerCase().includes("sponsor");
-          const affiliation_type: "individual" | "guest_of" | "corporate" = isGuestOf ? "guest_of" : isCorporate ? "corporate" : "individual";
+          const affiliation_type: "individual" | "guest_of" | "corporate" =
+            r.affiliation_type || (isGuestOf ? "guest_of" : isCorporate ? "corporate" : "individual");
           
-          let host_name: string | null = null;
-          let organization: string | null = null;
-          if (isGuestOf) {
+          let host_name: string | null = r.host_name || null;
+          let organization: string | null = r.organization || null;
+          if (!host_name && isGuestOf) {
             const match = cat.match(/Guest of (.*)/i);
             host_name = match ? match[1] : null;
           }
-          if (isCorporate) {
+          if (!organization && isCorporate) {
             const match = cat.match(/Corporate.*?\(?(.*?)\)?$/i);
             organization = match ? match[1] : null;
           }
 
           const creds = r.credentials || [];
           const passTypes = creds.map((c: any) => c.pass_type || "").join(" ") + " " + cat;
-          const day1 = passTypes.includes("Day 1") || passTypes.includes("Dual Pass") || passTypes.includes("Royal");
-          const day2 = passTypes.includes("Day 2") || passTypes.includes("Dual Pass") || passTypes.includes("Royal");
-          const day3 = passTypes.includes("Day 3") || passTypes.includes("VVIP") || passTypes.includes("Royal");
+          const day1 = passTypes.includes("Day 1") || passTypes.includes("Dual Pass");
+          const day2 = passTypes.includes("Day 2") || passTypes.includes("Dual Pass");
+          const day3 =
+            Boolean(r.has_day3_ticket) ||
+            passTypes.includes("Day 3") ||
+            passTypes.includes("VVIP") ||
+            passTypes.includes("Table") ||
+            passTypes.includes("Regular Section") ||
+            passTypes.includes("Kings") ||
+            passTypes.includes("Royal") ||
+            passTypes.includes("Queens") ||
+            passTypes.includes("Premium");
+
+          const inferredPaymentMethod =
+            r.payment_method ||
+            (r.bank_transfer_ref || cat.toLowerCase().includes("wire") || cat.toLowerCase().includes("provisional")
+              ? "bank_transfer"
+              : r.day3_ticket_ref?.startsWith("ABK-VVIP-") || cat.toLowerCase().includes("pstk")
+              ? "online_gateway"
+              : "free");
 
           return {
             id: r.id,
@@ -99,12 +102,16 @@ async function RegistrationsContent() {
             day1,
             day2,
             day3,
-            payment_method: cat.toLowerCase().includes("wire") ? "bank_transfer" : cat.toLowerCase().includes("pstk") ? "online_gateway" : "free",
+            payment_method: inferredPaymentMethod,
+            bank_transfer_ref: r.bank_transfer_ref || creds[0]?.bank_transfer_ref || null,
+            day3_ticket_ref: r.day3_ticket_ref || creds[0]?.day3_ticket_ref || null,
             credentials: creds.map((c: any) => ({
               id: c.id,
               pass_code: c.pass_code,
               pass_type: c.pass_type,
               status: c.status,
+              bank_transfer_ref: c.bank_transfer_ref || r.bank_transfer_ref || null,
+              day3_ticket_ref: c.day3_ticket_ref || r.day3_ticket_ref || null,
               day1_checked_in_at: c.first_checked_in_at,
               day2_checked_in_at: c.check_in_count > 1 ? c.last_checked_in_at : null,
               day3_checked_in_at: c.check_in_count > 2 ? c.last_checked_in_at : null,

@@ -69,12 +69,12 @@ export function AffiliatesCentreClient() {
   const [calcPremium, setCalcPremium] = useState(3);
   const [calcIndividual, setCalcIndividual] = useState(10);
 
-  // Calculate projected earnings
+  // Calculate projected earnings (10% of official brochure values: 5M, 3M, 2M, 500K, 50K)
   const projectedEarningsNgn =
-    calcKings * 1_000_000 +
-    calcRoyal * 500_000 +
-    calcQueens * 300_000 +
-    calcPremium * 150_000 +
+    calcKings * 500_000 +
+    calcRoyal * 300_000 +
+    calcQueens * 200_000 +
+    calcPremium * 50_000 +
     calcIndividual * 5_000;
 
   const samplePromoCode = "AFF-POLO-SAMPLE";
@@ -254,7 +254,7 @@ export function AffiliatesCentreClient() {
             {/* Kings Table Slider */}
             <div className="space-y-2 bg-[#00210E] p-4 rounded-xl border border-line/40">
               <div className="flex justify-between text-xs">
-                <span className="font-bold text-ivory">The Kings Table (₦10M)</span>
+                <span className="font-bold text-ivory">The Kings Table (₦5M)</span>
                 <span className="font-mono text-gold font-bold">{calcKings} Sold</span>
               </div>
               <input
@@ -265,13 +265,13 @@ export function AffiliatesCentreClient() {
                 onChange={(e) => setCalcKings(Number(e.target.value))}
                 className="w-full accent-[#C9A84C]"
               />
-              <span className="text-[10px] text-ivory/60 block">₦1,000,000 comm. each</span>
+              <span className="text-[10px] text-ivory/60 block">₦500,000 comm. each (10 Guests)</span>
             </div>
 
             {/* Royal Table Slider */}
             <div className="space-y-2 bg-[#00210E] p-4 rounded-xl border border-line/40">
               <div className="flex justify-between text-xs">
-                <span className="font-bold text-ivory">The Royal Table (₦5M)</span>
+                <span className="font-bold text-ivory">The Royal Table (₦3M)</span>
                 <span className="font-mono text-gold font-bold">{calcRoyal} Sold</span>
               </div>
               <input
@@ -282,13 +282,13 @@ export function AffiliatesCentreClient() {
                 onChange={(e) => setCalcRoyal(Number(e.target.value))}
                 className="w-full accent-[#C9A84C]"
               />
-              <span className="text-[10px] text-ivory/60 block">₦500,000 comm. each</span>
+              <span className="text-[10px] text-ivory/60 block">₦300,000 comm. each (8 Guests)</span>
             </div>
 
             {/* Queens Table Slider */}
             <div className="space-y-2 bg-[#00210E] p-4 rounded-xl border border-line/40">
               <div className="flex justify-between text-xs">
-                <span className="font-bold text-ivory">The Queens Table (₦3M)</span>
+                <span className="font-bold text-ivory">The Queens Table (₦2M)</span>
                 <span className="font-mono text-gold font-bold">{calcQueens} Sold</span>
               </div>
               <input
@@ -299,13 +299,13 @@ export function AffiliatesCentreClient() {
                 onChange={(e) => setCalcQueens(Number(e.target.value))}
                 className="w-full accent-[#C9A84C]"
               />
-              <span className="text-[10px] text-ivory/60 block">₦300,000 comm. each</span>
+              <span className="text-[10px] text-ivory/60 block">₦200,000 comm. each (6 Guests)</span>
             </div>
 
             {/* Premium Table Slider */}
             <div className="space-y-2 bg-[#00210E] p-4 rounded-xl border border-line/40">
               <div className="flex justify-between text-xs">
-                <span className="font-bold text-ivory">The Premium Table (₦1.5M)</span>
+                <span className="font-bold text-ivory">The Premium Table (₦500K)</span>
                 <span className="font-mono text-gold font-bold">{calcPremium} Sold</span>
               </div>
               <input
@@ -316,13 +316,13 @@ export function AffiliatesCentreClient() {
                 onChange={(e) => setCalcPremium(Number(e.target.value))}
                 className="w-full accent-[#C9A84C]"
               />
-              <span className="text-[10px] text-ivory/60 block">₦150,000 comm. each</span>
+              <span className="text-[10px] text-ivory/60 block">₦50,000 comm. each (5 Guests)</span>
             </div>
 
-            {/* Day 3 VVIP Individual Slider */}
+            {/* Regular Section Slider */}
             <div className="space-y-2 bg-[#00210E] p-4 rounded-xl border border-line/40">
               <div className="flex justify-between text-xs">
-                <span className="font-bold text-ivory">Individual Day 3 VVIP (₦50K)</span>
+                <span className="font-bold text-ivory">The Regular Section (₦50K)</span>
                 <span className="font-mono text-gold font-bold">{calcIndividual} Sold</span>
               </div>
               <input
@@ -333,7 +333,7 @@ export function AffiliatesCentreClient() {
                 onChange={(e) => setCalcIndividual(Number(e.target.value))}
                 className="w-full accent-[#C9A84C]"
               />
-              <span className="text-[10px] text-ivory/60 block">₦5,000 comm. each</span>
+              <span className="text-[10px] text-ivory/60 block">₦5,000 comm. each (Per Person)</span>
             </div>
 
             {/* Total Projected Earnings Display Box */}

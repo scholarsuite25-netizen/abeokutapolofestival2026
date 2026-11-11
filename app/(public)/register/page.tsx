@@ -388,6 +388,7 @@ function RegisterContent() {
         hostName: formData.hostName,
         organization: formData.organization,
         affiliateCode: affiliateCode || undefined,
+        useTestingFee,
         attendees: attendeesToSubmit,
       });
 
@@ -725,7 +726,7 @@ function RegisterContent() {
                     `• *Phone:* ${formData.phone}\n` +
                     `• *Email:* ${formData.email}\n` +
                     `• *Quantity Claimed:* ${issuedPasses.length} Day 3 VVIP Ticket(s)\n` +
-                    `• *Amount Transferred:* ₦${((issuedPasses.length || 1) * DAY3_VVIP_PRICE_NGN).toLocaleString()}\n\n` +
+                    `• *Amount Transferred:* ₦${((issuedPasses.length || 1) * activeDay3UnitPriceNgn).toLocaleString()}\n\n` +
                     `📎 *Attached:* My bank debit payment advice/slip. Please verify and release my Day 3 VVIP passes.\n\n` +
                     `_Abeokuta Polo Club Secretariat_`;
                   const waReceiptUrl = formatWhatsAppUrl("2348181888884", waReceiptText);
@@ -1280,7 +1281,7 @@ function RegisterContent() {
                         )}
 
                         <p className="text-[11px] leading-relaxed text-amber-900">
-                          Select whether you are purchasing Day 3 VVIP admission ({DAY3_VVIP_PRICE_DISPLAY} per pass) or redeeming an official single-use Special VIP Invitation Code:
+                          Select whether you are purchasing Day 3 VVIP admission ({activeDay3UnitPriceDisplay} per pass) or redeeming an official single-use Special VIP Invitation Code:
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

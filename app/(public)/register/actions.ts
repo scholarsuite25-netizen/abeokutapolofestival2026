@@ -9,6 +9,8 @@ import { writeAudit } from "@/lib/supabase/audit";
 import {
   DAY3_INVITATION_MAX_TICKETS,
   DAY3_VVIP_PRICE_NGN,
+  DAY3_VVIP_OFFICIAL_PRICE_NGN,
+  DAY3_VVIP_TESTING_PRICE_NGN,
   DAY3_REFERENCE_PREFIX,
   CLUB_BANK_DETAILS,
   generateWemaTransferReference,
@@ -238,6 +240,15 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
   let isBankTransfer = false;
   let bankTransferRef: string | null = null;
   let testingFeeAutoRemoved = false;
+
+  const testingStatus = await getTestingFeeStatus();
+  const isTestingModeActive =
+    typeof parsed.data.useTestingFee === "boolean"
+      ? parsed.data.useTestingFee
+      : testingStatus.enabled;
+  const activeUnitPriceNgn = isTestingModeActive
+    ? DAY3_VVIP_TESTING_PRICE_NGN
+    : DAY3_VVIP_OFFICIAL_PRICE_NGN;
 
   if (day3) {
     if (isValidSpecialInvitation(day3InvitationCode)) {
@@ -542,9 +553,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         // Record 10% Affiliate Commission on confirmed Day 3 VVIP tickets
         if (affiliateCode && day3) {
           const count = day3TicketCount || 1;
-          const officialVal = count * 50_000;
+          const officialVal = count * DAY3_VVIP_OFFICIAL_PRICE_NGN;
           const commissionVal = officialVal * AFFILIATE_COMMISSION_RATE; // ₦5,000 per ticket
-          const testingAmount = count * 100;
+          const saleAmount = count * activeUnitPriceNgn;
           try {
             await adaptiveInsert(supabase, "affiliate_referrals", {
               affiliate_code: affiliateCode.trim().toUpperCase(),
@@ -552,7 +563,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
               category: `Day 3 Individual VVIP (${count} ticket${count > 1 ? "s" : ""})`,
               order_ref: verifiedPaymentRef || bankTransferRef || usedInvitationCode || `REG-${Date.now()}`,
               buyer_name: holderName,
-              sale_amount_ngn: testingAmount,
+              sale_amount_ngn: saleAmount,
               official_value_ngn: officialVal,
               commission_rate: AFFILIATE_COMMISSION_RATE,
               commission_amount_ngn: commissionVal,
@@ -564,7 +575,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         }
 
         if (isBankTransfer && bankTransferRef) {
-          const totalNgn = (day3TicketCount || 1) * DAY3_VVIP_PRICE_NGN;
+          const totalNgn = (day3TicketCount || 1) * activeUnitPriceNgn;
           try {
             await supabase.from("offline_commitments").insert({
               edition_id: edition?.id ?? null,
@@ -609,7 +620,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
   // Automated Secretariat Notification & In-Memory Gate Registration for Bank Transfers
   let secretariatNotification: { message: string; verificationLink: string; whatsappUrl: string } | undefined;
   if (isBankTransfer && bankTransferRef) {
-    const totalNgn = (day3TicketCount || 1) * DAY3_VVIP_PRICE_NGN;
+    const totalNgn = (day3TicketCount || 1) * activeUnitPriceNgn;
     registerUnverifiedPasses(passes.map((p) => p.passCode));
     try {
       secretariatNotification = await notifySecretariatOfBankPayment({
@@ -1496,6 +1507,24 @@ export async function submitAffiliateRegistration(rawInput: unknown) {
             <div style="border-top: 1px solid #C1C9BF; padding-top: 16px; font-size: 11px; color: #55635A; text-align: center;">
               <p style="margin: 0;">Abeokuta Polo Club · Secretariat Helpline: +234 818 188 8884</p>
             </div>
+          </div>
+        `,
+      });
+
+      const secretariatEmail = process.env.SECRETARIAT_EMAIL || "abeokutapolo@gmail.com";
+      await sendEmail({
+        to: secretariatEmail,
+        replyTo: email,
+        subject: `[NEW AFFILIATE PARTNER] ${affiliateCode} — ${fullName} (${country})`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #002F1A; border-radius: 12px;">
+            <h2 style="color: #002F1A; margin-top: 0;">New Affiliate Partner Registration</h2>
+            <p><strong>Affiliate Code:</strong> ${escapeHtml(affiliateCode)}</p>
+            <p><strong>Full Name:</strong> ${safeFullName}</p>
+            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+            <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
+            <p><strong>Country:</strong> ${safeCountry}</p>
+            <p><strong>Payout Channel:</strong> ${escapeHtml(payoutChannel)}</p>
           </div>
         `,
       });

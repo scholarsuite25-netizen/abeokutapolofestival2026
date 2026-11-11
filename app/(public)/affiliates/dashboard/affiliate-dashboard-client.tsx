@@ -274,9 +274,9 @@ export function AffiliateDashboardClient() {
             <div className="space-y-2 rounded-xl bg-[#001A0E] p-4 border border-line/30">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-gold flex items-center gap-1.5">
-                  <Crown className="size-4" /> VIP Table Packages (₦1.5M – ₦10M)
+                  <Crown className="size-4" /> VIP Table Packages (₦500K – ₦5M)
                 </span>
-                <span className="text-[10px] text-ivory/60">10% comm: ₦150k – ₦1M</span>
+                <span className="text-[10px] text-ivory/60">10% comm: ₦50k – ₦500k</span>
               </div>
               <div className="flex items-center gap-2">
                 <Input

@@ -236,7 +236,13 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
         (p.affiliation_type === "corporate" || p.category.includes("Corporate")));
 
     // 4. Status filtering
-    const matchesStatus = selectedStatus === "all" || p.status === selectedStatus;
+    const isPendingStatus =
+      p.status === "pending_approval" ||
+      p.status === "pending_bank_verification" ||
+      p.status === "pending_verification";
+    const matchesStatus =
+      selectedStatus === "all" ||
+      (selectedStatus === "pending_approval" ? isPendingStatus : p.status === selectedStatus);
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -852,13 +858,18 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                             p.status === "confirmed"
                               ? "bg-emerald-100 text-emerald-800"
-                              : p.status === "pending_approval"
+                              : p.status === "pending_approval" ||
+                                p.status === "pending_bank_verification" ||
+                                p.status === "pending_verification"
                               ? "bg-amber-100 text-amber-800"
                               : "bg-red-100 text-red-800"
                           }`}
                         >
                           {p.status === "confirmed"
                             ? "Confirmed"
+                            : p.status === "pending_bank_verification" ||
+                              p.status === "pending_verification"
+                            ? "Pending Bank Verification"
                             : p.status === "pending_approval"
                             ? "Pending Review"
                             : "Declined"}
@@ -868,7 +879,9 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                       {/* Actions */}
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {p.status === "pending_approval" && (
+                          {(p.status === "pending_approval" ||
+                            p.status === "pending_bank_verification" ||
+                            p.status === "pending_verification") && (
                             <>
                               <Button
                                 size="sm"
