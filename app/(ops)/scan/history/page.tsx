@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { PermissionError, requirePermission } from "@/lib/auth/require";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -40,6 +41,8 @@ export default function ScanHistoryPage() {
 }
 
 async function ScanHistoryContent() {
+  // Prerender fix: defer the permission/session check to request time.
+  await connection();
   try {
     await requirePermission("credential.validate");
   } catch (error) {

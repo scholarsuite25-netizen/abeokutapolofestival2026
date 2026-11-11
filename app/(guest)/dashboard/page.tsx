@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { QrCode, ShieldCheck, ArrowRight } from "lucide-react";
 import { requireUser } from "@/lib/auth/require";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +26,9 @@ export default function GuestDashboardPage() {
 }
 
 async function DashboardContent() {
+  // Prerender fix: defer to request time — the session read below triggers an
+  // auth-js Date.now() token-expiry check that must not run while prerendering.
+  await connection();
   // requireUser redirects signed-out visitors to /sign-in (page-level guard).
   const session = await requireUser();
 

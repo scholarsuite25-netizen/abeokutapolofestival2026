@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { QrCode, ArrowLeft, ShieldCheck } from "lucide-react";
 import { requireUser } from "@/lib/auth/require";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +26,9 @@ export default function DigitalPassPage() {
 }
 
 async function PassContent() {
+  // Prerender fix: defer the session read to request time (auth-js reads
+  // Date.now() for token expiry, which cannot run during prerendering).
+  await connection();
   const session = await requireUser();
 
   if (!isSupabaseConfigured()) return <NotConfigured />;

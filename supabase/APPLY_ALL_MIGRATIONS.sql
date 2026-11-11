@@ -1893,3 +1893,82 @@ drop policy if exists affiliate_referrals_insert_policy on public.affiliate_refe
 create policy affiliate_referrals_insert_policy on public.affiliate_referrals for insert with check (true);
 
 
+-- ============================================================================
+-- FILE: 0017_durable_rate_limits.sql
+-- ============================================================================
+
+-- 0017_durable_rate_limits.sql
+-- Abeokuta Polo Festival 2026: durable, database-backed rate limiting for the
+-- credential verification oracle (review findings L1 + L2).
+
+-- ── 1. Rate limit windows ────────────────────────────────────────────────────
+create table if not exists public.rate_limit_windows (
+  bucket        text primary key,
+  window_start  timestamptz not null default now(),
+  count         integer not null default 0,
+  updated_at    timestamptz not null default now()
+);
+
+-- RLS floor: enabled with zero policies -> anon/authenticated can read or
+-- write nothing; only the service role (which bypasses RLS) may touch rows.
+alter table public.rate_limit_windows enable row level security;
+
+revoke all on public.rate_limit_windows from anon, authenticated;
+
+-- ── 2. Atomic consume RPC ─────────────────────────────────────────────────────
+drop function if exists public.consume_rate_limit(text, integer, integer);
+
+create function public.consume_rate_limit(
+  p_bucket text,
+  p_window_seconds integer,
+  p_max_attempts integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_count integer;
+  v_window timestamptz;
+begin
+  if p_bucket is null or p_bucket = '' then
+    return false;
+  end if;
+  if p_window_seconds is null or p_window_seconds <= 0 then
+    return false;
+  end if;
+  if p_max_attempts is null or p_max_attempts <= 0 then
+    return false;
+  end if;
+
+  delete from public.rate_limit_windows
+  where updated_at < now() - interval '2 days';
+
+  v_window := to_timestamp(
+    floor(extract(epoch from now()) / p_window_seconds) * p_window_seconds
+  );
+
+  insert into public.rate_limit_windows (bucket, window_start, "count", updated_at)
+  values (p_bucket, v_window, 1, now())
+  on conflict (bucket) do update set
+    "count" = case
+      when public.rate_limit_windows.window_start = excluded.window_start
+        then public.rate_limit_windows."count" + 1
+      else 1
+    end,
+    window_start = excluded.window_start,
+    updated_at = now()
+  returning "count" into v_count;
+
+  return v_count <= p_max_attempts;
+end;
+$$;
+
+revoke execute on function public.consume_rate_limit(text, integer, integer)
+  from anon, authenticated;
+grant  execute on function public.consume_rate_limit(text, integer, integer)
+  to service_role;
+
+
+

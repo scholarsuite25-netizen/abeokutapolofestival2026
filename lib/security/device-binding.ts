@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { writeAudit } from "@/lib/supabase/audit";
 import { sendEmail } from "@/lib/email/client";
+import { siteUrl } from "@/lib/site";
 
 export type DeviceType = "mobile" | "desktop" | "tablet";
 
@@ -42,38 +43,50 @@ export async function isTablePassCode(passCode: string): Promise<boolean> {
 }
 
 /**
- * Retrieves the persisted device binding record for a pass code if present.
+ * Retrieves the persisted device binding record for a pass code.
+ *
+ * Review finding L3: the durable registry is now authoritative — the
+ * database is read FIRST whenever Supabase is configured, and this
+ * instance's memory map is only a fallback/cache. A registry row with a
+ * null binding (e.g. a Secretariat reset performed on another instance)
+ * clears any stale in-memory record instead of shadowing it.
  */
 export async function getPassBindingRecord(passCodeInput: string): Promise<DeviceBindingRecord | null> {
   const passCode = passCodeInput.toUpperCase().trim();
   if (!passCode) return null;
 
-  let existing = memoryBindingRegistry.get(passCode);
-
-  if (!existing && isSupabaseConfigured()) {
+  if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("credentials")
         .select("id, bound_device_id, holder_name, created_at, claimed_at")
         .eq("pass_code", passCode)
         .maybeSingle();
 
-      if (data && (data as any).bound_device_id) {
-        existing = {
-          deviceId: (data as any).bound_device_id,
-          passCode,
-          holderName: data.holder_name,
-          claimedAt: (data as any).claimed_at || data.created_at,
-        };
-        memoryBindingRegistry.set(passCode, existing);
+      if (!error && data) {
+        if ((data as any).bound_device_id) {
+          const record: DeviceBindingRecord = {
+            deviceId: (data as any).bound_device_id,
+            passCode,
+            holderName: data.holder_name,
+            claimedAt: (data as any).claimed_at || data.created_at,
+          };
+          memoryBindingRegistry.set(passCode, record);
+          return record;
+        }
+        // Authoritative "unbound" answer — purge stale local memory.
+        memoryBindingRegistry.delete(passCode);
+        return null;
       }
+      // No credential row (e.g. invitation codes) or query error: fall back
+      // to the local registry below.
     } catch {
-      // Fallback to memory
+      // Database unreachable: fall back to the local registry.
     }
   }
 
-  return existing || null;
+  return memoryBindingRegistry.get(passCode) || null;
 }
 
 /**
@@ -91,7 +104,7 @@ export async function verifyPassDeviceBinding(
   holderName?: string,
 ): Promise<{
   isAuthorized: boolean;
-  status: "newly_bound" | "already_bound_to_this_device" | "forwarding_blocked" | "unrestricted";
+  status: "newly_bound" | "already_bound_to_this_device" | "forwarding_blocked" | "unrestricted" | "persistence_failed";
   boundDeviceId?: string;
   message?: string;
 }> {
@@ -141,28 +154,67 @@ export async function verifyPassDeviceBinding(
       holderName,
       claimedAt: new Date().toISOString(),
     };
-    memoryBindingRegistry.set(passCode, record);
 
     if (isSupabaseConfigured()) {
+      // Review finding L3: persist the binding BEFORE claiming success.
+      // A binding that only exists in this instance's memory is lost on the
+      // next invocation — so any failure to write the durable registry
+      // fails CLOSED instead of reporting "newly bound".
       try {
         const supabase = createAdminClient();
-        await supabase
+        const { data, error } = await supabase
           .from("credentials")
           .update({
             bound_device_id: deviceId,
             is_locked_to_device: true,
             claimed_at: record.claimedAt,
           } as any)
-          .eq("pass_code", passCode);
+          .eq("pass_code", passCode)
+          .select("id");
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          console.warn(
+            `[device-binding] Refused binding claim for "${passCode}": no credential row exists to persist the binding to.`,
+          );
+          return {
+            isAuthorized: false,
+            status: "persistence_failed",
+            boundDeviceId: deviceId,
+            message:
+              "This pass could not be securely claimed right now. Please try again in a moment or visit the Secretariat desk for accreditation.",
+          };
+        }
+      } catch (err) {
+        console.error(
+          `[device-binding] Failed to persist binding for "${passCode}":`,
+          err,
+        );
+        return {
+          isAuthorized: false,
+          status: "persistence_failed",
+          boundDeviceId: deviceId,
+          message:
+            "This pass could not be securely claimed right now. Please try again in a moment or visit the Secretariat desk for accreditation.",
+        };
+      }
+    }
 
+    memoryBindingRegistry.set(passCode, record);
+
+    if (isSupabaseConfigured()) {
+      try {
         await writeAudit({
           action: "pass.device_bound",
           entityType: "credential",
           entityId: passCode,
           metadata: { deviceId, holderName, passCode },
         });
-      } catch {
-        // Safe fallback
+      } catch (auditErr) {
+        // The binding is already durable; an audit hiccup must not revoke it.
+        console.error(
+          `[device-binding] Audit write failed for pass.device_bound ("${passCode}"):`,
+          auditErr,
+        );
       }
     }
 
@@ -201,7 +253,7 @@ export async function bindPassToMobileDevice(
   holderName?: string,
 ): Promise<{
   success: boolean;
-  status: "newly_bound" | "already_bound_to_this_device" | "forwarding_blocked" | "invalid_device";
+  status: "newly_bound" | "already_bound_to_this_device" | "forwarding_blocked" | "invalid_device" | "persistence_failed";
   boundDeviceId?: string;
   error?: string;
 }> {
@@ -220,6 +272,15 @@ export async function bindPassToMobileDevice(
       success: true,
       status: res.status === "already_bound_to_this_device" ? "already_bound_to_this_device" : "newly_bound",
       boundDeviceId: res.boundDeviceId,
+    };
+  }
+
+  if (res.status === "persistence_failed") {
+    return {
+      success: false,
+      status: "persistence_failed",
+      boundDeviceId: res.boundDeviceId,
+      error: res.message || "Binding could not be persisted to the durable registry",
     };
   }
 
@@ -300,6 +361,11 @@ export async function checkPassDeviceAccess(
 
 /**
  * Resets a pass device binding (Secretariat override tool).
+ *
+ * Review finding L3: with the database configured, the durable reset must
+ * succeed before this reports success — a DB error returns `success: false`
+ * instead of silently pretending the pass is unlocked. The audit write runs
+ * in its own try/catch so it can never flip the outcome.
  */
 export async function resetPassDeviceBinding(passCodeInput: string): Promise<{ success: boolean }> {
   const passCode = passCodeInput.toUpperCase().trim();
@@ -308,24 +374,45 @@ export async function resetPassDeviceBinding(passCodeInput: string): Promise<{ s
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
-      await supabase
+      const { data, error } = await supabase
         .from("credentials")
         .update({
           bound_device_id: null,
           is_locked_to_device: false,
           claimed_at: null,
         } as any)
-        .eq("pass_code", passCode);
+        .eq("pass_code", passCode)
+        .select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        // No durable binding existed for this code; local memory is cleared.
+        console.warn(
+          `[device-binding] Reset for "${passCode}" matched no credential row — nothing durable to unlock.`,
+        );
+      }
+    } catch (err) {
+      console.error(
+        `[device-binding] Failed to persist binding reset for "${passCode}":`,
+        err,
+      );
+      return { success: false };
+    }
 
+    try {
       await writeAudit({
         action: "pass.device_reset",
         entityType: "credential",
         entityId: passCode,
         metadata: { passCode },
       });
-    } catch {
-      // Safe fallback
+    } catch (auditErr) {
+      console.error(
+        `[device-binding] Audit write failed for pass.device_reset ("${passCode}"):`,
+        auditErr,
+      );
     }
+
+    return { success: true };
   }
 
   return { success: true };
@@ -346,7 +433,7 @@ export async function sendPassMobileBindingEmail(params: {
   }
 
   const name = holderName || "Esteemed Guest";
-  const bindingUrl = passUrl || `https://abeokutapolofestival2026.org.ng/pass/${passCode}?bind=mobile`;
+  const bindingUrl = passUrl || siteUrl(`/pass/${passCode}?bind=mobile`);
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #141f18; background-color: #faf8f5;">

@@ -15,8 +15,28 @@ import {
 } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AdminTopBadge } from "@/components/admin/admin-top-badge";
+import { requireUser } from "@/lib/auth/require";
+import { redirect } from "next/navigation";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+/**
+ * Review finding M4: the console shell now enforces its own guard instead of
+ * relying solely on per-page `requirePermission` calls. Signed-out visitors
+ * are sent to sign-in; authenticated non-console roles (public/guest) are sent
+ * to their own dashboard. Fine-grained permissions remain enforced per page.
+ *
+ * Rendering note: `requireUser` reads cookies via the session, so every
+ * /abawole/* route renders at request time (the layout runs outside any
+ * Suspense boundary) instead of being prerendered with an unstable session
+ * value.
+ */
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await requireUser("/abawole");
+  const isConsoleRole = session.actor.roles.some(
+    (role) => role !== "public" && role !== "guest",
+  );
+  if (!isConsoleRole) {
+    redirect("/dashboard");
+  }
 
   const navItems = [
     { label: "Command Centre", href: "/abawole", icon: LayoutDashboard },

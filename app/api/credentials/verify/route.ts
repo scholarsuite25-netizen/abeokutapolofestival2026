@@ -5,26 +5,14 @@ import { getInvitationByCode } from "@/lib/invitations/storage";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import { isPassPendingVerification } from "@/lib/storage/unverified-passes";
+import { consumeRateLimit, getClientIp } from "@/lib/security/rate-limit";
 
 /**
- * Minimal in-memory token bucket (per Vercel instance).
- * Plan §13.3 — credential oracle must be throttled.
+ * Verification-oracle throttling (Plan §13.3, review findings L1 + L2):
+ * client-IP bucketing with a durable database-backed counter — see
+ * lib/security/rate-limit.ts.
  */
-const WINDOW_MS = 60_000;
-const MAX_ATTEMPTS = 30;
-const buckets = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimit(key: string): boolean {
-  const now = Date.now();
-  const entry = buckets.get(key);
-  if (!entry || entry.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= MAX_ATTEMPTS) return false;
-  entry.count += 1;
-  return true;
-}
+const RATE_LIMIT_BUCKET_PREFIX = "credentials-verify";
 
 const invalid = (message: string) =>
   NextResponse.json({ valid: false, status: "invalid", error: message }, { status: 404 });
@@ -352,8 +340,9 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const ip = req.headers.get("x-forwarded-for") ?? "anonymous";
-  if (!rateLimit(ip)) {
+  const ip = getClientIp(req);
+  const rateCheck = await consumeRateLimit(`${RATE_LIMIT_BUCKET_PREFIX}:${ip}`);
+  if (!rateCheck.allowed) {
     return NextResponse.json(
       { valid: false, status: "rate_limited", error: "Too many verification attempts." },
       { status: 429 },
@@ -396,8 +385,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ip = req.headers.get("x-forwarded-for") ?? "anonymous";
-  if (!rateLimit(ip)) {
+  const ip = getClientIp(req);
+  const rateCheck = await consumeRateLimit(`${RATE_LIMIT_BUCKET_PREFIX}:${ip}`);
+  if (!rateCheck.allowed) {
     return NextResponse.json(
       { valid: false, status: "rate_limited", error: "Too many verification attempts." },
       { status: 429 },
