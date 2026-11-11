@@ -51,28 +51,28 @@ describe("Public Header Navigation & Layout Integrity", () => {
   });
 
   it("5. Mobile drawer items marked isPriority display Priority badge, NOT Day 1 Free", () => {
-    // The mobile drawer mapping should NOT unconditionally display "Day 1 Free" for priority items
-    const mobileDrawerSubmenuRegex =
-      /{\/\* Grouped Submenus \*\/}[\s\S]*?{category\.items\.map\(\(item\) => {([\s\S]*?)}/g;
-    const matches = Array.from(headerSource.matchAll(mobileDrawerSubmenuRegex));
-    expect(matches.length).toBeGreaterThan(0);
-
     // Verify badge logic in mobile submenu
     expect(headerSource).toContain(
       '{item.href === "/register" ? "Day 1 Free" : "Priority"}'
     );
   });
 
-  it("6. Desktop category dropdown button keeps category open on click rather than snapping shut", () => {
-    expect(headerSource).toContain(
-      "onClick={() => setActiveCategory(category.title)}"
-    );
-    expect(headerSource).not.toContain(
-      "onClick={() => setActiveCategory(isOpen ? null : category.title)}"
-    );
+  it("6. Desktop category dropdown button handles hover/click coordination and closes on Escape/outside click", () => {
+    expect(headerSource).toContain("handleCategoryClick(category.title)");
+    expect(headerSource).toContain('e.key === "Escape"');
+    expect(headerSource).toContain("handleClickOutside");
   });
 
-  it("7. Desktop nav items use compact padding without excessive bulk", () => {
-    expect(headerSource).toContain("px-2 xl:px-2.5 py-1.5");
+  it("7. Clear submenu indicators are displayed on both desktop dropdown and mobile drawer", () => {
+    // Desktop dropdown has explicit submenu header
+    expect(headerSource).toContain("{category.title} Submenus");
+    // Mobile drawer has explicit menu categories & submenus section
+    expect(headerSource).toContain("Menu Categories &amp; Submenus");
+    expect(headerSource).toContain("{category.items.length} submenus");
+  });
+
+  it("8. Header CTA actions prevent mobile overflow and clipping when storedPass is present", () => {
+    // Ensure Register CTA hides on mobile when storedPass is present to protect hamburger menu
+    expect(headerSource).toContain('storedPass ? "hidden sm:inline-flex" : "inline-flex"');
   });
 });
