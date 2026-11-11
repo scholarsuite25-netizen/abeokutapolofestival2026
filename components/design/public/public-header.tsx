@@ -81,7 +81,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     title: "Hospitality",
-    desc: "VIP suites, tables & corporate partnerships",
+    desc: "VIP suites, tables & enclosures",
     items: [
       {
         href: "/tables",
@@ -97,8 +97,21 @@ const NAV_CATEGORIES: NavCategory[] = [
         icon: Crown,
       },
       {
+        href: "https://www.abeokutapoloclub.org.ng/register",
+        label: "Club Membership",
+        desc: "Official Abeokuta Polo Club membership enquiries",
+        icon: Award,
+        isExternal: true,
+      },
+    ],
+  },
+  {
+    title: "Partnerships",
+    desc: "Corporate sponsorship & 10% affiliate programme",
+    items: [
+      {
         href: "/sponsorship",
-        label: "Corporate Partnerships",
+        label: "Corporate Sponsorship",
         desc: "Official brand sponsorship tiers & dossier",
         icon: Building2,
         isPriority: true,
@@ -115,13 +128,6 @@ const NAV_CATEGORIES: NavCategory[] = [
         label: "Affiliate Dashboard",
         desc: "Track partner referrals & commission",
         icon: ShieldCheck,
-      },
-      {
-        href: "https://www.abeokutapoloclub.org.ng/register",
-        label: "Club Membership",
-        desc: "Official Abeokuta Polo Club membership enquiries",
-        icon: Award,
-        isExternal: true,
       },
     ],
   },
@@ -380,24 +386,11 @@ export function PublicHeader() {
             asChild
             variant="outline"
             size="sm"
-            className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden xl:inline-flex"
+            className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden lg:inline-flex"
           >
             <Link href="/sponsorship" className="flex items-center gap-1.5">
               <Building2 className="size-3.5 text-gold-deep" />
-              <span>Sponsorship</span>
-            </Link>
-          </Button>
-
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="border-gold/60 bg-gold/10 text-forest font-semibold text-xs hover:bg-gold/20 h-8 sm:h-9 px-2.5 sm:px-3 hidden lg:inline-flex"
-          >
-            <Link href="/affiliates" className="flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-gold-deep" />
-              <span>Affiliates</span>
-              <span className="rounded bg-gold/25 px-1 py-0.2 text-[8px] font-bold text-gold uppercase">10%</span>
+              <span>Partnerships</span>
             </Link>
           </Button>
 
