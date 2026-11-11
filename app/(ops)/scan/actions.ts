@@ -488,8 +488,19 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
     }
   }
 
-  // 5. In production with database configured, refuse offline simulation fall-through
-  if (process.env.NODE_ENV === "production" && isSupabaseConfigured()) {
+  // 5. Production fails closed — never fall through to the offline demo
+  //    simulator at a turnstile, even when the database env is missing.
+  //    (Review finding M2: `production && isSupabaseConfigured()` previously
+  //    let a misconfigured production deployment admit demo codes.)
+  if (process.env.NODE_ENV === "production") {
+    if (!isSupabaseConfigured()) {
+      console.error(
+        "Gate scan refused: Supabase is not configured in production — credential validation unavailable (offline simulator disabled).",
+      );
+      return rejected(
+        "Credential validation unavailable. Please contact the Secretariat (system not configured).",
+      );
+    }
     return rejected("Credential not recognized or pass code format invalid.");
   }
 

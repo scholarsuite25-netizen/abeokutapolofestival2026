@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
 import { formatWhatsAppUrl } from "@/lib/utils/phone";
+import { getSiteOrigin } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -908,7 +909,7 @@ export function RegistrationsManager({ initialParticipants }: RegistrationsManag
                             const siteOrigin =
                               typeof window !== "undefined"
                                 ? window.location.origin
-                                : "https://abeokuta-polo-festival-2026.vercel.app";
+                                : getSiteOrigin();
                             const pUrl = `${siteOrigin}/pass/${pCode}`;
                             const waText = `🏇 *ABEOKUTA POLO FESTIVAL 2026 — OFFICIAL PASS ACCREDITATION*\n\nHello *${p.first_name} ${p.last_name}*,\n\nYour official gate accreditation pass is *${pCode}* (${p.category}).\n\n👉 *View & Save your pass on phone:* ${pUrl}\n\n📍 *Venue:* Abeokuta Polo Club & Country Resort, Kobape\n_Please present this pass at turnstiles for entry._`;
                             const waUrl = formatWhatsAppUrl(p.phone, waText);

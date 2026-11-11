@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import type { ComplimentaryInvitation } from "@/lib/invitations/types";
+import { siteUrl } from "@/lib/site";
 import {
   resetInvitationDeviceBindingAction,
   getWhatsAppInvitationTextAction,
@@ -38,7 +39,7 @@ export function InvitationsTable({
     if (typeof window !== "undefined") {
       return `${window.location.origin}/invitation/${code}`;
     }
-    return `https://abeokuta-polo-festival-2026.vercel.app/invitation/${code}`;
+    return siteUrl(`/invitation/${code}`);
   };
 
   const handleCopyLink = async (code: string) => {

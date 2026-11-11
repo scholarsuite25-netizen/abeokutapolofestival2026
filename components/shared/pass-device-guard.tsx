@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import QRCodeLib from "qrcode";
+import { getSiteOrigin } from "@/lib/site";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -125,7 +126,7 @@ export function MobileBindingStation({
   const origin =
     typeof window !== "undefined"
       ? window.location.origin
-      : "https://abeokutapolofestival2026.org.ng";
+      : getSiteOrigin();
 
   const mobileBindingUrl = `${origin}/pass/${encodeURIComponent(passCode)}?bind=mobile`;
 

@@ -25,6 +25,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getSiteOrigin } from "@/lib/site";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -123,7 +124,7 @@ export function AffiliateDashboardClient() {
 
   const siteUrl = typeof window !== "undefined"
     ? window.location.origin
-    : "https://abeokuta-polo-festival-2026.vercel.app";
+    : getSiteOrigin();
 
   const tableReferralLink = `${siteUrl}/tables?ref=${affiliateCode || "AFF-POLO"}`;
   const registerReferralLink = `${siteUrl}/register?ref=${affiliateCode || "AFF-POLO"}`;

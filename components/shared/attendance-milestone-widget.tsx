@@ -5,6 +5,7 @@ import { Users, Share2, Calendar, FileDown, Check, Sparkles, MessageCircle } fro
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { downloadProgrammePDF } from "@/lib/pdf/programme-pdf";
+import { siteUrl } from "@/lib/site";
 import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
 
 export function AttendanceMilestoneWidget({
@@ -27,7 +28,7 @@ export function AttendanceMilestoneWidget({
 
   const shareText = `🏇 ${
     holderName ? `${holderName} invites you` : "You're invited"
-  } to Abeokuta Polo Festival 2026 — The Blueprint! 18–20 Dec 2026 at Abeokuta Polo Club & Country Resort. Day 1 is 100% Free Public Admission! Claim your official gate access pass here: https://abeokuta-polo-festival-2026.vercel.app/register${
+  } to Abeokuta Polo Festival 2026 — The Blueprint! 18–20 Dec 2026 at Abeokuta Polo Club & Country Resort. Day 1 is 100% Free Public Admission! Claim your official gate access pass here: ${siteUrl("/register")}${
     passCode ? `?ref=${encodeURIComponent(passCode)}` : ""
   }`;
 
@@ -36,7 +37,7 @@ export function AttendanceMilestoneWidget({
   const handleCopy = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(
-        `https://abeokuta-polo-festival-2026.vercel.app/register${
+        `${siteUrl("/register")}${
           passCode ? `?ref=${encodeURIComponent(passCode)}` : ""
         }`
       );

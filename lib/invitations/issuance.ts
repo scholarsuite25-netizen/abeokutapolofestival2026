@@ -1,6 +1,7 @@
 import { randomBytes, createHmac, randomUUID } from "node:crypto";
 import type { ComplimentaryInvitation, InvitationSealVerificationResult } from "./types";
 import { getInvitationByCodeSync } from "./storage";
+import { getSiteOrigin } from "@/lib/site";
 
 export const ROYAL_SECURITY_SEAL = "Aare Elesin" as const;
 
@@ -131,7 +132,7 @@ export function buildInvitationVerificationUrl(
   const base =
     origin ||
     process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://abeokuta-polo-festival-2026.vercel.app");
+    getSiteOrigin();
 
   const cleanBase = base.replace(/\/+$/, "");
   const params = new URLSearchParams({
@@ -254,7 +255,7 @@ export function generateWhatsAppInvitationText(
   const base =
     origin ||
     process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://abeokuta-polo-festival-2026.vercel.app");
+    getSiteOrigin();
 
   const cleanBase = base.replace(/\/+$/, "");
   const directLink = `${cleanBase}/invitation/${invitation.invitationCode}`;

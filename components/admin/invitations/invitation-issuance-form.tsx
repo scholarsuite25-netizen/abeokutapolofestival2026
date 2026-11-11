@@ -19,6 +19,7 @@ import {
   type ComplimentaryInvitation,
 } from "@/lib/invitations/types";
 import { issueInvitationAction } from "@/app/(admin)/abawole/invitations/actions";
+import { siteUrl } from "@/lib/site";
 
 interface InvitationIssuanceFormProps {
   onInvitationCreated?: (invitation: ComplimentaryInvitation) => void;
@@ -91,7 +92,7 @@ export function InvitationIssuanceForm({
     if (typeof window !== "undefined") {
       return `${window.location.origin}/invitation/${code}`;
     }
-    return `https://abeokuta-polo-festival-2026.vercel.app/invitation/${code}`;
+    return siteUrl(`/invitation/${code}`);
   };
 
   const handleCopyLink = async () => {

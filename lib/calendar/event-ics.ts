@@ -3,6 +3,8 @@
  * When downloaded on mobile (iOS / Android) or desktop (Google Calendar / Outlook),
  * it adds all 3 festival days with built-in notification alarms (1 week before, 1 day before, and 2 hours before).
  */
+import { getSiteOrigin } from "@/lib/site";
+
 export function generateFestivalICS(): string {
   const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
@@ -105,7 +107,7 @@ export function downloadFestivalCalendar(): void {
 export function getGoogleCalendarLink(): string {
   const title = encodeURIComponent("Abeokuta Polo Festival 2026 — The Blueprint");
   const details = encodeURIComponent(
-    "3 ceremonial days of high-goal polo, Yoruba royal pageantry, and pan-African splendour.\nDay 1 Free, Day 2 & 3 Through Ticket.\nOfficial Schedule & Passes: https://abeokuta-polo-festival-2026.vercel.app"
+    "3 ceremonial days of high-goal polo, Yoruba royal pageantry, and pan-African splendour.\nDay 1 Free, Day 2 & 3 Through Ticket.\nOfficial Schedule & Passes: " + getSiteOrigin()
   );
   const location = encodeURIComponent(
     "Abeokuta Polo Club & Country Resort, Abeokuta, Ogun State, Nigeria"

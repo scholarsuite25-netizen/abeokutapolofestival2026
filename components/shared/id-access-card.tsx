@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { forceDownloadOfflinePassCard, type StoredPass } from "@/lib/storage/pass-storage";
 import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
 import { formatWhatsAppUrl } from "@/lib/utils/phone";
+import { getSiteOrigin } from "@/lib/site";
 
 interface IdAccessCardProps {
   pass: StoredPass;
@@ -51,7 +52,7 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
   };
 
   const handleCopyGuestLink = async () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://abeokuta-polo-festival-2026.vercel.app";
+    const origin = typeof window !== "undefined" ? window.location.origin : getSiteOrigin();
     const passUrl = `${origin}/pass/${pass.passCode}`;
     try {
       await navigator.clipboard.writeText(passUrl);
@@ -62,7 +63,7 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
     }
   };
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://abeokuta-polo-festival-2026.vercel.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : getSiteOrigin();
   const passUrl = `${origin}/pass/${pass.passCode}`;
   const whatsappShareText = isSponsored
     ? `👑 *Official VVIP Guest Invitation — 2026 Abeokuta Polo Festival*\n\nYou have been gifted a sponsored VVIP gate access ticket to the Royal Cup Grand Finale (Day 3 — Sunday 20 Dec 2026) at Abeokuta Polo Club!\n\n🎟️ *Pass Serial:* ${serialText || "VIP Invitation"}\n👤 *${pass.holderName}*\n🔑 *Pass Code:* ${pass.passCode}\n\n👉 *Click to open and save your digital gate card directly to your phone:* ${passUrl}`

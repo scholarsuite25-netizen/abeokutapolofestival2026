@@ -26,6 +26,8 @@ import {
   AFFILIATE_COMMISSION_TIERS,
 } from "@/lib/config/affiliates-config";
 import { isValidSpecialInvitation } from "@/lib/invitations/validate";
+import { getSiteOrigin, siteUrl } from "@/lib/site";
+import { adaptiveInsert } from "@/lib/db/adaptive-insert";
 import { attachClaimToRegistration, claimPaymentReference } from "@/lib/paystack/claims";
 import { verifyDay3Payment, getEffectivePaystackSecret } from "@/lib/paystack/verify";
 import type { StoredPass } from "@/lib/storage/pass-storage";
@@ -145,41 +147,6 @@ function formatAffiliationLabel(
     return organization ? `Corporate Guest (${organization})` : "Corporate Guest";
   }
   return "Individual Attendee";
-}
-
-/**
- * Resilient insert helper that handles remote database schema drift gracefully.
- * If PostgREST returns PGRST204 (column does not exist), it automatically prunes
- * the missing column and retries until insertion succeeds or base columns remain.
- */
-async function adaptiveInsert<T extends Record<string, unknown>>(
-  supabase: ReturnType<typeof createAdminClient>,
-  table: string,
-  payload: T,
-  selectQuery = "id",
-): Promise<{ data: any; error: any }> {
-  const currentPayload: Record<string, unknown> = { ...payload };
-  const maxAttempts = Object.keys(payload).length + 1;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const res = await (supabase.from(table as any) as any)
-      .insert(currentPayload)
-      .select(selectQuery)
-      .maybeSingle();
-
-    if (!res.error) {
-      return { data: res.data, error: null };
-    }
-    const msg = res.error.message || "";
-    const match =
-      msg.match(/Could not find the '([^']+)' column/) ||
-      msg.match(/column "?([^"'\s]+)"? of relation "[^"]+" does not exist/);
-    if (match && match[1] && match[1] in currentPayload) {
-      delete currentPayload[match[1]];
-      continue;
-    }
-    return { data: null, error: res.error };
-  }
-  return { data: null, error: new Error("Max insert attempts reached") };
 }
 
 /**
@@ -654,7 +621,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
             ${p.daysCovered?.length === 2 ? "Valid for Day 1 (Fri 18) & Day 2 (Sat 19 Dec)" : p.daysCovered?.includes(3) ? "Day 3 Grand Finale (Sun 20 Dec)" : p.daysCovered?.includes(2) ? "Valid for Day 2 (Sat 19 Dec)" : "Valid for Day 1 (Fri 18 Dec)"}
           </p>
           ${isBankTransfer ? `<p style="font-size: 11px; color: #F59E0B; margin-top: 8px; font-weight: bold;">Status: PENDING BURSARY VERIFICATION (Ref: ${bankTransferRef})</p>` : ""}
-          ${p.isSponsored ? `<p style="font-size: 11px; color: #E5C768; margin-top: 8px;">Guest Forwarding Link: <a href="https://abeokuta-polo-festival-2026.vercel.app/pass/${p.passCode}" style="color: #F5D77F; text-decoration: underline;">https://abeokuta-polo-festival-2026.vercel.app/pass/${p.passCode}</a></p>` : ""}
+          ${p.isSponsored ? `<p style="font-size: 11px; color: #E5C768; margin-top: 8px;">Guest Forwarding Link: <a href="${siteUrl(`/pass/${p.passCode}`)}" style="color: #F5D77F; text-decoration: underline;">${siteUrl(`/pass/${p.passCode}`)}</a></p>` : ""}
         </div>
       `,
       )
@@ -845,7 +812,7 @@ export async function initializeTablePayment(input: {
     const isTestMode =
       typeof input.useTestingFee === "boolean" ? input.useTestingFee : testingStatus.enabled;
     const chargeAmountNgn = isTestMode ? pkg.testingPriceNgn : pkg.officialPriceNgn;
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.abeokutapolofestival2026.org.ng";
+    const origin = getSiteOrigin();
     const secret = getEffectivePaystackSecret();
 
     const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
@@ -1249,7 +1216,7 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
     }
 
     // ── Transactional Resend Email to Table Buyer + Secretariat Copy ──────────
-    const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.abeokutapolofestival2026.org.ng";
+    const siteOrigin = getSiteOrigin();
     try {
       const safeBuyerName = escapeHtml(buyerFullName);
       const safePkgName = escapeHtml(pkg.name);
@@ -1464,7 +1431,7 @@ export async function submitAffiliateRegistration(rawInput: unknown) {
     }
 
     // Send Welcome Email via Resend to the Affiliate + Secretariat Copy
-    const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.abeokutapolofestival2026.org.ng";
+    const siteOrigin = getSiteOrigin();
     try {
       const safeFullName = escapeHtml(fullName);
       const safeCountry = escapeHtml(country);

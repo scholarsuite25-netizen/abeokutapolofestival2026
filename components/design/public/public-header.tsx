@@ -208,27 +208,27 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full overflow-x-clip border-b border-gold/30 bg-forest-deep/95 backdrop-blur-xl supports-[backdrop-filter]:bg-forest-deep/90 text-ivory shadow-lg shadow-black/20 print:hidden transition-all duration-200">
-      <div className="mx-auto flex h-18 sm:h-20 lg:h-22 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-18 sm:h-20 xl:h-22 max-w-7xl items-center justify-between gap-2.5 sm:gap-4 px-3 sm:px-6 lg:px-8">
         {/* ── 1. Event Brand Name: Royal Heritage Crest & Typography ── */}
         <Link
           href="/"
-          className="group flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-95 shrink min-w-0"
+          className="group flex items-center gap-2 sm:gap-3 transition-opacity hover:opacity-95 shrink-0"
           aria-label="Abeokuta Polo Festival 2026 - The Blueprint"
         >
-          <div className="relative flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-forest-interactive to-forest-deep text-gold border border-gold/60 shadow-md shadow-forest-deep/40 transition-transform group-hover:scale-105">
-            <Shield className="size-5 sm:size-5.5 text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
+          <div className="relative flex size-9 sm:size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-forest-interactive to-forest-deep text-gold border border-gold/60 shadow-md shadow-forest-deep/40 transition-transform group-hover:scale-105">
+            <Shield className="size-4.5 sm:size-5.5 text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
             <div className="absolute inset-0 rounded-xl bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <div className="flex flex-col min-w-0 justify-center">
+          <div className="flex flex-col justify-center whitespace-nowrap shrink-0">
             <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
-              <span className="font-display text-sm sm:text-base font-bold tracking-tight text-ivory leading-tight truncate">
+              <span className="font-display text-xs sm:text-base font-bold tracking-tight text-ivory whitespace-nowrap leading-tight">
                 Abeokuta Polo Festival
               </span>
               <span className="rounded bg-gold/20 px-1.5 py-0.5 text-[10px] font-extrabold text-gold border border-gold/40 leading-none">
                 2026
               </span>
             </div>
-            <div className="mt-1 flex items-center gap-1.5 text-[10px] sm:text-[11px] font-serif uppercase tracking-[0.2em] text-gold-light leading-none">
+            <div className="mt-0.5 sm:mt-1 flex items-center gap-1.5 text-[9px] sm:text-[11px] font-serif uppercase tracking-[0.18em] sm:tracking-[0.2em] text-gold-light leading-none whitespace-nowrap">
               <span>The Blueprint</span>
               <span className="inline-block size-1 rounded-full bg-gold/60" />
               <span className="font-sans tracking-normal font-normal text-ivory/70">
@@ -239,7 +239,7 @@ export function PublicHeader() {
         </Link>
 
         {/* ── 2. Unified Premium Main Menu with Stable Non-Shaking Submenus ── */}
-        <nav aria-label="Main Navigation" className="hidden lg:flex items-center gap-1 xl:gap-2">
+        <nav aria-label="Main Navigation" className="hidden xl:flex items-center gap-1 xl:gap-1.5">
           {NAV_CATEGORIES.map((category) => {
             const isOpen = activeCategory === category.title;
             return (
@@ -250,8 +250,8 @@ export function PublicHeader() {
                 className="relative py-2"
               >
                 <button
-                  onClick={() => setActiveCategory(isOpen ? null : category.title)}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 xl:px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
+                  onClick={() => setActiveCategory(category.title)}
+                  className={`flex items-center gap-1.5 rounded-lg px-2 xl:px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
                     isOpen ? "bg-white/10 text-gold" : ""
                   }`}
                   aria-expanded={isOpen}
@@ -363,7 +363,7 @@ export function PublicHeader() {
             href="https://www.abeokutapoloclub.org.ng/register"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-lg px-2.5 xl:px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5"
+            className="flex items-center gap-1 rounded-lg px-2 xl:px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5"
             aria-label="Membership Enquiries at Abeokuta Polo Club (Opens in new tab)"
           >
             <span>Membership</span>
@@ -414,7 +414,7 @@ export function PublicHeader() {
         </div>
 
         {/* ── 4. Mobile Quick Actions & Drawer ── */}
-        <div className="flex items-center gap-2 lg:hidden shrink-0">
+        <div className="flex items-center gap-2 xl:hidden shrink-0">
           {storedPass && (
             <Button
               asChild
@@ -541,17 +541,8 @@ export function PublicHeader() {
                 </div>
               )}
 
-              {/* Mobile Quick Action Buttons: Sponsorship, Affiliates, VIP Tables, Membership */}
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <SheetClose asChild>
-                  <Link
-                    href="/sponsorship"
-                    className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-white/5 p-3 text-center text-[11px] font-semibold text-ivory hover:bg-gold/15 hover:border-gold transition-colors"
-                  >
-                    <Building2 className="size-4 text-gold" />
-                    <span>Partnerships</span>
-                  </Link>
-                </SheetClose>
+              {/* Mobile Quick Action Buttons: VIP Tables, Affiliates, Membership */}
+              <div className="mt-4 grid grid-cols-3 gap-2">
                 <SheetClose asChild>
                   <Link
                     href="/tables"
@@ -604,8 +595,8 @@ export function PublicHeader() {
                               {isExt && <ExternalLink className="size-3 opacity-60 text-gold" />}
                             </span>
                             {item.isPriority ? (
-                              <Badge className="bg-gold text-forest-deep text-[9px] px-1.5 py-0 font-extrabold uppercase">
-                                Day 1 Free
+                              <Badge className="bg-gold text-forest-deep text-[9px] px-1.5 py-0 font-extrabold uppercase tracking-wider border border-gold/60">
+                                {item.href === "/register" ? "Day 1 Free" : "Priority"}
                               </Badge>
                             ) : (
                               <span className="text-[10px] text-ivory/60">{item.desc}</span>

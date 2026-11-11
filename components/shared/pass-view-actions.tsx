@@ -9,6 +9,7 @@ import {
   type StoredPass,
 } from "@/lib/storage/pass-storage";
 import { downloadProgrammePDF } from "@/lib/pdf/programme-pdf";
+import { siteUrl } from "@/lib/site";
 import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
 
 interface PassViewActionsProps {
@@ -41,7 +42,7 @@ export function PassViewActions({ passData }: PassViewActionsProps) {
   };
 
   const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
-    `🏇 I have registered for the Abeokuta Polo Festival 2026 — The Blueprint! (18–20 Dec 2026 at Abeokuta Polo Club & Country Resort). Day 1 is 100% Free Public Admission! Claim your complimentary pass and view the 3-day schedule here: https://abeokuta-polo-festival-2026.vercel.app/register?ref=${passData.passCode}`
+    `🏇 I have registered for the Abeokuta Polo Festival 2026 — The Blueprint! (18–20 Dec 2026 at Abeokuta Polo Club & Country Resort). Day 1 is 100% Free Public Admission! Claim your complimentary pass and view the 3-day schedule here: ${siteUrl(`/register?ref=${passData.passCode}`)}`
   )}`;
 
   const handleShare = async () => {

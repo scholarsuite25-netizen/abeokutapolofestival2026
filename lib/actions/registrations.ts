@@ -17,6 +17,7 @@ import {
   autoDisableTestingFeeAfterPayment,
 } from "@/lib/config/testing-fee-mode";
 import { markPassVerified } from "@/lib/storage/unverified-passes";
+import { getSiteOrigin } from "@/lib/site";
 import {
   buildVvipPassReleaseWhatsAppMessage,
   formatWhatsAppUrl,
@@ -645,7 +646,7 @@ export async function approveBankTransferAction(identifier: string): Promise<{
       const amountNgn =
         linkedTableBooking?.amount_ngn ||
         (testingState.enabled ? quantity * 100 : quantity * DAY3_VVIP_OFFICIAL_PRICE_NGN);
-      const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://abeokuta-polo-festival-2026.vercel.app";
+      const siteOrigin = getSiteOrigin();
 
       if (testingState.enabled || amountNgn <= 1000) {
         await autoDisableTestingFeeAfterPayment(transferRef, amountNgn);
@@ -831,7 +832,7 @@ export async function approveBankTransferAction(identifier: string): Promise<{
   // Graceful offline fallback (for testing or dev without Supabase)
   const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
   const mockCode = `ABK-2026-VVIP${randomSuffix}`;
-  const siteOrigin = "https://abeokuta-polo-festival-2026.vercel.app";
+  const siteOrigin = getSiteOrigin();
   const passUrl = `${siteOrigin}/pass/${mockCode}`;
   const waMsg = buildVvipPassReleaseWhatsAppMessage({
     holderName: "VVIP Attendee",

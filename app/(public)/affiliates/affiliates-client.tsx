@@ -26,6 +26,7 @@ import {
   Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getSiteOrigin } from "@/lib/site";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,7 +81,7 @@ export function AffiliatesCentreClient() {
   const samplePromoCode = "AFF-POLO-SAMPLE";
   const siteUrl = typeof window !== "undefined"
     ? window.location.origin
-    : "https://abeokuta-polo-festival-2026.vercel.app";
+    : getSiteOrigin();
   const promoTemplates = getPromoTemplates(samplePromoCode, siteUrl);
 
   const handleRegister = async (e: React.FormEvent) => {

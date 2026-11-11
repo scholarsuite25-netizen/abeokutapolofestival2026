@@ -1,6 +1,7 @@
 import { sendEmail } from "@/lib/email/client";
 import { formatWhatsAppUrl } from "@/lib/utils/phone";
 import { CLUB_BANK_DETAILS } from "@/lib/config/checkout-config";
+import { getSiteOrigin } from "@/lib/site";
 
 export interface BankPaymentNotificationPayload {
   amountNgn: number;
@@ -19,11 +20,11 @@ export interface BankPaymentNotificationPayload {
  * 🚨 NEW BANK PAYMENT NOTIFICATION: ₦[Amount] from [Buyer Name] (Phone: [Phone]). Ref: [ABK-WEMA-XXXX]. 1-Click Verification Link: [URL]
  */
 export function formatBankPaymentSecretariatMessage(payload: BankPaymentNotificationPayload): string {
-  const siteUrl =
+  const origin =
     payload.siteUrl ||
     process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://abeokuta-polo-festival-2026.vercel.app";
-  const verificationLink = `${siteUrl}/abawole/registrations?ref=${encodeURIComponent(payload.ref)}`;
+    getSiteOrigin();
+  const verificationLink = `${origin}/abawole/registrations?ref=${encodeURIComponent(payload.ref)}`;
 
   return (
     `🚨 NEW BANK PAYMENT NOTIFICATION: ₦${payload.amountNgn.toLocaleString()} ` +
@@ -60,11 +61,11 @@ export async function notifySecretariatOfBankPayment(payload: BankPaymentNotific
   whatsappUrl: string;
 }> {
   const message = formatBankPaymentSecretariatMessage(payload);
-  const siteUrl =
+  const origin =
     payload.siteUrl ||
     process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://abeokuta-polo-festival-2026.vercel.app";
-  const verificationLink = `${siteUrl}/abawole/registrations?ref=${encodeURIComponent(payload.ref)}`;
+    getSiteOrigin();
+  const verificationLink = `${origin}/abawole/registrations?ref=${encodeURIComponent(payload.ref)}`;
   const whatsappUrl = formatWhatsAppUrl(CLUB_BANK_DETAILS.secretariatWhatsApp, message);
 
   // 1. Dispatch Email to Secretariat accreditation desk

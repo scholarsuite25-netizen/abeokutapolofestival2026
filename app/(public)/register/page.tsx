@@ -26,6 +26,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getSiteOrigin } from "@/lib/site";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -773,7 +774,7 @@ function RegisterContent() {
                 const appOrigin =
                   typeof window !== "undefined"
                     ? window.location.origin
-                    : "https://abeokuta-polo-festival-2026.vercel.app";
+                    : getSiteOrigin();
                 const primaryPass = issuedPasses[0];
                 const primaryPassUrl = primaryPass
                   ? `${appOrigin}/pass/${primaryPass.passCode}`
@@ -860,7 +861,7 @@ function RegisterContent() {
                 const appOrigin =
                   typeof window !== "undefined"
                     ? window.location.origin
-                    : "https://abeokuta-polo-festival-2026.vercel.app";
+                    : getSiteOrigin();
                 const primaryPass = issuedPasses[0];
                 const primaryPassUrl = primaryPass
                   ? `${appOrigin}/pass/${primaryPass.passCode}`

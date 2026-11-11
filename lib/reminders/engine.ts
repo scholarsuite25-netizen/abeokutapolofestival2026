@@ -1,6 +1,7 @@
 import { sendEmail } from "@/lib/email/client";
 import { OFFICIAL_PROGRAMME } from "@/lib/data/programme";
 import { validateWhatsAppPhone, formatWhatsAppUrl } from "@/lib/utils/phone";
+import { siteUrl } from "@/lib/site";
 
 export interface ReminderRecipient {
   name: string;
@@ -39,9 +40,8 @@ export function buildWhatsappReminderMessage(
   type: "weekly" | "daily",
   dayNumber?: 1 | 2 | 3,
 ): string {
-  const festivalUrl = "https://abeokuta-polo-festival-2026.vercel.app";
-  const pdfUrl = `${festivalUrl}/api/programme/pdf`;
-  const passUrl = `${festivalUrl}/pass/${encodeURIComponent(recipient.passCode)}`;
+  const pdfUrl = siteUrl("/api/programme/pdf");
+  const passUrl = siteUrl(`/pass/${encodeURIComponent(recipient.passCode)}`);
 
   if (type === "daily" && dayNumber) {
     const day = OFFICIAL_PROGRAMME.find((d) => d.dayNumber === dayNumber) || OFFICIAL_PROGRAMME[0];
@@ -83,7 +83,7 @@ export function buildWhatsappReminderMessage(
     `• *Sunday 20 Dec (Day 3):* Grand Finale · Royal Cup & Queens Cup · 100 Kings Celebration · Aristos Band & Berryola (Through Ticket)\n\n` +
     `📄 *Official 3-Page PDF Schedule:* ${pdfUrl}\n` +
     `📱 *Access Your Pass:* ${passUrl}\n\n` +
-    `Invite friends on WhatsApp: ${festivalUrl}/register`
+    `Invite friends on WhatsApp: ${siteUrl("/register")}`
   );
 }
 
@@ -180,9 +180,9 @@ async function sendTermiiWhatsAppMessage(
  * Builds rich HTML weekly countdown reminder email.
  */
 export function buildWeeklyEmailHtml(recipient: ReminderRecipient): string {
-  const passUrl = `https://abeokuta-polo-festival-2026.vercel.app/pass/${recipient.passCode}`;
-  const pdfUrl = `https://abeokuta-polo-festival-2026.vercel.app/api/programme/pdf`;
-  const inviteUrl = `https://abeokuta-polo-festival-2026.vercel.app/register`;
+  const passUrl = siteUrl(`/pass/${recipient.passCode}`);
+  const pdfUrl = siteUrl("/api/programme/pdf");
+  const inviteUrl = siteUrl("/register");
 
   return `
     <div style="font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; color: #1B1C1C; background-color: #FCF9F8; border-radius: 16px; border: 1px solid #C1C9BF;">
@@ -255,8 +255,8 @@ export function buildWeeklyEmailHtml(recipient: ReminderRecipient): string {
  */
 export function buildDailyEmailHtml(recipient: ReminderRecipient, dayNumber: 1 | 2 | 3): string {
   const day = OFFICIAL_PROGRAMME.find((d) => d.dayNumber === dayNumber) || OFFICIAL_PROGRAMME[0];
-  const passUrl = `https://abeokuta-polo-festival-2026.vercel.app/pass/${recipient.passCode}`;
-  const pdfUrl = `https://abeokuta-polo-festival-2026.vercel.app/api/programme/pdf`;
+  const passUrl = siteUrl(`/pass/${recipient.passCode}`);
+  const pdfUrl = siteUrl("/api/programme/pdf");
   const dateLabel = `${day.dayName}, ${day.dateStr}`;
 
   const admissionNotice =

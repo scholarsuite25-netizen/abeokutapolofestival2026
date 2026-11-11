@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission, PermissionError } from "@/lib/auth/require";
 import { isSupabaseConfigured } from "@/lib/env";
+import { DAY3_VVIP_OFFICIAL_PRICE_NGN } from "@/lib/config/checkout-config";
 
 function toCsvRow(values: (string | number | boolean | null | undefined)[]): string {
   return values
@@ -178,8 +179,8 @@ export async function GET(
           toCsvRow([
             `${b.first_name} ${b.last_name}`,
             b.category,
-            50000,
-            b.status === "confirmed" ? 50000 : 0,
+            DAY3_VVIP_OFFICIAL_PRICE_NGN,
+            b.status === "confirmed" ? DAY3_VVIP_OFFICIAL_PRICE_NGN : 0,
             b.status,
             b.created_at,
           ]),

@@ -28,6 +28,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { siteUrl } from "@/lib/site";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -452,7 +453,7 @@ export function TablesBookingClient() {
                 const totalSeats = bookingResult.passes?.length || 1;
                 const passUrl = typeof window !== "undefined"
                   ? `${window.location.origin}/pass/${pass.passCode}`
-                  : `https://abeokuta-polo-festival-2026.vercel.app/pass/${pass.passCode}`;
+                  : siteUrl(`/pass/${pass.passCode}`);
 
                 const whatsappText = `👑 *Official VIP Invitation: Abeokuta Polo Festival 2026 Grand Finale*\n\nDear ${guestName},\nYou are cordially invited to join our private VIP table enclosure:\n🏆 *${bookingResult.packageName}*\n📍 *Table:* ${bookingResult.tableSerial} (Seat ${idx + 1} of ${totalSeats})\n📅 *Date:* Sunday, 20 Dec 2026\n👤 *Host:* ${hostName}\n\n🛡️ *Claim your official Gate Turnstile Access Card:*\n👉 ${passUrl}\n\n_Note: Once opened, this access pass binds to your mobile device and cannot be forwarded._`;
                 const whatsappHref = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`;

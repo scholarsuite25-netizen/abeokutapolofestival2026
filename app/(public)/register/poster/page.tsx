@@ -25,9 +25,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getSiteOrigin, siteHostname } from "@/lib/site";
 
-const TARGET_URL = "https://abeokuta-polo-festival-2026.vercel.app/register?ref=venue_poster";
-const DISPLAY_URL = "abeokuta-polo-festival-2026.vercel.app/register?ref=venue_poster";
+const TARGET_URL = `${getSiteOrigin()}/register?ref=venue_poster`;
+const DISPLAY_URL = `${siteHostname()}/register?ref=venue_poster`;
 
 export default function VenueRegistrationPosterPage() {
   const [svgQr, setSvgQr] = useState<string>("");

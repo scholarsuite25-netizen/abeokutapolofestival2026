@@ -2,6 +2,7 @@
  * Official PDF & Print Document Generator for Abeokuta Polo Festival 2026 Corporate Sponsorship Brochure.
  * Formatted with royal typography, gold accents, and 6-page layout matching the blueprint sponsorship document.
  */
+import { siteHostname } from "@/lib/site";
 
 export function generateSponsorshipHTML(): string {
   return `<!DOCTYPE html>
@@ -548,7 +549,7 @@ export function generateSponsorshipHTML(): string {
           <strong>Telephone:</strong> +234 818 188 8884<br>
           <strong>Alternative:</strong> +234 803 681 8916<br>
           <strong>Email:</strong> abeokutapolo@gmail.com<br>
-          <strong>Website:</strong> abeokuta-polo-festival-2026.vercel.app
+          <strong>Website:</strong> ${siteHostname()}
         </p>
       </div>
 
