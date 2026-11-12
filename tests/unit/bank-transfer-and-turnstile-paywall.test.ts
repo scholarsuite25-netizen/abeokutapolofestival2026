@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { submitRegistration } from "@/app/(public)/register/actions";
+import { submitRegistration, submitTableRegistration } from "@/app/(public)/register/actions";
 import { isPassPendingVerification, registerUnverifiedPasses } from "@/lib/storage/unverified-passes";
 import { generateOfflinePassHtml } from "@/lib/storage/pass-storage";
 
@@ -28,22 +28,21 @@ describe("Bank Transfer & Turnstile Paywall Hardening", () => {
     expect(dualPass.day2Status).toBe("free_admitted");
   });
 
-  it("Day 3 bank transfer registration strictly issues a provisional claim slip in pending_verification status", async () => {
-    const res = await submitRegistration({
-      firstName: "Chief",
-      lastName: "WirePayer",
-      email: "wire@example.com",
-      phone: "+2348039998877",
-      day1: false,
-      day2: false,
-      day3: true,
-      day3TicketCount: 1,
+  it("Day 3 bank transfer table booking strictly issues provisional claim slips in pending_verification status", async () => {
+    const res = await submitTableRegistration({
+      packageId: "individual_vip",
+      tableSerial: "Regular Pass 01",
+      buyerFirstName: "Chief",
+      buyerLastName: "WirePayer",
+      buyerEmail: "wire@example.com",
+      buyerPhone: "+2348039998877",
       paymentMethod: "bank_transfer",
       bankTransferRef: "ABK-WEMA-TEST-001",
+      attendees: [{ seat: 1, name: "Chief WirePayer" }],
     });
 
     expect(res.success).toBe(true);
-    expect(res.status).toBe("pending_verification");
+    expect(res.status).toBe("pending_bank_verification");
     expect(res.paymentMethod).toBe("bank_transfer");
     expect(res.bankTransferRef).toBe("ABK-WEMA-TEST-001");
     expect(res.passes).toBeDefined();
@@ -54,7 +53,7 @@ describe("Bank Transfer & Turnstile Paywall Hardening", () => {
     expect(provPass.isVvip).toBe(false);
     expect(provPass.status).toBe("pending_verification");
     expect(provPass.day3Status).toBe("pending_verification");
-    expect(provPass.category).toContain("Provisional Claim (Pending Bursary Verification)");
+    expect(provPass.category).toContain("Provisional");
     expect(provPass.bankTransferRef).toBe("ABK-WEMA-TEST-001");
   });
 

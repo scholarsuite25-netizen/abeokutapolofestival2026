@@ -8,6 +8,16 @@
  * Server code (`lib/paystack/*`, `app/api/paystack/*`, `submitRegistration`) MUST
  * derive price, quantity and reference rules from this file. Never trust a price,
  * quantity or "paid" flag that arrives from the browser.
+ *
+ * PRICING POLICY — the ₦100 pilot testing fee has been PERMANENTLY CONCLUDED.
+ * Official brochure prices are the only active pricing model:
+ *   - The Kings Table: ₦5,000,000 (10 Guests)
+ *   - The Royal Table: ₦3,000,000 (8 Guests)
+ *   - The Queens Table: ₦2,000,000 (6 Guests)
+ *   - The Premium Table: ₦500,000 (5 Guests)
+ *   - The Regular Section: ₦50,000 Per Person (1 Guest)
+ * There is no toggle, no test-price constant and no client-supplied fee flag:
+ * pricing is decided on the server and cannot be lowered by a browser payload.
  */
 
 export const DAY3_CHECKOUT_PROVIDER = "Paystack";
@@ -16,11 +26,9 @@ export const DAY3_CHECKOUT_PROVIDER = "Paystack";
 export const DAY3_VVIP_OFFICIAL_PRICE_NGN = 50_000;
 export const DAY3_VVIP_OFFICIAL_PRICE_DISPLAY = "₦50,000";
 
-/** Price of one Day 3 VVIP pass charged during pilot testing phase (₦100.00) */
-export const DAY3_VVIP_PRICE_NGN = 100;
-export const DAY3_VVIP_PRICE_DISPLAY = "₦100.00";
-export const DAY3_VVIP_TESTING_PRICE_NGN = 100;
-export const DAY3_VVIP_TESTING_PRICE_DISPLAY = "₦100.00";
+/** Price of one Day 3 VVIP pass (₦50,000) */
+export const DAY3_VVIP_PRICE_NGN = 50_000;
+export const DAY3_VVIP_PRICE_DISPLAY = "₦50,000";
 
 /** Most Day 3 VVIP passes one payment can cover. */
 export const DAY3_VVIP_MAX_TICKETS = 20;
@@ -30,13 +38,13 @@ export const DAY3_INVITATION_MAX_TICKETS = 1;
 
 /**
  * Official Abeokuta Polo Club Bank Account for Direct Wire Transfers.
- * Alternate payment channel to Paystack.
+ * Primary payment channel for table and pass reservations.
  */
 export const CLUB_BANK_DETAILS = {
   bankName: "WEMA BANK",
   accountName: "ABEOKUTA POLO CLUB",
   accountNumber: "0126769779",
-  feePerTicketNgn: 100,
+  feePerTicketNgn: 50_000,
   secretariatWhatsApp: "2348181888884",
   secretariatPhoneFormatted: "+234 818 188 8884",
   referencePrefix: "ABK-WEMA-",

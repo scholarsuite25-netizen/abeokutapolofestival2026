@@ -12,8 +12,6 @@ export interface CommissionTier {
   categoryName: string;
   officialPackageValueNgn: number;
   officialCommissionNgn: number;
-  testingPriceNgn: number;
-  testingCommissionNgn: number;
   description: string;
 }
 
@@ -22,40 +20,30 @@ export const AFFILIATE_COMMISSION_TIERS: CommissionTier[] = [
     categoryName: "The Kings Table (10 Guests)",
     officialPackageValueNgn: 5_000_000,
     officialCommissionNgn: 500_000,
-    testingPriceNgn: 100,
-    testingCommissionNgn: 10,
     description: "Ultra-Exclusive VIP Experience within the Kings Arena (10 Guests, 10 VIP parking vehicles).",
   },
   {
     categoryName: "The Royal Table (8 Guests)",
     officialPackageValueNgn: 3_000_000,
     officialCommissionNgn: 300_000,
-    testingPriceNgn: 100,
-    testingCommissionNgn: 10,
     description: "Luxury Hospitality Experience within the VVIP Hospitality Section (8 Guests, 5 VIP parking vehicles).",
   },
   {
     categoryName: "The Queens Table (6 Guests)",
     officialPackageValueNgn: 2_000_000,
     officialCommissionNgn: 200_000,
-    testingPriceNgn: 100,
-    testingCommissionNgn: 10,
     description: "Signature Ladies’ Experience with premium dining and Queens Polo access (6 Guests).",
   },
   {
     categoryName: "The Premium Table (5 Guests)",
     officialPackageValueNgn: 500_000,
     officialCommissionNgn: 50_000,
-    testingPriceNgn: 100,
-    testingCommissionNgn: 10,
     description: "Premium Festival Experience with reserved seating and food & beverage package (5 Guests).",
   },
   {
     categoryName: "The Regular Section (Day 3 Individual Pass)",
     officialPackageValueNgn: 50_000,
     officialCommissionNgn: 5_000,
-    testingPriceNgn: 100,
-    testingCommissionNgn: 10,
     description: "General Festival Experience — ₦50,000 Per Person admission to the festival viewing area.",
   },
 ];

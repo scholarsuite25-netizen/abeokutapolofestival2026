@@ -4,7 +4,6 @@ import {
   DAY3_VVIP_MAX_TICKETS,
   DAY3_VVIP_PRICE_NGN,
   DAY3_VVIP_OFFICIAL_PRICE_NGN,
-  DAY3_VVIP_TESTING_PRICE_NGN,
 } from "@/lib/config/checkout-config";
 
 /**
@@ -140,14 +139,12 @@ export async function verifyDay3Payment(
   const amountKobo = Number(data.amount);
   if (!Number.isFinite(amountKobo) || amountKobo <= 0) return fail("amount_too_low");
 
-  const minAmountKobo = (options.expectedMinAmountNgn ?? DAY3_VVIP_TESTING_PRICE_NGN) * 100;
+  const minAmountKobo = (options.expectedMinAmountNgn ?? DAY3_VVIP_OFFICIAL_PRICE_NGN) * 100;
   if (amountKobo < minAmountKobo) return fail("amount_too_low");
 
-  // Support both Official Brochure Rate (₦50,000/pass) and Pilot Testing Fee Rate (₦100/pass)
-  const unitPriceKobo =
-    amountKobo >= DAY3_VVIP_OFFICIAL_PRICE_NGN * 100
-      ? DAY3_VVIP_OFFICIAL_PRICE_NGN * 100
-      : DAY3_VVIP_TESTING_PRICE_NGN * 100;
+  // Official Brochure Rate (₦50,000/pass) is the only active pricing model —
+  // the pilot testing fee has been permanently concluded.
+  const unitPriceKobo = DAY3_VVIP_OFFICIAL_PRICE_NGN * 100;
 
   const quantity = Math.floor(amountKobo / unitPriceKobo);
   if (quantity < 1) return fail("amount_too_low");

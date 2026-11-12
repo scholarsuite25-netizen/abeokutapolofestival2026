@@ -30,13 +30,25 @@ function getInitialNotificationPermission(): NotificationPermission {
 
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(getIsInstalled);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(getInitialNotificationPermission);
+  // These must start from SSR-safe constants: the browser-only values
+  // (installed mode, session dismissal, notification permission) are read in
+  // the mount effect below. Seeding them during render made the server HTML
+  // and the first client render disagree whenever the browser had already
+  // installed the app, dismissed the prompt, or blocked notifications —
+  // which surfaced as a React hydration mismatch (#418) on every public page.
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [notificationPermission, setNotificationPermission] =
+    useState<NotificationPermission>("default");
   const [isSubscribing, setIsSubscribing] = useState(false);
-  const [dismissed, setDismissed] = useState(getIsDismissed);
+  const [dismissed, setDismissed] = useState(false);
   const [swRegistered, setSwRegistered] = useState(false);
 
   useEffect(() => {
+    // Adopt the real browser state after hydration.
+    setIsInstalled(getIsInstalled());
+    setNotificationPermission(getInitialNotificationPermission());
+    setDismissed(getIsDismissed());
+
     // Register Service Worker
     if ("serviceWorker" in navigator && process.env.NODE_ENV !== "test") {
       navigator.serviceWorker

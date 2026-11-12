@@ -12,10 +12,6 @@ import {
   DAY3_VVIP_PRICE_NGN,
   DAY3_VVIP_OFFICIAL_PRICE_NGN,
 } from "@/lib/config/checkout-config";
-import {
-  getTestingFeeStatus,
-  autoDisableTestingFeeAfterPayment,
-} from "@/lib/config/testing-fee-mode";
 import { markPassVerified } from "@/lib/storage/unverified-passes";
 import { getSiteOrigin } from "@/lib/site";
 import {
@@ -398,19 +394,6 @@ export async function approveRegistrationAction(registrationId: string): Promise
 
   if (regError) return { ok: false, error: "Could not update the registration." };
 
-  // If this was a pending bank verification during ₦100 pilot testing mode, auto-remove the testing fee
-  if (reg.status === "pending_bank_verification" || reg.status === "pending_verification") {
-    const testingState = await getTestingFeeStatus();
-    if (testingState.enabled) {
-      await autoDisableTestingFeeAfterPayment(
-        bankTransferRef || passCode || reg.id,
-        100,
-      );
-      revalidatePath("/tables");
-      revalidatePath("/register");
-    }
-  }
-
   await writeAudit({
     action: "registration.approve",
     entityType: "registration",
@@ -607,11 +590,10 @@ export async function approveBankTransferAction(identifier: string): Promise<{
 
           markPassVerified(cleanId);
 
-          const verifiedAmount = tableBookingOnly?.amount_ngn || commitment?.proposed_amount || 100;
-          const testingState = await getTestingFeeStatus();
-          if (testingState.enabled || verifiedAmount <= 1000) {
-            await autoDisableTestingFeeAfterPayment(cleanId, verifiedAmount);
-          }
+          const verifiedAmount =
+            tableBookingOnly?.amount_ngn ||
+            commitment?.proposed_amount ||
+            DAY3_VVIP_OFFICIAL_PRICE_NGN;
 
           revalidatePath("/abawole/finance");
           revalidatePath("/abawole/registrations");
@@ -634,7 +616,6 @@ export async function approveBankTransferAction(identifier: string): Promise<{
       const holderName = `${reg.first_name} ${reg.last_name}`.trim();
       const transferRef = reg.bank_transfer_ref || reg.day3_ticket_ref || cleanId || "WEMA-TRANSFER";
       const quantity = Math.max(1, reg.group_size || 1);
-      const testingState = await getTestingFeeStatus();
 
       // Check if there is an associated table booking or offline commitment with the exact amount
       const { data: linkedTableBooking } = await supabase
@@ -643,14 +624,10 @@ export async function approveBankTransferAction(identifier: string): Promise<{
         .or(`bank_transfer_ref.eq.${transferRef},payment_ref.eq.${transferRef}`)
         .maybeSingle();
 
+      // Official brochure pricing is permanent: no testing-fee branch exists.
       const amountNgn =
-        linkedTableBooking?.amount_ngn ||
-        (testingState.enabled ? quantity * 100 : quantity * DAY3_VVIP_OFFICIAL_PRICE_NGN);
+        linkedTableBooking?.amount_ngn || quantity * DAY3_VVIP_OFFICIAL_PRICE_NGN;
       const siteOrigin = getSiteOrigin();
-
-      if (testingState.enabled || amountNgn <= 1000) {
-        await autoDisableTestingFeeAfterPayment(transferRef, amountNgn);
-      }
 
       if (linkedTableBooking) {
         await supabase

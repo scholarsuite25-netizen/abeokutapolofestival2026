@@ -79,7 +79,9 @@ end;
 $$;
 
 -- The RPC itself is callable only by the service role (admin client).
+-- NOTE: PostgreSQL grants EXECUTE to PUBLIC by default on new functions, so
+-- revoking from anon/authenticated alone is a no-op — PUBLIC must go too.
 revoke execute on function public.consume_rate_limit(text, integer, integer)
-  from anon, authenticated;
+  from public, anon, authenticated;
 grant  execute on function public.consume_rate_limit(text, integer, integer)
   to service_role;

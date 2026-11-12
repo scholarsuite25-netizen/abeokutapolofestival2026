@@ -9,8 +9,7 @@
  * 4. THE PREMIUM TABLE (Premium Festival Experience) — 5 Guests — ₦500,000
  * 5. THE REGULAR SECTION (General Festival Experience) — Per Person (1 Guest) — ₦50,000
  *
- * Pricing: Official brochure value is displayed alongside the toggleable ₦100.00 pilot testing fee
- * (which automatically disables itself after a successful ₦100 test payment).
+ * Pricing: Official brochure values are permanently active across all checkouts.
  */
 
 export interface TablePackage {
@@ -20,8 +19,6 @@ export interface TablePackage {
   tagline: string;
   officialPriceNgn: number;
   officialPriceDisplay: string;
-  testingPriceNgn: number;
-  testingPriceDisplay: string;
   guestCapacity: number;
   parkingVehicles?: number;
   tableCount: number;
@@ -40,8 +37,6 @@ export const DAY3_TABLE_PACKAGES: Record<string, TablePackage> = {
     tagline: "Ultra-Exclusive VIP Experience",
     officialPriceNgn: 5_000_000,
     officialPriceDisplay: "₦5,000,000",
-    testingPriceNgn: 100,
-    testingPriceDisplay: "₦100.00",
     guestCapacity: 10,
     parkingVehicles: 10,
     tableCount: 5,
@@ -69,8 +64,6 @@ export const DAY3_TABLE_PACKAGES: Record<string, TablePackage> = {
     tagline: "Luxury Hospitality Experience",
     officialPriceNgn: 3_000_000,
     officialPriceDisplay: "₦3,000,000",
-    testingPriceNgn: 100,
-    testingPriceDisplay: "₦100.00",
     guestCapacity: 8,
     parkingVehicles: 5,
     tableCount: 10,
@@ -96,8 +89,6 @@ export const DAY3_TABLE_PACKAGES: Record<string, TablePackage> = {
     tagline: "Signature Ladies’ Experience",
     officialPriceNgn: 2_000_000,
     officialPriceDisplay: "₦2,000,000",
-    testingPriceNgn: 100,
-    testingPriceDisplay: "₦100.00",
     guestCapacity: 6,
     parkingVehicles: 0,
     tableCount: 10,
@@ -123,8 +114,6 @@ export const DAY3_TABLE_PACKAGES: Record<string, TablePackage> = {
     tagline: "Premium Festival Experience",
     officialPriceNgn: 500_000,
     officialPriceDisplay: "₦500,000",
-    testingPriceNgn: 100,
-    testingPriceDisplay: "₦100.00",
     guestCapacity: 5,
     parkingVehicles: 0,
     tableCount: 20,
@@ -148,8 +137,6 @@ export const DAY3_TABLE_PACKAGES: Record<string, TablePackage> = {
     tagline: "General Festival Experience",
     officialPriceNgn: 50_000,
     officialPriceDisplay: "₦50,000",
-    testingPriceNgn: 100,
-    testingPriceDisplay: "₦100.00",
     guestCapacity: 1,
     parkingVehicles: 0,
     tableCount: 200,
@@ -161,7 +148,7 @@ export const DAY3_TABLE_PACKAGES: Record<string, TablePackage> = {
       "General admission to the festival viewing area.",
       "Access to designated public seating areas, subject to availability.",
       "Opportunity to enjoy the polo matches and festival entertainment.",
-      "Access to designated food and beverage vendors at prevailing prices.",
+      "Access to designated food and beverage.",
       "Opportunity to experience cultural performances and other festival activities.",
     ],
   },

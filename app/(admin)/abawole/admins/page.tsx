@@ -7,6 +7,7 @@ import { NotConfigured } from "@/components/shared/guards";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminManagementClient, type AdminUserRecord } from "@/components/admin/admin-management-client";
+import { connection } from "next/server";
 
 export const metadata = {
   title: "Administrator Governance & Access Console | 2026 Abeokuta Polo Festival",
@@ -27,6 +28,11 @@ async function AdminsContent() {
   // 1. Authoritative Super Admin permission guard
   let session;
   try {
+    // Prerender fix: defer the session read to request time. The auth-js
+    // session load calls Date.now() for token expiry, which Next rejects as an
+    // unstable value while prerendering.
+    await connection();
+
     session = await requirePermission("admin.manage");
   } catch (error) {
     if (error instanceof PermissionError) {

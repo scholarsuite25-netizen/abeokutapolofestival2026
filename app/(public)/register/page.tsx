@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -16,7 +16,6 @@ import {
   FileDown,
   RotateCcw,
   Check,
-  CreditCard,
   KeyRound,
   ExternalLink,
   Share2,
@@ -33,8 +32,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   submitRegistration,
   recordAffiliateClick,
-  getTestingFeeModeAction,
-  toggleTestingFeeModeAction,
   type RegisterResult,
 } from "./actions";
 import {
@@ -47,15 +44,9 @@ import { MobileBindingStation, isMobileBrowser } from "@/components/shared/pass-
 import { downloadProgrammePDF } from "@/lib/pdf/programme-pdf";
 import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
 import { IdAccessCard } from "@/components/shared/id-access-card";
-import { WemaBankPaymentCard } from "@/components/shared/wema-bank-payment-card";
 import {
-  generateWemaTransferReference,
-  DAY3_VVIP_PRICE_NGN,
-  DAY3_VVIP_PRICE_DISPLAY,
   DAY3_VVIP_OFFICIAL_PRICE_NGN,
-  DAY3_VVIP_TESTING_PRICE_NGN,
   DAY3_VVIP_OFFICIAL_PRICE_DISPLAY,
-  DAY3_VVIP_TESTING_PRICE_DISPLAY,
 } from "@/lib/config/checkout-config";
 import { WhatsAppIcon } from "@/components/shared/whatsapp-icon";
 import {
@@ -89,7 +80,7 @@ function RegisterContent() {
   const [day1, setDay1] = useState(true);
   const [day2, setDay2] = useState(true);
   const [day3, setDay3] = useState(false);
-  const [day3TicketCount, setDay3TicketCount] = useState(1);
+  const day3TicketCount = 1;
 
   // Simple Form Data (Single registration only)
   const [formData, setFormData] = useState({
@@ -102,45 +93,16 @@ function RegisterContent() {
     organization: "",
   });
 
-  // Day 3 VVIP Options: Direct Bank Transfer (Option A / Primary Default), Paystack, or Special Invitation Code
-  const [day3PaymentMethod, setDay3PaymentMethod] = useState<"paystack" | "bank_transfer" | "invitation">("bank_transfer");
-  const [wemaRef, setWemaRef] = useState<string>(() => generateWemaTransferReference());
-  const [hasInviteCode, setHasInviteCode] = useState(false);
+  // Day 3 Grand Finale admission is issued with a VIP Table package (each
+  // table includes a Day-3 VVIP credential for every seat). The only Day 3
+  // route left on this page is a complimentary Special VIP Invitation Code —
+  // paid Day-3 admission happens on the VIP Tables page.
+  const hasInviteCode = true;
   const [invitationCode, setInvitationCode] = useState("");
   const [affiliateCode, setAffiliateCode] = useState<string>("");
-  const [useTestingFee, setUseTestingFee] = useState<boolean>(true);
-  const [testingAutoRemovedNotice, setTestingAutoRemovedNotice] = useState<boolean>(false);
 
-  const activeDay3UnitPriceNgn = useTestingFee
-    ? DAY3_VVIP_TESTING_PRICE_NGN
-    : DAY3_VVIP_OFFICIAL_PRICE_NGN;
-  const activeDay3UnitPriceDisplay = useTestingFee
-    ? DAY3_VVIP_TESTING_PRICE_DISPLAY
-    : DAY3_VVIP_OFFICIAL_PRICE_DISPLAY;
-
-  useEffect(() => {
-    getTestingFeeModeAction()
-      .then((status) => {
-        setUseTestingFee(status.enabled);
-        if (status.autoRemovedAfterPayment) {
-          setTestingAutoRemovedNotice(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleToggleTestingFee = async (nextVal: boolean) => {
-    setUseTestingFee(nextVal);
-    if (nextVal) setTestingAutoRemovedNotice(false);
-    try {
-      await toggleTestingFeeModeAction(
-        nextVal,
-        nextVal ? "manual_enable_from_register_ui" : "manual_disable_from_register_ui",
-      );
-    } catch {
-      // Non-blocking
-    }
-  };
+  const activeDay3UnitPriceNgn = DAY3_VVIP_OFFICIAL_PRICE_NGN;
+  const activeDay3UnitPriceDisplay = DAY3_VVIP_OFFICIAL_PRICE_DISPLAY;
 
   // Track affiliate referral code from URL search param e.g. /register?ref=AFF-...
   useEffect(() => {
@@ -190,141 +152,9 @@ function RegisterContent() {
     }
   }, [searchParams]);
 
-  // Individual VVIP Ticket Holder Names (Ticket 1: Buyer/First Guest, Ticket 2+: Guests)
-  const [ticketAttendees, setTicketAttendees] = useState<Array<{ firstName: string; lastName: string }>>([
-    { firstName: "", lastName: "" },
-  ]);
-
   const handlePrimaryNameChange = (field: "firstName" | "lastName", val: string) => {
-    setFormData((prev) => {
-      const prevVal = prev[field];
-      const updated = { ...prev, [field]: val };
-      setTicketAttendees((att) => {
-        const next = [...att];
-        if (!next[0]) next[0] = { firstName: "", lastName: "" };
-        // Sync Ticket 1 if it is empty or was in sync with the previous value
-        if (!next[0][field] || next[0][field] === prevVal) {
-          next[0] = { ...next[0], [field]: val };
-        }
-        return next;
-      });
-      return updated;
-    });
+    setFormData((prev) => ({ ...prev, [field]: val }));
   };
-
-  const handleTicketCountChange = (count: number) => {
-    const clamped = Math.max(1, Math.min(20, count));
-    setDay3TicketCount(clamped);
-    setTicketAttendees((prev) => {
-      const next = [...prev];
-      if (!next[0] || (!next[0].firstName && !next[0].lastName)) {
-        next[0] = {
-          firstName: formData.firstName || "",
-          lastName: formData.lastName || "",
-        };
-      }
-      while (next.length < clamped) {
-        next.push({ firstName: "", lastName: "" });
-      }
-      return next.slice(0, clamped);
-    });
-  };
-
-  const updateAttendee = (index: number, field: "firstName" | "lastName", val: string) => {
-    setTicketAttendees((prev) => {
-      const next = [...prev];
-      while (next.length <= index) {
-        next.push({ firstName: "", lastName: "" });
-      }
-      next[index] = { ...next[index], [field]: val };
-      return next;
-    });
-  };
-
-  // Handle return from Paystack. The URL is NOT proof of payment: the reference is
-  // sent to the server, which verifies it with Paystack and issues passes only if
-  // the payment is genuine, large enough, made with this email, and unused.
-  const returnHandled = useRef(false);
-  useEffect(() => {
-    const paymentRef = searchParams.get("reference") || searchParams.get("payment_ref");
-    if (!paymentRef || returnHandled.current) return;
-    returnHandled.current = true;
-
-    const fn = searchParams.get("fn") || "";
-    const ln = searchParams.get("ln") || "";
-    const em = searchParams.get("em") || "";
-    const ph = searchParams.get("ph") || "";
-
-    if (!fn || !ln || !em || !ph) {
-      void Promise.resolve().then(() =>
-        setErrorMsg(
-          "We could not read your registration details after payment. Please fill in the form again and use the same email you paid with.",
-        ),
-      );
-      return;
-    }
-
-    let parsedAttendees: Array<{ firstName: string; lastName: string }> | undefined;
-    const attendeesParam = searchParams.get("attendees");
-    if (attendeesParam) {
-      try {
-        parsedAttendees = JSON.parse(attendeesParam);
-      } catch {
-        // ignore parse error
-      }
-    }
-    if (!parsedAttendees || parsedAttendees.length === 0) {
-      try {
-        const stored =
-          sessionStorage.getItem("abk_pending_attendees") ||
-          localStorage.getItem("abk_pending_attendees");
-        if (stored) {
-          parsedAttendees = JSON.parse(stored);
-        }
-      } catch {
-        // ignore storage error
-      }
-    }
-
-    void Promise.resolve().then(async () => {
-      setLoading(true);
-      const qtyParam = searchParams.get("qty");
-      const day3TicketCountParsed = qtyParam ? parseInt(qtyParam, 10) : (parsedAttendees ? parsedAttendees.length : 1);
-
-      const res = await submitRegistration({
-        firstName: fn,
-        lastName: ln,
-        email: em,
-        phone: ph,
-        day1: searchParams.get("day1") === "1",
-        day2: searchParams.get("day2") === "1",
-        day3: true,
-        day3TicketCount: day3TicketCountParsed,
-        day3PaymentRef: paymentRef,
-        affiliateCode: searchParams.get("ref") || affiliateCode || undefined,
-        attendees: parsedAttendees,
-      });
-
-      setLoading(false);
-      if (res.success && res.passes && res.passes.length > 0) {
-        setResult(res);
-        setIssuedPasses(res.passes);
-        if (res.testingFeeAutoRemoved) {
-          setUseTestingFee(false);
-          setTestingAutoRemovedNotice(true);
-        }
-        if (isMobileBrowser()) {
-          persistRegisteredPass(res.passes);
-          forceDownloadAllPasses(res.passes);
-          setDownloadTriggered(true);
-        } else {
-          setDownloadTriggered(false);
-        }
-      } else {
-        setErrorMsg(res.error || "We could not confirm your payment. Please contact the festival office.");
-      }
-    });
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -346,121 +176,13 @@ function RegisterContent() {
       return;
     }
 
-    // Build personalized attendees for Day 3 VVIP passes
-    const attendeesToSubmit = day3
-      ? Array.from({ length: day3TicketCount }, (_, i) => ({
-          firstName:
-            ticketAttendees[i]?.firstName?.trim() ||
-            (i === 0 ? formData.firstName.trim() : ""),
-          lastName:
-            ticketAttendees[i]?.lastName?.trim() ||
-            (i === 0 ? formData.lastName.trim() : ""),
-        }))
-      : undefined;
-
-    // Validate individual first & last names for each VVIP ticket holder when buying multiple passes
-    if (day3 && (!hasInviteCode || !invitationCode.trim()) && day3TicketCount > 1) {
-      for (let i = 0; i < day3TicketCount; i++) {
-        const att = attendeesToSubmit?.[i];
-        if (!att?.firstName || !att?.lastName) {
-          setErrorMsg(
-            `Please enter both the First Name and Last Name for Ticket ${i + 1}.`,
-          );
-          return;
-        }
-      }
-    }
-
-    // If Day 3 is chosen with Direct Bank Transfer (Wema Bank), submit directly for Bursary verification
-    if (day3 && day3PaymentMethod === "bank_transfer") {
-      setLoading(true);
-      const res = await submitRegistration({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        day1,
-        day2,
-        day3,
-        day3TicketCount,
-        paymentMethod: "bank_transfer",
-        bankTransferRef: wemaRef,
-        affiliationType: formData.affiliationType,
-        hostName: formData.hostName,
-        organization: formData.organization,
-        affiliateCode: affiliateCode || undefined,
-        useTestingFee,
-        attendees: attendeesToSubmit,
-      });
-
-      if (!res.success) {
-        setErrorMsg(res.error || "Failed to register bank transfer. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      setResult(res);
-      if (res.passes && res.passes.length > 0) {
-        setIssuedPasses(res.passes);
-        persistRegisteredPass(res.passes);
-      }
-      setLoading(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    // Day 3 admission is issued with a VIP Table package. On this page it can
+    // only be claimed with a complimentary Special VIP Invitation Code.
+    if (day3 && !invitationCode.trim()) {
+      setErrorMsg(
+        "Please enter your Special VIP Invitation Code. To purchase Day 3 Grand Finale admission, reserve a VIP Table.",
+      );
       return;
-    }
-
-    // If Day 3 is ticked with Paystack payment gateway
-    if (day3 && day3PaymentMethod === "paystack" && (!hasInviteCode || !invitationCode.trim())) {
-      setLoading(true);
-      try {
-        if (attendeesToSubmit && attendeesToSubmit.length > 0) {
-          try {
-            sessionStorage.setItem("abk_pending_attendees", JSON.stringify(attendeesToSubmit));
-            localStorage.setItem("abk_pending_attendees", JSON.stringify(attendeesToSubmit));
-          } catch {
-            // Non-blocking
-          }
-        }
-
-        const response = await fetch("/api/paystack/initialize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: formData.email,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            phone: formData.phone,
-            day1,
-            day2,
-            day3: true,
-            quantity: day3TicketCount,
-            affiliateCode: affiliateCode || undefined,
-            useTestingFee,
-            attendees: attendeesToSubmit,
-          }),
-        });
-
-        const data = await response.json();
-        if (data.authorization_url) {
-          // Redirect to Paystack gateway
-          window.location.href = data.authorization_url;
-          return;
-        } else {
-          // Fall back gracefully to Bank Wire Transfer
-          setDay3PaymentMethod("bank_transfer");
-          setErrorMsg(
-            (data.error ? `${data.error} ` : "") +
-              "Switched to Abeokuta Polo Club Wema Bank wire transfer below. Please transfer the gate fee and submit.",
-          );
-          setLoading(false);
-          return;
-        }
-      } catch {
-        setDay3PaymentMethod("bank_transfer");
-        setErrorMsg("Network error connecting to payment gateway. Switched to direct Wema Bank wire transfer.");
-        setLoading(false);
-        return;
-      }
     }
 
     // Direct registration (Free Days 1/2 or Day 3 with Special Invitation)
@@ -473,13 +195,12 @@ function RegisterContent() {
       day1,
       day2,
       day3,
-      day3TicketCount: hasInviteCode ? 1 : day3TicketCount,
-      day3InvitationCode: hasInviteCode ? invitationCode.trim() : undefined,
+      day3TicketCount: 1,
+      day3InvitationCode: invitationCode.trim() || undefined,
       affiliationType: formData.affiliationType,
       hostName: formData.hostName,
       organization: formData.organization,
       affiliateCode: affiliateCode || undefined,
-      attendees: attendeesToSubmit,
     });
 
     setLoading(false);
@@ -1231,40 +952,27 @@ function RegisterContent() {
                           </Badge>
                         </div>
 
-                        {/* Prestige Value & Pilot Testing Fee Toggle Banner */}
-                        <div className="rounded-xl border border-gold/40 bg-gradient-to-r from-[#1B1608] via-[#2A2007] to-[#1B1608] p-3 text-ivory space-y-2">
+                        {/* Day 3 admission is issued with a VIP Table package */}
+                        <div className="rounded-xl border border-gold/40 bg-gradient-to-r from-[#1B1608] via-[#2A2007] to-[#1B1608] p-3.5 text-ivory space-y-2">
                           <div className="flex flex-wrap items-center justify-between gap-1.5">
                             <span className="font-display font-bold text-xs text-gold">
-                              Official Regular Section Price: {DAY3_VVIP_OFFICIAL_PRICE_DISPLAY} Per Person
+                              Day 3 Grand Finale Admission
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleTestingFee(!useTestingFee)}
-                              className={`rounded-full px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider cursor-pointer transition-all ${
-                                useTestingFee
-                                  ? "bg-emerald-500 text-black hover:bg-emerald-400"
-                                  : "bg-gold text-black hover:bg-gold/90"
-                              }`}
-                            >
-                              {useTestingFee
-                                ? `Testing Fee Active (${DAY3_VVIP_TESTING_PRICE_DISPLAY}) · Click for Official ₦50,000`
-                                : "Official Price Active (₦50,000) · Click for ₦100 Test Fee"}
-                            </button>
+                            <span className="rounded-full bg-gold/20 px-2.5 py-0.5 text-[10px] font-extrabold text-gold border border-gold/40">
+                              Included with a VIP Table
+                            </span>
                           </div>
-                          {testingAutoRemovedNotice && !useTestingFee && (
-                            <p className="text-[10px] text-emerald-300 font-bold leading-tight">
-                              ✅ ₦100 Test Payment Verified! The testing fee has been automatically removed — Official Brochure Price ({DAY3_VVIP_OFFICIAL_PRICE_DISPLAY}) is now active.
-                            </p>
-                          )}
                           <p className="text-[10px] text-ivory/80 leading-tight">
-                            {useTestingFee
-                              ? `Pilot Testing Mode is active: checkout charges ${DAY3_VVIP_TESTING_PRICE_DISPLAY} per ticket and automatically reverts to the official ${DAY3_VVIP_OFFICIAL_PRICE_DISPLAY} brochure rate immediately after your test payment succeeds.`
-                              : `Live Official Brochure Rate is active: checkout charges ${DAY3_VVIP_OFFICIAL_PRICE_DISPLAY} per person for The Regular Section (General Festival Experience).`}
+                            The Grand Finale (20 Dec 2026) is a table-only event. Every Day 3 VVIP
+                            credential is issued as part of a VIP Table package — each table includes
+                            a sealed Day 3 pass for every seat.
                           </p>
-                          <div className="pt-1 border-t border-gold/20 flex items-center justify-between">
-                            <span className="text-[10px] text-gold/90 font-medium">Looking for Exclusive Table Packages (10, 8, 6, or 5 Guests)?</span>
+                          <div className="pt-1.5 border-t border-gold/20 flex flex-wrap items-center justify-between gap-1">
+                            <span className="text-[10px] text-gold/90 font-medium">
+                              Kings ₦5,000,000 · Royal ₦3,000,000 · Queens ₦2,000,000 · Premium ₦500,000 · Regular Section seat ₦50,000
+                            </span>
                             <Link href="/tables" className="text-[10px] font-bold text-gold underline hover:text-white flex items-center gap-1">
-                              Explore Tables (₦5M, ₦3M, ₦2M, ₦500k) <ArrowRight className="size-2.5" />
+                              Reserve a VIP Table <ArrowRight className="size-2.5" />
                             </Link>
                           </div>
                         </div>
@@ -1278,261 +986,6 @@ function RegisterContent() {
                             <Badge className="bg-emerald-600 text-white text-[9px] uppercase font-bold">
                               10% Commission Active
                             </Badge>
-                          </div>
-                        )}
-
-                        <p className="text-[11px] leading-relaxed text-amber-900">
-                          Select whether you are purchasing Day 3 VVIP admission ({activeDay3UnitPriceDisplay} per pass) or redeeming an official single-use Special VIP Invitation Code:
-                        </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          {/* Option A: Direct Club Wire (Primary Default) */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDay3PaymentMethod("bank_transfer");
-                              setHasInviteCode(false);
-                            }}
-                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer relative ${
-                              day3PaymentMethod === "bank_transfer"
-                                ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
-                                : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
-                            }`}
-                          >
-                            <span className="absolute top-1.5 right-1.5 rounded bg-amber-900/80 px-1 py-0.2 text-[8px] font-black uppercase text-amber-100">
-                              Option A
-                            </span>
-                            <div className="flex items-center gap-1.5 font-semibold text-xs">
-                              <ShieldCheck className="size-3.5" /> Wema Bank Wire
-                            </div>
-                            <span className="text-[10px] opacity-90 block mt-0.5">
-                              0126769779 · Abeokuta Polo Club
-                            </span>
-                          </button>
-
-                          {/* Option B: Paystack Gateway */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDay3PaymentMethod("paystack");
-                              setHasInviteCode(false);
-                            }}
-                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer relative ${
-                              day3PaymentMethod === "paystack"
-                                ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
-                                : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
-                            }`}
-                          >
-                            <span className="absolute top-1.5 right-1.5 rounded bg-black/30 px-1 py-0.2 text-[8px] font-bold uppercase text-amber-100">
-                              Option B
-                            </span>
-                            <div className="flex items-center gap-1.5 font-semibold text-xs">
-                              <CreditCard className="size-3.5" /> Paystack Gateway
-                            </div>
-                            <span className="text-[10px] opacity-90 block mt-0.5">
-                              Instant Card / USSD Payment
-                            </span>
-                          </button>
-
-                          {/* Option C: Special VIP Invitation */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDay3PaymentMethod("invitation");
-                              setHasInviteCode(true);
-                            }}
-                            className={`rounded-lg p-2.5 text-left border transition-all cursor-pointer relative ${
-                              day3PaymentMethod === "invitation"
-                                ? "bg-amber-600 text-white border-amber-600 font-bold shadow-xs"
-                                : "bg-white/80 text-amber-950 border-amber-300 hover:bg-white"
-                            }`}
-                          >
-                            <span className="absolute top-1.5 right-1.5 rounded bg-black/30 px-1 py-0.2 text-[8px] font-bold uppercase text-amber-100">
-                              Option C
-                            </span>
-                            <div className="flex items-center gap-1.5 font-semibold text-xs">
-                              <KeyRound className="size-3.5" /> Special Invitation
-                            </div>
-                            <span className="text-[10px] opacity-90 block mt-0.5">
-                              Redeem VIP Guest Pass Code
-                            </span>
-                          </button>
-                        </div>
-
-                        {/* Wema Bank Details Card when Bank Wire is selected */}
-                        {day3PaymentMethod === "bank_transfer" && (
-                          <WemaBankPaymentCard
-                            flow="vvip"
-                            referenceCode={wemaRef}
-                            amountNgn={day3TicketCount * activeDay3UnitPriceNgn}
-                            itemName={`Day 3 Regular Section / VVIP Admission (${day3TicketCount} Ticket${day3TicketCount > 1 ? "s" : ""})`}
-                            buyerName={`${formData.firstName} ${formData.lastName}`.trim() || "VVIP Buyer"}
-                            phone={formData.phone}
-                            email={formData.email}
-                          />
-                        )}
-
-                        {/* Multi-Ticket Quantity Selector (for Paid Tickets) */}
-                        {!hasInviteCode && (
-                          <div className="rounded-xl border border-amber-300/80 bg-white/95 p-3.5 space-y-3">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <div>
-                                <Label htmlFor="ticketQty" className="text-xs font-bold text-amber-950 block">
-                                  Number of Day 3 Tickets ({activeDay3UnitPriceDisplay} each)
-                                </Label>
-                                <span className="text-[11px] text-amber-800">
-                                  Purchase for yourself, invitees, or delegation
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handleTicketCountChange(day3TicketCount - 1)}
-                                  disabled={day3TicketCount <= 1}
-                                  className="size-8 rounded-lg border border-amber-400 bg-amber-100 font-bold text-amber-950 disabled:opacity-40 hover:bg-amber-200 cursor-pointer text-base"
-                                  title="Decrease quantity"
-                                >
-                                  -
-                                </button>
-                                <span className="font-mono text-base font-extrabold text-amber-950 w-8 text-center">
-                                  {day3TicketCount}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleTicketCountChange(day3TicketCount + 1)}
-                                  disabled={day3TicketCount >= 20}
-                                  className="size-8 rounded-lg border border-amber-400 bg-amber-100 font-bold text-amber-950 disabled:opacity-40 hover:bg-amber-200 cursor-pointer text-base"
-                                  title="Increase quantity"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="pt-2 border-t border-amber-200/80 flex items-center justify-between text-xs">
-                              <span className="font-bold text-amber-900">Total Amount Payable:</span>
-                              <span className="font-mono font-extrabold text-lg text-amber-950">
-                                ₦{(day3TicketCount * activeDay3UnitPriceNgn).toLocaleString()}
-                              </span>
-                            </div>
-
-                            {/* Individual Ticket Holder Information for each pass */}
-                            {day3TicketCount > 1 && (
-                              <div className="pt-3 border-t border-amber-200/80 space-y-3">
-                                <div>
-                                  <h4 className="font-serif text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                                    <Crown className="size-3.5 text-amber-600" />
-                                    <span>Ticket Holder Names (Personalized Gate Passes)</span>
-                                  </h4>
-                                  <p className="text-[10px] text-amber-800 leading-tight mt-0.5">
-                                    Please enter the First and Last Name for each person you are purchasing a Day 3 VVIP pass for. Each pass is individually personalized and cryptographic credentials issued in their name.
-                                  </p>
-                                </div>
-
-                                <div className="space-y-2.5">
-                                  {Array.from({ length: day3TicketCount }, (_, idx) => {
-                                    const ticketNum = idx + 1;
-                                    const isPrimary = ticketNum === 1;
-                                    return (
-                                      <div
-                                        key={ticketNum}
-                                        className="rounded-lg border border-amber-300/70 bg-amber-50/60 p-2.5 space-y-2 shadow-2xs"
-                                      >
-                                        <div className="flex flex-wrap items-center justify-between gap-1.5">
-                                          <span className="text-[11px] font-bold text-amber-950 flex items-center gap-1.5 min-w-0">
-                                            <span className="flex size-4 items-center justify-center rounded-full bg-amber-600 text-[9px] font-extrabold text-white shrink-0">
-                                              {ticketNum}
-                                            </span>
-                                            <span className="truncate">
-                                              {isPrimary
-                                                ? "Ticket 1: Primary Buyer or First Guest *"
-                                                : `Ticket ${ticketNum}: Guest ${ticketNum} *`}
-                                            </span>
-                                          </span>
-                                          <div className="flex items-center gap-1.5 shrink-0">
-                                            {isPrimary && (
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  updateAttendee(0, "firstName", formData.firstName);
-                                                  updateAttendee(0, "lastName", formData.lastName);
-                                                }}
-                                                className="text-[9px] font-semibold text-amber-800 underline hover:text-amber-950 cursor-pointer"
-                                              >
-                                                Use Buyer Details
-                                              </button>
-                                            )}
-                                            <Badge
-                                              variant="outline"
-                                              className="text-[9px] border-amber-400 text-amber-900 bg-white/90 py-0"
-                                            >
-                                              {isPrimary ? `Pass 1 of ${day3TicketCount}` : `Pass ${ticketNum} of ${day3TicketCount}`}
-                                            </Badge>
-                                          </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                          <div className="space-y-1">
-                                            <Label
-                                              htmlFor={`attendee-${idx}-first`}
-                                              className="text-[10px] font-semibold text-amber-900"
-                                            >
-                                              First Name *
-                                            </Label>
-                                            <Input
-                                              id={`attendee-${idx}-first`}
-                                              placeholder={
-                                                isPrimary
-                                                  ? formData.firstName || "e.g. Adebayo"
-                                                  : `Guest ${ticketNum} First Name`
-                                              }
-                                              className="bg-white border-amber-300 text-xs h-8"
-                                              value={ticketAttendees[idx]?.firstName || ""}
-                                              onChange={(e) => updateAttendee(idx, "firstName", e.target.value)}
-                                            />
-                                          </div>
-
-                                          <div className="space-y-1">
-                                            <Label
-                                              htmlFor={`attendee-${idx}-last`}
-                                              className="text-[10px] font-semibold text-amber-900"
-                                            >
-                                              Last Name *
-                                            </Label>
-                                            <Input
-                                              id={`attendee-${idx}-last`}
-                                              placeholder={
-                                                isPrimary
-                                                  ? formData.lastName || "e.g. Adeleke"
-                                                  : `Guest ${ticketNum} Last Name`
-                                              }
-                                              className="bg-white border-amber-300 text-xs h-8"
-                                              value={ticketAttendees[idx]?.lastName || ""}
-                                              onChange={(e) => updateAttendee(idx, "lastName", e.target.value)}
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-
-                            {day3TicketCount > 1 && (
-                              <div className="rounded-lg bg-amber-500/10 border border-amber-400/40 p-2.5 text-[11px] text-amber-950 space-y-1">
-                                <p className="font-bold flex items-center gap-1.5 text-amber-950">
-                                  <ShieldCheck className="size-3.5 text-amber-700" />
-                                  Anti-Leakage &amp; Ticket Forwarding Guard:
-                                </p>
-                                <p className="leading-snug text-amber-900">
-                                  You will receive <strong>{day3TicketCount} unique HMAC-256 sealed digital passes</strong>. Pass 1 is issued in your name. You can forward passes 2 to {day3TicketCount} to your designated invitees via 1-click WhatsApp or guest link.
-                                </p>
-                                <p className="leading-snug text-amber-800 font-semibold">
-                                  🛡️ Recipient Device Lock: When a guest claims their ticket, it binds to their phone and cannot be forwarded, preventing fund leakage and unauthorized resale.
-                                </p>
-                              </div>
-                            )}
                           </div>
                         )}
 
@@ -1584,30 +1037,19 @@ function RegisterContent() {
                 <div className="pt-4 border-t border-line">
                   <Button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || (day3 && !invitationCode.trim())}
                     className={`w-full font-semibold py-3.5 sm:py-5 px-3 text-sm sm:text-base cursor-pointer shadow-md transition-all whitespace-normal h-auto leading-tight text-center ${
-                      day3 && (!hasInviteCode || !invitationCode.trim())
+                      day3
                         ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:opacity-95"
                         : "bg-forest text-ivory hover:bg-forest-interactive"
                     }`}
                   >
                     {loading ? (
                       "Processing Pass Issuance..."
-                    ) : day3 && day3PaymentMethod === "bank_transfer" ? (
+                    ) : day3 ? (
                       <span className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                        <ShieldCheck className="size-4 sm:size-5 shrink-0 text-amber-200" />
-                        <span>Register &amp; Submit Bank Transfer</span>
-                        <span className="text-xs sm:text-sm opacity-95">
-                          (Ref: {wemaRef}) →
-                        </span>
-                      </span>
-                    ) : day3 && (!hasInviteCode || !invitationCode.trim()) ? (
-                      <span className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                        <CreditCard className="size-4 sm:size-5 shrink-0" />
-                        <span>Proceed to Paystack Payment</span>
-                        <span className="text-xs sm:text-sm opacity-95">
-                          ({day3TicketCount === 1 ? activeDay3UnitPriceDisplay : `${day3TicketCount} Tickets · ₦${(day3TicketCount * activeDay3UnitPriceNgn).toLocaleString()}`}) →
-                        </span>
+                        <KeyRound className="size-4 sm:size-5 shrink-0" />
+                        <span>Redeem Special VIP Invitation Code</span>
                       </span>
                     ) : (
                       "Complete Registration & Get ID Pass →"

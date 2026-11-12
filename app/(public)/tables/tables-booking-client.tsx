@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -42,11 +42,8 @@ import {
 } from "@/lib/config/tables-config";
 import { CLUB_BANK_DETAILS, generateWemaTransferReference } from "@/lib/config/checkout-config";
 import {
-  initializeTablePayment,
   submitTableRegistration,
   recordAffiliateClick,
-  getTestingFeeModeAction,
-  toggleTestingFeeModeAction,
   type TableBookingResult,
 } from "@/app/(public)/register/actions";
 import { persistRegisteredPass, forceDownloadOfflinePassCard, type StoredPass } from "@/lib/storage/pass-storage";
@@ -79,42 +76,16 @@ export function TablesBookingClient() {
   // 10 Seats: Seat 1 is Host, Seats 2 to 10 are Guests
   const [attendeeNames, setAttendeeNames] = useState<string[]>(Array(10).fill(""));
 
-  // Payment channel: 'bank_transfer' (Wema Bank — default until live gateway keys are supplied) or 'gateway' (online card)
-  const [paymentChannel, setPaymentChannel] = useState<"bank_transfer" | "gateway">("bank_transfer");
-  const [wemaRef, setWemaRef] = useState<string>(() => generateWemaTransferReference());
+  // Payment channel: 'bank_transfer' (Wema Bank is the active channel while
+  // online card processing is being activated)
+  const [paymentChannel] = useState<"bank_transfer">("bank_transfer");
+  const [wemaRef] = useState<string>(() => generateWemaTransferReference());
 
   // UI state
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [bookingResult, setBookingResult] = useState<TableBookingResult | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [useTestingFee, setUseTestingFee] = useState<boolean>(true);
-  const [testingAutoRemovedNotice, setTestingAutoRemovedNotice] = useState<boolean>(false);
-
-  // Sync testing fee mode from server on mount
-  useEffect(() => {
-    getTestingFeeModeAction()
-      .then((status) => {
-        setUseTestingFee(status.enabled);
-        if (status.autoRemovedAfterPayment) {
-          setTestingAutoRemovedNotice(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleToggleTestingFee = async (nextVal: boolean) => {
-    setUseTestingFee(nextVal);
-    if (nextVal) setTestingAutoRemovedNotice(false);
-    try {
-      await toggleTestingFeeModeAction(
-        nextVal,
-        nextVal ? "manual_enable_from_tables_ui" : "manual_disable_from_tables_ui",
-      );
-    } catch {
-      // Non-blocking
-    }
-  };
 
   // Auto-sync Seat 1 name with Host name
   useEffect(() => {
@@ -126,8 +97,7 @@ export function TablesBookingClient() {
     });
   }, [firstName, lastName]);
 
-  // Read URL search params for return from online payment or affiliate ref
-  const returnHandled = useRef(false);
+  // Read URL search params (package prefill + affiliate ref)
   useEffect(() => {
     const refParam = searchParams.get("ref") || searchParams.get("aff");
     if (refParam) {
@@ -155,6 +125,14 @@ export function TablesBookingClient() {
     const pkgParam = searchParams.get("pkg");
     if (pkgParam && DAY3_TABLE_PACKAGES[pkgParam]) {
       setSelectedPackageId(pkgParam);
+    }
+
+    // Deep link support: /tables#kings_table (used by the header navigation)
+    // selects that package and scrolls its card into view.
+    const hashParam =
+      typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
+    if (hashParam && DAY3_TABLE_PACKAGES[hashParam]) {
+      setSelectedPackageId(hashParam);
     }
 
     const serialParam = searchParams.get("serial");
@@ -194,67 +172,9 @@ export function TablesBookingClient() {
       }
     }
 
-    const paymentRefParam = searchParams.get("payment_ref") || searchParams.get("reference");
-    if (paymentRefParam && !returnHandled.current) {
-      returnHandled.current = true;
-      const effectivePkgId = pkgParam || selectedPackageId;
-      const effectiveSerial = serialParam || selectedSerial;
-      const effectiveEmail = emParam || email;
-      const effectiveFn = fnParam || firstName;
-      const effectiveLn = lnParam || lastName;
-      const effectivePh = phParam || phone;
-
-      if (effectiveEmail) {
-        setLoading(true);
-        // Build attendees payload for the effective package capacity
-        const effectivePkg = getTablePackage(effectivePkgId) || selectedPkg;
-        const capacity = effectivePkg.guestCapacity || 10;
-        const attendeesPayload =
-          capacity === 1
-            ? [{ seat: 1, name: `${effectiveFn} ${effectiveLn}`.trim() }]
-            : attendeeNames.slice(0, capacity).map((name, idx) => ({
-                seat: idx + 1,
-                name:
-                  name.trim() ||
-                  (idx === 0
-                    ? `${effectiveFn} ${effectiveLn}`.trim()
-                    : `${effectiveFn} ${effectiveLn} (Guest ${idx + 1})`),
-              }));
-
-        submitTableRegistration({
-          packageId: effectivePkgId,
-          tableSerial: effectiveSerial,
-          buyerFirstName: effectiveFn,
-          buyerLastName: effectiveLn,
-          buyerEmail: effectiveEmail,
-          buyerPhone: effectivePh,
-          paymentMethod: "gateway",
-          paymentRef: paymentRefParam,
-          affiliateCode: refParam || affiliateRef || undefined,
-          useTestingFee: searchParams.get("tf") !== "0",
-          attendees: attendeesPayload,
-        })
-          .then((res) => {
-            setLoading(false);
-            if (res.success) {
-              setBookingResult(res);
-              if (res.testingFeeAutoRemoved) {
-                setUseTestingFee(false);
-                setTestingAutoRemovedNotice(true);
-              }
-              if (res.passes && res.passes.length > 0) {
-                persistRegisteredPass(res.passes);
-              }
-            } else {
-              setErrorMessage(res.error || "Failed to confirm table reservation.");
-            }
-          })
-          .catch((err) => {
-            setLoading(false);
-            setErrorMessage((err as Error)?.message || "Failed to confirm payment.");
-          });
-      }
-    }
+    // NOTE: the online gateway return path was removed with the pilot testing
+    // fee mode. Table reservations are settled by direct bank transfer, so
+    // there is no payment provider reference to reconcile on return.
   }, [searchParams]);
 
   // Handle form submission
@@ -281,56 +201,29 @@ export function TablesBookingClient() {
       name: name.trim() || (idx === 0 ? `${firstName} ${lastName}`.trim() : `${firstName} ${lastName} (Guest ${idx + 1})`),
     }));
 
-    if (paymentChannel === "gateway") {
-      setLoading(true);
-      const init = await initializeTablePayment({
-        packageId: selectedPackageId,
-        tableSerial: selectedSerial,
-        buyerFirstName: firstName,
-        buyerLastName: lastName,
-        buyerEmail: email,
-        buyerPhone: phone,
-        affiliateCode: affiliateRef.trim() || undefined,
-        useTestingFee,
-        attendees: attendeesPayload,
-      });
+    // Wema Bank Transfer (Primary Payment Channel)
+    setLoading(true);
+    const res = await submitTableRegistration({
+      packageId: selectedPackageId,
+      tableSerial: selectedSerial,
+      buyerFirstName: firstName,
+      buyerLastName: lastName,
+      buyerEmail: email,
+      buyerPhone: phone,
+      paymentMethod: "bank_transfer",
+      bankTransferRef: wemaRef,
+      affiliateCode: affiliateRef.trim() || undefined,
+      attendees: attendeesPayload,
+    });
 
-      if (!init.success) {
-        setLoading(false);
-        setErrorMessage(init.error || "Failed to launch online payment gateway.");
-        return;
-      }
-
-      if (init.authorization_url) {
-        window.location.href = init.authorization_url;
-        return;
+    setLoading(false);
+    if (res.success) {
+      setBookingResult(res);
+      if (res.passes && res.passes.length > 0) {
+        persistRegisteredPass(res.passes);
       }
     } else {
-      // Wema Bank Transfer
-      setLoading(true);
-      const res = await submitTableRegistration({
-        packageId: selectedPackageId,
-        tableSerial: selectedSerial,
-        buyerFirstName: firstName,
-        buyerLastName: lastName,
-        buyerEmail: email,
-        buyerPhone: phone,
-        paymentMethod: "bank_transfer",
-        bankTransferRef: wemaRef,
-        affiliateCode: affiliateRef.trim() || undefined,
-        useTestingFee,
-        attendees: attendeesPayload,
-      });
-
-      setLoading(false);
-      if (res.success) {
-        setBookingResult(res);
-        if (res.passes && res.passes.length > 0) {
-          persistRegisteredPass(res.passes);
-        }
-      } else {
-        setErrorMessage(res.error || "Failed to register table booking.");
-      }
+      setErrorMessage(res.error || "Failed to register table booking.");
     }
   };
 
@@ -361,11 +254,12 @@ export function TablesBookingClient() {
               <span>Day 3 Grand Finale · Private Table Enclosure</span>
             </div>
             <h1 className="font-display text-2xl sm:text-4xl lg:text-5xl font-black text-ivory tracking-tight">
-              Table Enclosure Confirmed!
+              {isProvisional ? "Table Enclosure Reserved!" : "Table Enclosure Confirmed!"}
             </h1>
             <p className="max-w-2xl mx-auto text-sm sm:text-base text-ivory/85">
               Welcome to the <strong>{bookingResult.packageName}</strong> ({bookingResult.tableSerial}). 
               All <strong>{bookingResult.passes.length} distinct VIP ID access card{bookingResult.passes.length > 1 ? "s" : ""}</strong> have been generated with cryptographic HMAC-256 signatures.
+              {isProvisional && " They remain provisional until the Secretariat Bursary reconciles your transfer."}
             </p>
           </div>
 
@@ -386,7 +280,7 @@ export function TablesBookingClient() {
                   </h3>
                   <p className="text-xs sm:text-sm text-amber-200/90 leading-relaxed">
                     Transfer reference: <strong className="font-mono text-amber-300">{bookingResult.bankTransferRef}</strong>. 
-                    Please send your transfer receipt (₦{(bookingResult.amountNgn ?? selectedPkg.testingPriceNgn).toLocaleString()}) to the Secretariat Bursary via WhatsApp to activate {bookingResult.passes.length === 1 ? "your turnstile credential" : `all ${bookingResult.passes.length} turnstile credentials`} before the gates open on 20 Dec 2026.
+                    Please send your transfer receipt (₦{(bookingResult.amountNgn ?? selectedPkg.officialPriceNgn).toLocaleString()}) to the Secretariat Bursary via WhatsApp to activate {bookingResult.passes.length === 1 ? "your turnstile credential" : `all ${bookingResult.passes.length} turnstile credentials`} before the gates open on 20 Dec 2026.
                   </p>
                   {bookingResult.secretariatNotification?.whatsappUrl && (
                     <div className="pt-2">
@@ -441,8 +335,15 @@ export function TablesBookingClient() {
                 <Users className="size-5 text-gold" />
                 <span>{bookingResult.passes.length} Hospitality Access Pass{bookingResult.passes.length === 1 ? "" : "es"} ({bookingResult.tableSerial})</span>
               </h2>
-              <Badge className="bg-gold text-black font-bold text-xs uppercase px-2.5 py-0.5">
-                All {bookingResult.passes.length} Pass{bookingResult.passes.length === 1 ? "" : "es"} Active
+              <Badge
+                className={
+                  isProvisional
+                    ? "bg-amber-500 text-black font-bold text-xs uppercase px-2.5 py-0.5"
+                    : "bg-gold text-black font-bold text-xs uppercase px-2.5 py-0.5"
+                }
+              >
+                All {bookingResult.passes.length} Pass{bookingResult.passes.length === 1 ? "" : "es"}{" "}
+                {isProvisional ? "Provisional" : "Active"}
               </Badge>
             </div>
 
@@ -569,10 +470,6 @@ export function TablesBookingClient() {
   // ───────────────────────────────────────────────────────────────────────────
   // VIEW: Interactive Table Selection & Booking Form
   // ───────────────────────────────────────────────────────────────────────────
-  const activePayableDisplay = useTestingFee
-    ? selectedPkg.testingPriceDisplay
-    : selectedPkg.officialPriceDisplay;
-
   return (
     <div className="w-full bg-black text-ivory py-10 sm:py-16 px-3 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
@@ -591,51 +488,9 @@ export function TablesBookingClient() {
             Experience an exceptional fusion of heritage, royalty, sporting excellence and luxury hospitality at the Abeokuta Polo Festival 2026 – <strong>THE BLUEPRINT</strong>. Designed for distinguished personalities, corporate organisations, families and individual guests, our five carefully curated hospitality categories offer different levels of comfort, exclusivity and access to the festival’s grand finale.
           </p>
 
-          {/* Auto-Removal Notice Banner (shown after a ₦100 test payment succeeds) */}
-          {testingAutoRemovedNotice && !useTestingFee && (
-            <div className="rounded-xl border-2 border-emerald-500 bg-emerald-950/90 p-3.5 text-center shadow-lg max-w-2xl mx-auto">
-              <p className="text-xs sm:text-sm font-bold text-emerald-300">
-                ✅ ₦100.00 Test Payment Verified! The Pilot Testing Fee has been automatically removed — Live Official Brochure Pricing is now active.
-              </p>
-            </div>
-          )}
-
-          {/* Smart ₦100 Pilot Testing Fee Toggle Control */}
-          <div className="rounded-xl border border-gold-deep/80 bg-[#0d0d0d] p-4 text-center shadow-lg max-w-2xl mx-auto space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/20 pb-2.5">
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-black text-gold uppercase tracking-wider">
-                <Sparkles className="size-4 text-gold shrink-0 animate-pulse" />
-                <span>
-                  {useTestingFee
-                    ? "₦100.00 Pilot Testing Mode Active"
-                    : "Official Brochure Pricing Mode Active"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleToggleTestingFee(!useTestingFee)}
-                className={`rounded-full px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider transition-all cursor-pointer border ${
-                  useTestingFee
-                    ? "bg-emerald-500 text-black border-emerald-400 hover:bg-emerald-400"
-                    : "bg-gold-deep text-black border-gold hover:bg-gold-light"
-                }`}
-              >
-                {useTestingFee
-                  ? "Switch to Official Prices (₦5M – ₦50k)"
-                  : "Enable ₦100.00 Testing Fee"}
-              </button>
-            </div>
-            <p className="text-[11px] sm:text-xs text-ivory/90 leading-snug text-left">
-              {useTestingFee ? (
-                <>
-                  <strong>Pilot Testing Provision:</strong> Official brochure prices (<strong>₦5,000,000</strong> Kings Table, <strong>₦3,000,000</strong> Royal Table, <strong>₦2,000,000</strong> Queens Table, <strong>₦500,000</strong> Premium Table, <strong>₦50,000</strong> Regular Section) are preserved on your credentials. Checkout is currently set to <strong>₦100.00</strong> for live verification and will <strong>automatically remove itself and revert to the official brochure amounts</strong> immediately after a successful ₦100 payment.
-                </>
-              ) : (
-                <>
-                  <strong>Live Official Brochure Pricing:</strong> Checkout charges the official brochure package price (<strong>{selectedPkg.officialPriceDisplay}</strong> for {selectedPkg.name}). You can toggle the ₦100.00 testing fee above at any time if needed.
-                </>
-              )}
-            </p>
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold-deep/60 bg-gold-deep/15 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold-light">
+            <Sparkles className="size-3.5 text-gold-deep" />
+            <span>Official Brochure Packages · Direct Bank Wire Reservation</span>
           </div>
         </div>
 
@@ -661,6 +516,7 @@ export function TablesBookingClient() {
               return (
                 <div
                   key={pkg.id}
+                  id={pkg.id}
                   onClick={() => setSelectedPackageId(pkg.id)}
                   className={`rounded-2xl border-2 p-5 cursor-pointer transition-all flex flex-col justify-between relative ${
                     isSelected
@@ -700,11 +556,6 @@ export function TablesBookingClient() {
                           <span className="text-[10px] font-normal text-ivory/80 block">PER PERSON</span>
                         )}
                       </p>
-                      {useTestingFee && (
-                        <div className="inline-block bg-emerald-950/80 border border-emerald-500/50 rounded px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
-                          Active Test Fee: {pkg.testingPriceDisplay}
-                        </div>
-                      )}
                     </div>
 
                     <ul className="space-y-1.5 pt-2 text-[11px] text-ivory/85">
@@ -927,97 +778,82 @@ export function TablesBookingClient() {
           <div className="space-y-4 pt-2">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/30 pb-1.5">
               <h3 className="text-xs uppercase font-bold tracking-widest text-gold">
-                Step 4: Select Payment Channel ({useTestingFee ? `Pilot Testing Fee: ${selectedPkg.testingPriceDisplay}` : `Official Price: ${selectedPkg.officialPriceDisplay}`})
+                Step 4: Select Payment Channel (Official Price: {selectedPkg.officialPriceDisplay})
               </h3>
-              <button
-                type="button"
-                onClick={() => handleToggleTestingFee(!useTestingFee)}
-                className="text-[11px] font-bold text-emerald-400 underline hover:text-gold cursor-pointer"
-              >
-                {useTestingFee
-                  ? `Switch to Official Price (${selectedPkg.officialPriceDisplay})`
-                  : "Use ₦100.00 Pilot Testing Fee"}
-              </button>
+              <Badge className="bg-gold/20 text-gold border-gold/40 text-[10px] uppercase font-bold">
+                Direct Bank Wire Active
+              </Badge>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              {/* Option 1 (Default): WEMA Bank Direct Wire */}
+              {/* Option 1 (Default & Active): WEMA Bank Direct Wire */}
               <button
                 type="button"
-                onClick={() => setPaymentChannel("bank_transfer")}
-                className={`rounded-xl p-4 text-left border-2 transition-all cursor-pointer ${
-                  paymentChannel === "bank_transfer"
-                    ? "border-gold bg-gold/15 shadow-md"
-                    : "border-line/40 bg-neutral-950 hover:border-gold/40"
-                }`}
+                onClick={() => {}}
+                className="rounded-xl p-4 text-left border-2 border-gold bg-gold/15 shadow-md transition-all cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-sm text-ivory flex items-center gap-2">
                     <Building className="size-4 text-gold" />
-                    <span>1. Direct WEMA Bank Transfer (Default)</span>
+                    <span>1. Direct WEMA Bank Transfer (Active)</span>
                   </span>
-                  {paymentChannel === "bank_transfer" && <CheckCircle2 className="size-4 text-gold" />}
+                  <CheckCircle2 className="size-4 text-gold" />
                 </div>
-                <p className="text-xs text-ivory/70 mt-1.5">
+                <p className="text-xs text-ivory/70 mt-1.5 leading-relaxed">
                   Direct payment to Abeokuta Polo Club ({CLUB_BANK_DETAILS.accountNumber}). Issues Provisional Claim Slips with turnstiles activated upon Bursary verification.
                 </p>
                 <span className="inline-block mt-2 font-mono text-xs font-bold text-gold">
-                  Transfer Amount: {activePayableDisplay} {useTestingFee ? "(Pilot Testing — Auto-removes after verification)" : "(Official Brochure Rate)"}
+                  Transfer Amount: {selectedPkg.officialPriceDisplay} (Official Brochure Rate)
                 </span>
               </button>
 
-              {/* Option 2: Online Gateway (Demo / Testing Mode) */}
-              <button
-                type="button"
-                onClick={() => setPaymentChannel("gateway")}
-                className={`rounded-xl p-4 text-left border-2 transition-all cursor-pointer ${
-                  paymentChannel === "gateway"
-                    ? "border-gold bg-gold/15 shadow-md"
-                    : "border-line/40 bg-neutral-950 hover:border-gold/40"
-                }`}
+              {/* Option 2: Online Card Payment (Coming Soon) */}
+              <div
+                className="rounded-xl p-4 text-left border-2 border-line/40 bg-neutral-950/60 opacity-65 cursor-not-allowed relative"
+                aria-disabled="true"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-ivory flex items-center gap-2">
-                    <CreditCard className="size-4 text-gold" />
-                    <span>2. Online Payment Gateway (Demo Testing)</span>
+                  <span className="font-bold text-sm text-ivory/70 flex items-center gap-2">
+                    <CreditCard className="size-4 text-ivory/50" />
+                    <span>2. Online Card Payment</span>
                   </span>
-                  {paymentChannel === "gateway" && <CheckCircle2 className="size-4 text-gold" />}
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-300 border border-amber-500/40">
+                    Coming Soon
+                  </span>
                 </div>
-                <p className="text-xs text-ivory/70 mt-1.5">
-                  Debit / Credit Card, USSD (Demo Testing Mode until live gateway keys are supplied). Instant simulation &amp; email issuance of {selectedPkg.guestCapacity === 1 ? "your turnstile pass" : `all ${selectedPkg.guestCapacity} turnstile passes`}.
+                <p className="text-xs text-ivory/60 mt-1.5 leading-relaxed">
+                  Online card payments are currently being activated and will be available shortly. Please use Direct Bank Transfer to complete your payment.
                 </p>
-                <span className="inline-block mt-2 font-mono text-xs font-bold text-gold">
-                  Charged: {activePayableDisplay} {useTestingFee ? "(Pilot Testing — Auto-removes after payment)" : "(Official Brochure Rate)"}
+                <span className="inline-block mt-2 font-mono text-xs font-semibold text-ivory/50">
+                  Official Rate: {selectedPkg.officialPriceDisplay}
                 </span>
-              </button>
+              </div>
             </div>
 
             {/* Wema Bank Details Panel */}
-            {paymentChannel === "bank_transfer" && (
-              <div className="rounded-xl border border-gold/50 bg-neutral-900 p-4 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-gold uppercase text-[10px] tracking-wider">Abeokuta Polo Club Official Account</span>
-                  <span className="font-mono font-bold text-amber-300">Reference: {wemaRef}</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 font-mono text-xs">
-                  <div>
-                    <span className="text-[10px] text-ivory/60 block">Bank Name</span>
-                    <strong className="text-ivory">{CLUB_BANK_DETAILS.bankName}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-ivory/60 block">Account Number</span>
-                    <strong className="text-gold text-sm">{CLUB_BANK_DETAILS.accountNumber}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-ivory/60 block">Account Name</span>
-                    <strong className="text-ivory">{CLUB_BANK_DETAILS.accountName}</strong>
-                  </div>
-                </div>
-                <p className="text-[11px] text-ivory/80 pt-1 leading-snug">
-                  * Please use transfer reference <strong className="text-gold font-mono">{wemaRef}</strong> in your payment narration.
-                </p>
+            <div className="rounded-xl border border-gold/50 bg-neutral-900 p-4 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-gold uppercase text-[10px] tracking-wider">Abeokuta Polo Club Official Account</span>
+                <span className="font-mono font-bold text-amber-300">Reference: {wemaRef}</span>
               </div>
-            )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 font-mono text-xs">
+                <div>
+                  <span className="text-[10px] text-ivory/60 block">Bank Name</span>
+                  <strong className="text-ivory">{CLUB_BANK_DETAILS.bankName}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-ivory/60 block">Account Number</span>
+                  <strong className="text-gold text-sm">{CLUB_BANK_DETAILS.accountNumber}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-ivory/60 block">Account Name</span>
+                  <strong className="text-ivory">{CLUB_BANK_DETAILS.accountName}</strong>
+                </div>
+              </div>
+              <p className="text-[11px] text-ivory/80 pt-1 leading-snug">
+                * Please use transfer reference <strong className="text-gold font-mono">{wemaRef}</strong> in your payment narration.
+              </p>
+            </div>
           </div>
 
           {/* Booking Summary Box */}
@@ -1037,14 +873,9 @@ export function TablesBookingClient() {
 
             <div className="text-right sm:text-right space-y-0.5">
               <span className="text-[10px] uppercase font-bold text-ivory/60 block">
-                {useTestingFee ? "Amount Payable (Pilot Testing)" : "Amount Payable (Official Brochure Price)"}
+                Amount Payable (Official Brochure Price)
               </span>
-              <span className="font-display text-2xl font-black text-gold">{activePayableDisplay}</span>
-              {useTestingFee && (
-                <span className="text-[10px] text-ivory/60 block line-through">
-                  Official Brochure Price: {selectedPkg.officialPriceDisplay}
-                </span>
-              )}
+              <span className="font-display text-2xl font-black text-gold">{selectedPkg.officialPriceDisplay}</span>
             </div>
           </div>
 
@@ -1057,17 +888,12 @@ export function TablesBookingClient() {
             >
               {loading ? (
                 <span>Processing Hospitality Reservation...</span>
-              ) : paymentChannel === "gateway" ? (
-                <>
-                  <CreditCard className="size-5" />
-                  <span>Proceed to Online Checkout ({activePayableDisplay}) →</span>
-                </>
               ) : (
                 <>
                   <Building className="size-5" />
                   <span>
                     Confirm Bank Transfer &amp; Issue{" "}
-                    {selectedPkg.guestCapacity === 1 ? "Pass" : `${selectedPkg.guestCapacity} Passes`} ({activePayableDisplay}) →
+                    {selectedPkg.guestCapacity === 1 ? "Pass" : `${selectedPkg.guestCapacity} Passes`} ({selectedPkg.officialPriceDisplay}) →
                   </span>
                 </>
               )}

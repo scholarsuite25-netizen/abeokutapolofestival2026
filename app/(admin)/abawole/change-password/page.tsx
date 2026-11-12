@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { NotConfigured } from "@/components/shared/guards";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { ChangePasswordForm } from "@/components/admin/change-password-form";
+import { connection } from "next/server";
 
 export const metadata = {
   title: "Change Account Password | 2026 Abeokuta Polo Festival",
@@ -24,6 +25,11 @@ async function ChangePasswordContent() {
   if (!isSupabaseConfigured()) return <NotConfigured />;
 
   // Requires valid authenticated session (Super Admin, President, General Secretary, Gate Marshal, etc.)
+  // Prerender fix: defer the session read to request time. The auth-js
+  // session load calls Date.now() for token expiry, which Next rejects as an
+  // unstable value while prerendering.
+  await connection();
+
   const session = await requireUser("/abawole/change-password");
 
   const primaryRole = session.actor.roles[0] ?? "staff";

@@ -9,8 +9,6 @@ import { writeAudit } from "@/lib/supabase/audit";
 import {
   DAY3_INVITATION_MAX_TICKETS,
   DAY3_VVIP_PRICE_NGN,
-  DAY3_VVIP_OFFICIAL_PRICE_NGN,
-  DAY3_VVIP_TESTING_PRICE_NGN,
   DAY3_REFERENCE_PREFIX,
   CLUB_BANK_DETAILS,
   generateWemaTransferReference,
@@ -34,23 +32,6 @@ import type { StoredPass } from "@/lib/storage/pass-storage";
 import { validateWhatsAppPhone } from "@/lib/utils/phone";
 import { notifySecretariatOfBankPayment } from "@/lib/notifications/secretariat";
 import { registerUnverifiedPasses } from "@/lib/storage/unverified-passes";
-import {
-  getTestingFeeStatus,
-  setTestingFeeMode,
-  autoDisableTestingFeeAfterPayment,
-  type TestingFeeStatus,
-} from "@/lib/config/testing-fee-mode";
-
-export async function getTestingFeeModeAction(): Promise<TestingFeeStatus> {
-  return getTestingFeeStatus();
-}
-
-export async function toggleTestingFeeModeAction(
-  enabled: boolean,
-  reason?: string,
-): Promise<TestingFeeStatus> {
-  return setTestingFeeMode(enabled, { reason });
-}
 
 const registrationSchema = z.object({
   firstName: z.string().trim().min(2, "First name must be at least 2 characters."),
@@ -85,7 +66,6 @@ const registrationSchema = z.object({
   sendWhatsappReminders: z.boolean().default(true),
   reminderCadence: z.enum(["weekly_and_daily", "weekly_only", "event_week_only"]).default("weekly_and_daily"),
   affiliateCode: z.string().trim().optional(),
-  useTestingFee: z.boolean().optional(),
   attendees: z
     .array(
       z.object({
@@ -122,7 +102,6 @@ export interface RegisterResult {
   day3Status?: "vvip_admitted" | "payment_verified" | "ticket_required" | "ticket_verified" | "not_selected" | "pending_verification" | "pending_bank_verification";
   ticketRefDay2?: string;
   ticketRefDay3?: string;
-  testingFeeAutoRemoved?: boolean;
 }
 
 /** Escapes user-supplied text before it is placed in the confirmation email HTML. */
@@ -179,11 +158,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     email,
     phone: rawPhone,
     day3InvitationCode,
-    day3PaymentRef,
     affiliationType,
     hostName,
     organization,
-    affiliateCode,
   } = parsed.data;
   const phoneValidation = validateWhatsAppPhone(rawPhone);
   const phone = phoneValidation.isValid ? phoneValidation.formatted : rawPhone;
@@ -199,63 +176,25 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     day1 = true;
   }
 
-  // Day 3 VVIP admission: a Special Invitation Code from the server allow-list, a
-  // Paystack payment verified server-side and claimed exactly once, OR a Direct Bank
-  // Wire Transfer to the official Abeokuta Polo Club Wema Bank account (pending verification).
-  let verifiedPaymentRef: string | null = null;
+  // Day 3 Grand Finale admission is sold with VIP Table packages (see
+  // submitTableRegistration), so this registration path issues a Day-3 pass
+  // ONLY for a complimentary Special VIP Invitation Code. Paid Day-3
+  // admissions are refused here, so a hand-crafted request can never buy a
+  // standalone Day-3 ticket.
+  const verifiedPaymentRef: string | null = null;
+  const bankTransferRef: string | null = null;
+  const isBankTransfer = false;
   let usedInvitationCode: string | null = null;
-  let isBankTransfer = false;
-  let bankTransferRef: string | null = null;
-  let testingFeeAutoRemoved = false;
-
-  const testingStatus = await getTestingFeeStatus();
-  const isTestingModeActive =
-    typeof parsed.data.useTestingFee === "boolean"
-      ? parsed.data.useTestingFee
-      : testingStatus.enabled;
-  const activeUnitPriceNgn = isTestingModeActive
-    ? DAY3_VVIP_TESTING_PRICE_NGN
-    : DAY3_VVIP_OFFICIAL_PRICE_NGN;
 
   if (day3) {
     if (isValidSpecialInvitation(day3InvitationCode)) {
       usedInvitationCode = day3InvitationCode!.trim();
       day3TicketCount = Math.min(day3TicketCount, DAY3_INVITATION_MAX_TICKETS);
-    } else if (
-      parsed.data.paymentMethod === "bank_transfer" ||
-      (parsed.data.bankTransferRef && parsed.data.bankTransferRef.toUpperCase().startsWith("ABK-WEMA-"))
-    ) {
-      isBankTransfer = true;
-      bankTransferRef = (parsed.data.bankTransferRef || generateWemaTransferReference()).trim().toUpperCase();
-    } else if (day3PaymentRef) {
-      const payment = await verifyDay3Payment(day3PaymentRef, { expectedEmail: email });
-      if (!payment.ok) {
-        return { success: false, error: payment.message };
-      }
-
-      const claim = await claimPaymentReference({
-        reference: payment.reference,
-        email,
-        amountNgn: payment.amountNgn,
-        quantity: payment.quantity,
-      });
-      if (!claim.ok) {
-        return { success: false, error: claim.message };
-      }
-
-      verifiedPaymentRef = payment.reference;
-      // The amount Paystack confirmed decides how many passes were bought.
-      day3TicketCount = payment.quantity;
-
-      // Auto-remove the ₦100 pilot testing fee once a ₦100 test payment succeeds
-      testingFeeAutoRemoved = await autoDisableTestingFeeAfterPayment(
-        payment.reference,
-        payment.amountNgn,
-      );
     } else {
       return {
         success: false,
-        error: "Day 3 requires Paystack VVIP payment or an authorized Special Invitation Code (or Abeokuta Polo Club Bank Transfer).",
+        error:
+          "Day 3 Grand Finale admission is issued with a VIP Table package (or a complimentary Special VIP Invitation Code). Please complete your table reservation on the VIP Tables page (/tables).",
       };
     }
   }
@@ -517,47 +456,9 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
           );
         }
 
-        // Record 10% Affiliate Commission on confirmed Day 3 VVIP tickets
-        if (affiliateCode && day3) {
-          const count = day3TicketCount || 1;
-          const officialVal = count * DAY3_VVIP_OFFICIAL_PRICE_NGN;
-          const commissionVal = officialVal * AFFILIATE_COMMISSION_RATE; // ₦5,000 per ticket
-          const saleAmount = count * activeUnitPriceNgn;
-          try {
-            await adaptiveInsert(supabase, "affiliate_referrals", {
-              affiliate_code: affiliateCode.trim().toUpperCase(),
-              item_type: "ticket",
-              category: `Day 3 Individual VVIP (${count} ticket${count > 1 ? "s" : ""})`,
-              order_ref: verifiedPaymentRef || bankTransferRef || usedInvitationCode || `REG-${Date.now()}`,
-              buyer_name: holderName,
-              sale_amount_ngn: saleAmount,
-              official_value_ngn: officialVal,
-              commission_rate: AFFILIATE_COMMISSION_RATE,
-              commission_amount_ngn: commissionVal,
-              status: isBankTransfer ? "pending_verification" : "confirmed",
-            });
-          } catch {
-            // Non-blocking
-          }
-        }
-
-        if (isBankTransfer && bankTransferRef) {
-          const totalNgn = (day3TicketCount || 1) * activeUnitPriceNgn;
-          try {
-            await supabase.from("offline_commitments").insert({
-              edition_id: edition?.id ?? null,
-              sponsor_name: holderName,
-              tier: `Day 3 VVIP Ticket (${day3TicketCount} Pass${day3TicketCount > 1 ? "es" : ""})`,
-              proposed_amount: totalNgn,
-              confirmed_amount: 0,
-              status: "pledged",
-              channel: "Bank Wire Transfer (WEMA BANK 0126769779)",
-              reference_code: bankTransferRef,
-            });
-          } catch {
-            // Ignore non-blocking offline ledger insert error
-          }
-        }
+        // NOTE: Day 3 affiliate commission is recorded by the table booking
+        // path (submitTableRegistration). This path only issues complimentary
+        // invitation passes, so there is no sale to commission here.
 
         await writeAudit({
           action: "registration.issue_passes",
@@ -585,24 +486,12 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
   }
 
   // Automated Secretariat Notification & In-Memory Gate Registration for Bank Transfers
-  let secretariatNotification: { message: string; verificationLink: string; whatsappUrl: string } | undefined;
-  if (isBankTransfer && bankTransferRef) {
-    const totalNgn = (day3TicketCount || 1) * activeUnitPriceNgn;
-    registerUnverifiedPasses(passes.map((p) => p.passCode));
-    try {
-      secretariatNotification = await notifySecretariatOfBankPayment({
-        amountNgn: totalNgn,
-        buyerName: holderName,
-        phone,
-        email,
-        ref: bankTransferRef,
-        ticketCount: day3TicketCount,
-        flow: "vvip_pass",
-      });
-    } catch {
-      // Non-blocking
-    }
-  }
+  // (bank transfers for Day 3 are handled by the VIP Table booking path).
+  const secretariatNotification: {
+    message: string;
+    verificationLink: string;
+    whatsappUrl: string;
+  } | undefined = undefined;
 
   // Send confirmation email
   try {
@@ -705,11 +594,8 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       day1Status: day1 ? "free_admitted" : "not_selected",
       day2Status: day2 ? "free_admitted" : "not_selected",
       day3Status: day3 ? (isBankTransfer ? "pending_verification" : "vvip_admitted") : "not_selected",
-      testingFeeAutoRemoved,
       message: isBankTransfer
         ? "Bank transfer registered! Please submit your payment receipt to the Secretariat via WhatsApp to activate your Day 3 VVIP access credentials."
-        : testingFeeAutoRemoved
-        ? "Registration confirmed! The ₦100 Pilot Testing Fee has now been automatically removed and reverted to Official Brochure Pricing."
         : "Registration confirmed and access card(s) issued successfully!",
     };
   } catch (error) {
@@ -751,7 +637,6 @@ const tableBookingSchema = z.object({
   paymentRef: z.string().trim().optional(),
   bankTransferRef: z.string().trim().optional(),
   affiliateCode: z.string().trim().optional(),
-  useTestingFee: z.boolean().optional(),
   attendees: z
     .array(
       z.object({
@@ -776,7 +661,6 @@ export interface TableBookingResult {
   bankTransferRef?: string;
   officialValueNgn?: number;
   amountNgn?: number;
-  testingFeeAutoRemoved?: boolean;
   passes?: StoredPass[];
   secretariatNotification?: {
     message: string;
@@ -799,7 +683,6 @@ export async function initializeTablePayment(input: {
   buyerEmail: string;
   buyerPhone: string;
   affiliateCode?: string;
-  useTestingFee?: boolean;
   attendees?: Array<{ seat: number; name?: string }>;
 }) {
   try {
@@ -808,10 +691,8 @@ export async function initializeTablePayment(input: {
       return { success: false, error: "Invalid table package selected." };
     }
 
-    const testingStatus = await getTestingFeeStatus();
-    const isTestMode =
-      typeof input.useTestingFee === "boolean" ? input.useTestingFee : testingStatus.enabled;
-    const chargeAmountNgn = isTestMode ? pkg.testingPriceNgn : pkg.officialPriceNgn;
+    // Official brochure pricing is permanent and server-controlled.
+    const chargeAmountNgn = pkg.officialPriceNgn;
     const origin = getSiteOrigin();
     const secret = getEffectivePaystackSecret();
 
@@ -825,7 +706,6 @@ export async function initializeTablePayment(input: {
     callback.searchParams.set("ln", input.buyerLastName);
     callback.searchParams.set("em", input.buyerEmail);
     callback.searchParams.set("ph", input.buyerPhone);
-    callback.searchParams.set("tf", isTestMode ? "1" : "0");
     if (input.affiliateCode) {
       callback.searchParams.set("ref", input.affiliateCode);
     }
@@ -841,9 +721,8 @@ export async function initializeTablePayment(input: {
           error: "Online payment gateway is temporarily unavailable. Please use Direct Bank Transfer.",
         };
       }
-      const simRef = isTestMode
-        ? `${DAY3_REFERENCE_PREFIX}SIM-${pkg.guestCapacity || 10}-${suffix}`
-        : `${DAY3_REFERENCE_PREFIX}SIM-${pkg.guestCapacity || 10}-OFF-${suffix}`;
+      // Official pricing only — the pilot testing fee reference form is retired.
+      const simRef = `${DAY3_REFERENCE_PREFIX}SIM-${pkg.guestCapacity || 10}-OFF-${suffix}`;
       callback.searchParams.set("payment_ref", simRef);
       return {
         success: true,
@@ -872,7 +751,6 @@ export async function initializeTablePayment(input: {
           attendees_count: pkg.guestCapacity || 10,
           buyer_name: `${input.buyerFirstName} ${input.buyerLastName}`,
           affiliate_code: input.affiliateCode || null,
-          testing_fee_mode: isTestMode,
         },
       }),
     });
@@ -929,7 +807,6 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       paymentRef,
       bankTransferRef: inputBankRef,
       affiliateCode,
-      useTestingFee,
       attendees: inputAttendees,
     } = parsed.data;
 
@@ -944,21 +821,17 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
     const buyerFullName = `${buyerFirstName} ${buyerLastName}`.trim();
     const isBankTransfer = paymentMethod === "bank_transfer";
 
-    const testingStatus = await getTestingFeeStatus();
-    const isTestMode =
-      typeof useTestingFee === "boolean" ? useTestingFee : testingStatus.enabled;
-
+    // Official brochure pricing is permanent and server-controlled.
     let verifiedPaymentRef: string | null = null;
     let bankTransferRef: string | null = null;
-    let paidAmountNgn: number = isTestMode ? pkg.testingPriceNgn : pkg.officialPriceNgn;
-    let testingFeeAutoRemoved = false;
+    let paidAmountNgn: number = pkg.officialPriceNgn;
 
     if (isBankTransfer) {
       bankTransferRef = (inputBankRef || generateWemaTransferReference()).trim().toUpperCase();
     } else if (paymentRef) {
       const payment = await verifyDay3Payment(paymentRef, {
         expectedEmail: buyerEmail,
-        expectedMinAmountNgn: isTestMode ? pkg.testingPriceNgn : pkg.officialPriceNgn,
+        expectedMinAmountNgn: pkg.officialPriceNgn,
       });
       if (!payment.ok) {
         return { success: false, error: payment.message };
@@ -975,12 +848,6 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       }
       verifiedPaymentRef = payment.reference;
       paidAmountNgn = payment.amountNgn;
-
-      // Auto-remove the ₦100 pilot testing fee once a ₦100 test payment succeeds
-      testingFeeAutoRemoved = await autoDisableTestingFeeAfterPayment(
-        payment.reference,
-        payment.amountNgn,
-      );
     } else {
       return {
         success: false,
@@ -1182,7 +1049,6 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
             passesIssued: capacity,
             paidAmountNgn,
             officialValueNgn: pkg.officialPriceNgn,
-            testingFeeAutoRemoved,
           },
         });
       } catch (dbErr) {
@@ -1320,13 +1186,10 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       bankTransferRef: bankTransferRef || undefined,
       officialValueNgn: pkg.officialPriceNgn,
       amountNgn: paidAmountNgn,
-      testingFeeAutoRemoved,
       passes,
       secretariatNotification,
       message: isBankTransfer
         ? "Provisional Table Claim Slip issued. Please forward proof of transfer to Secretariat via WhatsApp to confirm turnstile activation."
-        : testingFeeAutoRemoved
-        ? `Table reservation confirmed! All ${capacity} distinct VIP ID access card${capacity > 1 ? "s are" : " is"} ready. The ₦100 testing fee has now been automatically removed and reverted to Official Brochure Pricing.`
         : `Table reservation confirmed! All ${capacity} distinct VIP ID access card${capacity > 1 ? "s are" : " is"} ready to share.`,
     };
   } catch (err) {

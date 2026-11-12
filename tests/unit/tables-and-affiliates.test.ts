@@ -1,4 +1,38 @@
 import { describe, expect, it } from "vitest";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import path from "node:path";
+
+const ROOT = process.cwd();
+
+/** Recursively collects source files under the given directories. */
+function collectSourceFiles(dirs: string[]): string[] {
+  const out: string[] = [];
+  const walk = (dir: string) => {
+    let entries: string[] = [];
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry);
+      let isDir = false;
+      try {
+        isDir = statSync(full).isDirectory();
+      } catch {
+        continue;
+      }
+      if (isDir) {
+        walk(full);
+      } else if (/\.(ts|tsx)$/.test(entry)) {
+        out.push(full);
+      }
+    }
+  };
+  for (const dir of dirs) walk(dir);
+  return out;
+}
+
 import {
   DAY3_TABLE_PACKAGES,
   TABLE_PACKAGE_LIST,
@@ -21,16 +55,7 @@ import {
 } from "@/app/(public)/register/actions";
 import { verifyPassToken } from "@/lib/qr/token";
 import { verifyPassDeviceBinding, isTablePassCode } from "@/lib/security/device-binding";
-import {
-  DAY3_VVIP_OFFICIAL_PRICE_NGN,
-  DAY3_VVIP_TESTING_PRICE_NGN,
-} from "@/lib/config/checkout-config";
-import {
-  getTestingFeeStatus,
-  setTestingFeeMode,
-  autoDisableTestingFeeAfterPayment,
-  resetTestingFeeModeForTests,
-} from "@/lib/config/testing-fee-mode";
+import { DAY3_VVIP_OFFICIAL_PRICE_NGN } from "@/lib/config/checkout-config";
 
 describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
   it("defines all 5 official Day 3 hospitality categories matching the official brochure", () => {
@@ -40,7 +65,6 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
     expect(regular).toBeDefined();
     expect(regular?.name).toBe("The Regular Section");
     expect(regular?.officialPriceNgn).toBe(50_000);
-    expect(regular?.testingPriceNgn).toBe(100);
     expect(regular?.guestCapacity).toBe(1);
     expect(getTablePackage("regular_section")?.id).toBe("individual_vip");
 
@@ -48,7 +72,6 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
     expect(kings).toBeDefined();
     expect(kings?.name).toBe("The Kings Table");
     expect(kings?.officialPriceNgn).toBe(5_000_000);
-    expect(kings?.testingPriceNgn).toBe(100);
     expect(kings?.guestCapacity).toBe(10);
     expect(kings?.parkingVehicles).toBe(10);
     expect(kings?.tableCount).toBe(5);
@@ -57,7 +80,6 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
     expect(royal).toBeDefined();
     expect(royal?.name).toBe("The Royal Table");
     expect(royal?.officialPriceNgn).toBe(3_000_000);
-    expect(royal?.testingPriceNgn).toBe(100);
     expect(royal?.guestCapacity).toBe(8);
     expect(royal?.parkingVehicles).toBe(5);
     expect(royal?.tableCount).toBe(10);
@@ -66,7 +88,6 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
     expect(queens).toBeDefined();
     expect(queens?.name).toBe("The Queens Table");
     expect(queens?.officialPriceNgn).toBe(2_000_000);
-    expect(queens?.testingPriceNgn).toBe(100);
     expect(queens?.guestCapacity).toBe(6);
     expect(queens?.tableCount).toBe(10);
 
@@ -74,7 +95,6 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
     expect(premium).toBeDefined();
     expect(premium?.name).toBe("The Premium Table");
     expect(premium?.officialPriceNgn).toBe(500_000);
-    expect(premium?.testingPriceNgn).toBe(100);
     expect(premium?.guestCapacity).toBe(5);
     expect(premium?.tableCount).toBe(20);
   });
@@ -183,30 +203,35 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
     expect(result.secretariatNotification).toBeDefined();
   });
 
-  it("supports toggling the ₦100 pilot testing fee and automatically removes it after a successful ₦100 payment", async () => {
-    resetTestingFeeModeForTests(true);
-    const initial = await getTestingFeeStatus();
-    expect(initial.enabled).toBe(true);
-    expect(initial.autoRemovedAfterPayment).toBe(false);
+  it("keeps the pilot testing fee permanently decommissioned and ignores client-supplied fee flags", async () => {
+    // 1. The fee-mode controller is gone: there is no toggle to reach.
+    expect(existsSync(path.join(ROOT, "lib", "config", "testing-fee-mode.ts"))).toBe(false);
 
-    // Manually toggle off -> Official brochure pricing
-    const manualOff = await setTestingFeeMode(false, { reason: "manual_test_off" });
-    expect(manualOff.enabled).toBe(false);
-    expect(manualOff.autoRemovedAfterPayment).toBe(false);
+    // 2. No retired testing-fee symbol survives anywhere in app/ or lib/.
+    const retired = [
+      "setTestingFeeMode",
+      "toggleTestingFeeMode",
+      "getTestingFeeStatus",
+      "autoDisableTestingFeeAfterPayment",
+      "testingPriceNgn",
+      "testingPriceDisplay",
+      "testingCommissionNgn",
+      "DAY3_VVIP_TESTING_PRICE",
+      "isTestMode",
+      "useTestingFee",
+    ];
+    const offenders: string[] = [];
+    for (const file of collectSourceFiles([path.join(ROOT, "app"), path.join(ROOT, "lib")])) {
+      const content = readFileSync(file, "utf8");
+      for (const symbol of retired) {
+        if (content.includes(symbol)) {
+          offenders.push(`${path.relative(ROOT, file)} → ${symbol}`);
+        }
+      }
+    }
+    expect(offenders, "Retired pilot-testing-fee symbols must not return").toEqual([]);
 
-    // Manually toggle back on -> ₦100 testing mode
-    const manualOn = await setTestingFeeMode(true, { reason: "manual_test_on" });
-    expect(manualOn.enabled).toBe(true);
-
-    // Simulate a successful ₦100 payment -> auto-removes the testing fee and reverts to official brochure pricing
-    const didAutoDisable = await autoDisableTestingFeeAfterPayment("ABK-VVIP-TEST-100", 100);
-    expect(didAutoDisable).toBe(true);
-    const afterPayment = await getTestingFeeStatus();
-    expect(afterPayment.enabled).toBe(false);
-    expect(afterPayment.autoRemovedAfterPayment).toBe(true);
-    expect(afterPayment.lastPaymentRef).toBe("ABK-VVIP-TEST-100");
-
-    // Verify table booking and Day 3 registration use official brochure prices when testing mode is disabled
+    // 3. Table booking at official brochure price — bank transfer channel.
     const officialTableRes = await submitTableRegistration({
       packageId: "royal_table",
       tableSerial: "Royal Table 07",
@@ -215,7 +240,6 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
       buyerEmail: `otunba.${Date.now()}@test.ng`,
       buyerPhone: "+234 803 555 0199",
       paymentMethod: "bank_transfer",
-      useTestingFee: false,
       attendees: Array.from({ length: 8 }, (_, i) => ({
         seat: i + 1,
         name: `Royal Guest ${i + 1}`,
@@ -226,30 +250,91 @@ describe("Day 3 VIP Table Packages & Official Brochure Enclosures", () => {
     expect(officialTableRes.officialValueNgn).toBe(3_000_000);
     expect(officialTableRes.secretariatNotification?.message).toContain("₦3,000,000");
 
-    const officialRegRes = await submitRegistration({
-      firstName: "Adebayo",
-      lastName: "Williams",
-      email: `adebayo.${Date.now()}@test.ng`,
-      phone: "+234 803 555 0299",
+    // 4. A client that smuggles the old fee flag in its payload is still
+    //    charged official pricing — the flag is unknown to the server.
+    const flaggedTableRes = await submitTableRegistration({
+      packageId: "royal_table",
+      tableSerial: "Royal Table 08",
+      buyerFirstName: "Chief",
+      buyerLastName: "Falola",
+      buyerEmail: `falola.${Date.now()}@test.ng`,
+      buyerPhone: "+234 803 555 0288",
+      paymentMethod: "bank_transfer",
+      attendees: Array.from({ length: 8 }, (_, i) => ({
+        seat: i + 1,
+        name: `Royal Guest ${i + 1}`,
+      })),
+      ...({ useTestingFee: true } as Record<string, unknown>),
+    } as Parameters<typeof submitTableRegistration>[0]);
+    expect(flaggedTableRes.success).toBe(true);
+    expect(flaggedTableRes.amountNgn).toBe(3_000_000);
+
+    // 5. The ₦50,000 Regular Section seat is sold through the VIP Tables page.
+    const regularSeatRes = await submitTableRegistration({
+      packageId: "individual_vip",
+      tableSerial: "Regular Pass 01",
+      buyerFirstName: "Adebayo",
+      buyerLastName: "Williams",
+      buyerEmail: `adebayo.${Date.now()}@test.ng`,
+      buyerPhone: "+234 803 555 0299",
+      paymentMethod: "bank_transfer",
+      attendees: [{ seat: 1, name: "Adebayo Williams" }],
+    });
+    expect(regularSeatRes.success, regularSeatRes.error).toBe(true);
+    expect(regularSeatRes.amountNgn).toBe(50_000);
+    expect(regularSeatRes.officialValueNgn).toBe(50_000);
+    expect(regularSeatRes.status).toBe("pending_bank_verification");
+
+    // 6. A standalone Day-3 purchase on the registration page is refused —
+    //    Day 3 admission is issued with a VIP Table package.
+    const standaloneRes = await submitRegistration({
+      firstName: "Tunde",
+      lastName: "Bakare",
+      email: `tunde.${Date.now()}@test.ng`,
+      phone: "+234 803 555 0277",
       affiliationType: "individual",
       day1: false,
       day2: false,
       day3: true,
       paymentMethod: "bank_transfer",
-      day3TicketCount: 2,
-      useTestingFee: false,
-      attendees: [
-        { firstName: "Adebayo", lastName: "Williams" },
-        { firstName: "Guest", lastName: "Two" },
-      ],
+      day3TicketCount: 1,
     });
-    expect(officialRegRes.success).toBe(true);
-    expect(officialRegRes.secretariatNotification?.message).toContain(
-      `₦${(DAY3_VVIP_OFFICIAL_PRICE_NGN * 2).toLocaleString()}`,
-    );
+    expect(standaloneRes.success).toBe(false);
+    expect(standaloneRes.error).toContain("VIP Table");
+    expect(standaloneRes.error).toContain("/tables");
+    expect(standaloneRes.passes).toBeUndefined();
 
-    // Reset back to default for subsequent tests
-    resetTestingFeeModeForTests(true);
+    // 7. The same attempt with the retired fee flag smuggled in is refused too.
+    const flaggedRes = await submitRegistration({
+      firstName: "Kemi",
+      lastName: "Aduke",
+      email: `kemi.${Date.now()}@test.ng`,
+      phone: "+234 803 555 0276",
+      affiliationType: "individual",
+      day1: false,
+      day2: false,
+      day3: true,
+      paymentMethod: "bank_transfer",
+      day3TicketCount: 1,
+      ...({ useTestingFee: true } as Record<string, unknown>),
+    } as Parameters<typeof submitRegistration>[0]);
+    expect(flaggedRes.success).toBe(false);
+    expect(flaggedRes.error).toContain("VIP Table");
+
+    // 8. Day 1 & Day 2 free registration is unaffected.
+    const freeRes = await submitRegistration({
+      firstName: "Emeka",
+      lastName: "Nwosu",
+      email: `emeka.${Date.now()}@test.ng`,
+      phone: "+234 803 555 0275",
+      affiliationType: "individual",
+      day1: true,
+      day2: true,
+      day3: false,
+    });
+    expect(freeRes.success).toBe(true);
+    expect(freeRes.passes?.length).toBe(1);
+    expect(freeRes.passes?.[0].daysCovered).toEqual([1, 2]);
   });
 });
 
@@ -335,29 +420,27 @@ describe("International Affiliate Centre (10% Commission)", () => {
     expect(liTemplate?.copyText).toContain("AFF-POLO-8472");
   });
 
-  it("credits 10% affiliate commission when individual Day 3 VVIP passes are registered", async () => {
+  it("credits 10% affiliate commission when a VIP Table booking is registered", async () => {
     const affiliateCode = "AFF-POLO-VIP99";
-    const result = await submitRegistration({
-      firstName: "Barrister",
-      lastName: "Kayode",
-      email: `kayode.${Date.now()}@law.ng`,
-      phone: "0803 555 7788",
-      day1: false,
-      day2: false,
-      day3: true,
-      day3TicketCount: 2,
+    const result = await submitTableRegistration({
+      packageId: "individual_vip",
+      tableSerial: "Regular Pass 01",
+      buyerFirstName: "Barrister",
+      buyerLastName: "Kayode",
+      buyerEmail: `kayode.${Date.now()}@law.ng`,
+      buyerPhone: "0803 555 7788",
       paymentMethod: "bank_transfer",
-      bankTransferRef: "ABK-WEMA-AFF-TEST",
       affiliateCode,
+      attendees: [{ seat: 1, name: "Barrister Kayode" }],
     });
 
     expect(result.success).toBe(true);
-    expect(result.passes?.length).toBe(2);
+    expect(result.passes?.length).toBe(1);
+    expect(result.amountNgn).toBe(50_000);
   });
 
-  it("verifies official figures and pilot testing price constants", () => {
+  it("verifies the official Day 3 figures", () => {
     expect(DAY3_VVIP_OFFICIAL_PRICE_NGN).toBe(50_000);
-    expect(DAY3_VVIP_TESTING_PRICE_NGN).toBe(100);
   });
 
   it("enforces device locking on guest table invitations and strictly blocks third-party forwarding", async () => {

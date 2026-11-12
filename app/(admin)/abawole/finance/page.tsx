@@ -8,11 +8,11 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Building2, Landmark, CheckCircle2, Clock, Crown, Users, Sparkles, Award } from "lucide-react";
-import { getTestingFeeStatus } from "@/lib/config/testing-fee-mode";
 import {
   FinanceTestingFeePanel,
   VerifyTableTransferButton,
 } from "@/components/admin/finance-testing-fee-panel";
+import { connection } from "next/server";
 
 export const metadata = {
   title: "Offline Finance & Commitments Ledger | 2026 Abeokuta Polo Festival",
@@ -45,6 +45,11 @@ async function FinanceContent() {
   if (!isSupabaseConfigured()) return <NotConfigured />;
 
   try {
+    // Prerender fix: defer the session read to request time. The auth-js
+    // session load calls Date.now() for token expiry, which Next rejects as an
+    // unstable value while prerendering.
+    await connection();
+
     await requirePermission("finance.read");
   } catch (error) {
     if (error instanceof PermissionError) return <PermissionDenied />;
@@ -66,8 +71,6 @@ async function FinanceContent() {
       "id, package_id, package_name, table_serial, buyer_name, buyer_email, buyer_phone, amount_ngn, official_value_ngn, status, payment_method, bank_transfer_ref, payment_ref, affiliate_code, created_at",
     )
     .order("created_at", { ascending: false });
-
-  const testingFeeStatus = await getTestingFeeStatus();
 
   const { data: affiliateReferralsData } = await supabase
     .from("affiliate_referrals")
@@ -109,8 +112,8 @@ async function FinanceContent() {
         </Link>
       </div>
 
-      {/* Explicit Admin Toggle for Day 3 ₦100 Pilot Testing Fee Mode vs Official Brochure Pricing */}
-      <FinanceTestingFeePanel initialStatus={testingFeeStatus} />
+      {/* Official Brochure Pricing Status */}
+      <FinanceTestingFeePanel />
 
       <div className="rounded-xl border border-gold/40 bg-card p-5 shadow-xs">
         <div className="flex items-start gap-3.5">
@@ -289,7 +292,7 @@ async function FinanceContent() {
                   <th className="px-6 py-3">Table &amp; Serial</th>
                   <th className="px-6 py-3">Buyer Contact</th>
                   <th className="px-6 py-3">Selling Affiliate Partner</th>
-                  <th className="px-6 py-3 text-right">Testing Fee</th>
+                  <th className="px-6 py-3 text-right">Amount Paid</th>
                   <th className="px-6 py-3 text-right">Official Value</th>
                   <th className="px-6 py-3 text-center">Payment Status</th>
                   <th className="px-6 py-3">Channel</th>

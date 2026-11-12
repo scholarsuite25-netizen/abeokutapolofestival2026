@@ -1,12 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { submitRegistration } from "@/app/(public)/register/actions";
+import { submitRegistration, submitTableRegistration } from "@/app/(public)/register/actions";
 import { resetMemoryClaimsForTests } from "@/lib/paystack/claims";
-import { DAY3_VVIP_PRICE_NGN } from "@/lib/config/checkout-config";
 
 /**
  * Regression tests for the Day 3 VVIP bypasses that existed before server-side
  * verification: a made-up reference, "paid" URL parameters, any 5+ character
  * invitation code, replaying a reference, and minting many passes with one code.
+ *
+ * Day 3 Grand Finale admission is issued with a VIP Table package, so the paid
+ * Day-3 flow is exercised through the table booking path (which uses the same
+ * verify-and-claim machinery). The registration page now issues a Day-3 pass
+ * only against a complimentary Special VIP Invitation Code.
  */
 
 const guest = {
@@ -18,6 +22,18 @@ const guest = {
   day2: false,
   day3: true,
 };
+
+const tableBooking = {
+  packageId: "royal_table",
+  tableSerial: "Royal Table 07",
+  buyerFirstName: "Test",
+  buyerLastName: "Guest",
+  buyerEmail: "guest@example.com",
+  buyerPhone: "+234 803 000 0000",
+  paymentMethod: "gateway",
+};
+
+const ROYAL_TABLE_PRICE_NGN = 3_000_000;
 
 describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", () => {
   beforeEach(() => {
@@ -32,7 +48,7 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
 
   it("rejects a made-up payment reference (the old '>3 characters' bypass)", async () => {
     for (const ref of ["abcd", "PSTK-ABK-8812", "paid", "ABK-VVIP-12345"]) {
-      const res = await submitRegistration({ ...guest, day3PaymentRef: ref });
+      const res = await submitTableRegistration({ ...tableBooking, paymentRef: ref });
       expect(res.success, `reference ${ref}`).toBe(false);
       expect(res.passes).toBeUndefined();
     }
@@ -47,9 +63,9 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
 
   it("refuses a simulated reference in production", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    const res = await submitRegistration({
-      ...guest,
-      day3PaymentRef: "ABK-VVIP-SIM-1-1700000000000-ABCD1234",
+    const res = await submitTableRegistration({
+      ...tableBooking,
+      paymentRef: "ABK-VVIP-SIM-1-1700000000000-ABCD1234",
     });
     expect(res.success).toBe(false);
     expect(res.passes).toBeUndefined();
@@ -63,15 +79,15 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
         new Response(JSON.stringify({ status: true, data: { status: "abandoned" } }), { status: 200 }),
       ),
     );
-    const res = await submitRegistration({
-      ...guest,
-      day3PaymentRef: "ABK-VVIP-1700000000000-AB12CD34",
+    const res = await submitTableRegistration({
+      ...tableBooking,
+      paymentRef: "ABK-VVIP-1700000000000-AB12CD34",
     });
     expect(res.success).toBe(false);
     expect(res.error).toContain("not been completed");
   });
 
-  it("issues passes for a genuine payment and refuses to reuse the same reference", async () => {
+  it("issues the table's passes for a genuine payment and refuses to reuse the same reference", async () => {
     vi.stubEnv("PAYSTACK_SECRET_KEY", "sk_test_dummy");
     const reference = "ABK-VVIP-1700000000000-AB12CD34";
     vi.stubGlobal(
@@ -84,7 +100,7 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
               data: {
                 status: "success",
                 reference,
-                amount: DAY3_VVIP_PRICE_NGN * 100,
+                amount: ROYAL_TABLE_PRICE_NGN * 100,
                 currency: "NGN",
                 customer: { email: "guest@example.com" },
               },
@@ -94,25 +110,43 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
       ),
     );
 
-    const first = await submitRegistration({ ...guest, day3PaymentRef: reference });
+    const first = await submitTableRegistration({ ...tableBooking, paymentRef: reference });
     expect(first.success).toBe(true);
-    expect(first.passes).toHaveLength(1);
+    expect(first.passes).toHaveLength(8);
     expect(first.passes![0].paymentRef).toBe(reference);
 
-    const replay = await submitRegistration({ ...guest, day3PaymentRef: reference });
+    const replay = await submitTableRegistration({ ...tableBooking, paymentRef: reference });
     expect(replay.success).toBe(false);
     expect(replay.error).toContain("already been used");
   });
 
-  it("issues exactly the number of passes that were paid for, not the number requested", async () => {
-    // One pass paid (₦50,000) but 20 requested by the client.
-    const res = await submitRegistration({
-      ...guest,
-      day3TicketCount: 20,
-      day3PaymentRef: "ABK-VVIP-SIM-1-1700000000000-ABCD1234",
+  it("will not issue a table's seats for a payment that only covers one pass", async () => {
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "sk_test_dummy");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            status: true,
+            data: {
+              status: "success",
+              reference: "ABK-VVIP-1700000000000-AB12CD34",
+              amount: 50_000 * 100, // a single ₦50,000 pass
+              currency: "NGN",
+              customer: { email: "guest@example.com" },
+            },
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    const res = await submitTableRegistration({
+      ...tableBooking,
+      paymentRef: "ABK-VVIP-1700000000000-AB12CD34",
     });
-    expect(res.success).toBe(true);
-    expect(res.passes).toHaveLength(1);
+    expect(res.success).toBe(false);
+    expect(res.passes).toBeUndefined();
   });
 
   it("rejects payment made with a different email address", async () => {
@@ -127,7 +161,7 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
             data: {
               status: "success",
               reference,
-              amount: 50000 * 100,
+              amount: ROYAL_TABLE_PRICE_NGN * 100,
               currency: "NGN",
               customer: { email: "payer@example.com" },
             },
@@ -136,7 +170,7 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
         ),
       ),
     );
-    const res = await submitRegistration({ ...guest, day3PaymentRef: reference });
+    const res = await submitTableRegistration({ ...tableBooking, paymentRef: reference });
     expect(res.success).toBe(false);
     expect(res.error).toContain("same email");
   });
@@ -161,6 +195,17 @@ describe("Day 3 VVIP cannot be obtained without genuine payment or invitation", 
     });
     expect(res.success).toBe(true);
     expect(res.passes![0].paymentRef).toBeNull();
+  });
+
+  it("refuses a standalone Day 3 purchase on the registration page", async () => {
+    const res = await submitRegistration({
+      ...guest,
+      paymentMethod: "bank_transfer",
+      bankTransferRef: "ABK-WEMA-STANDALONE",
+    });
+    expect(res.success).toBe(false);
+    expect(res.error).toContain("VIP Table");
+    expect(res.passes).toBeUndefined();
   });
 
   it("free Day 1 and Day 2 registration still works with no payment or code (1 combined pass issued)", async () => {

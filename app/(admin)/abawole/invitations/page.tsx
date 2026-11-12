@@ -11,6 +11,7 @@ import {
   Layers,
   Award,
 } from "lucide-react";
+import { connection } from "next/server";
 
 export const metadata = {
   title: "Complimentary Invitations — Secretariat Console",
@@ -29,6 +30,11 @@ export default function AdminInvitationsPage() {
 async function InvitationsContent() {
   // 1. Authoritative permission check
   try {
+    // Prerender fix: defer the session read to request time. The auth-js
+    // session load calls Date.now() for token expiry, which Next rejects as an
+    // unstable value while prerendering.
+    await connection();
+
     await requirePermission("credential.issue");
   } catch (error) {
     if (error instanceof PermissionError) {

@@ -4,9 +4,7 @@ import {
   DAY3_REFERENCE_PREFIX,
   DAY3_VVIP_MAX_TICKETS,
   DAY3_VVIP_OFFICIAL_PRICE_NGN,
-  DAY3_VVIP_TESTING_PRICE_NGN,
 } from "@/lib/config/checkout-config";
-import { getTestingFeeStatus } from "@/lib/config/testing-fee-mode";
 import { getEffectivePaystackSecret } from "@/lib/paystack/verify";
 
 const attendeeSchema = z.object({
@@ -24,7 +22,6 @@ const bodySchema = z.object({
   quantity: z.coerce.number().int().min(1).max(DAY3_VVIP_MAX_TICKETS).default(1),
   attendees: z.array(attendeeSchema).optional(),
   affiliateCode: z.string().trim().optional(),
-  useTestingFee: z.boolean().optional(),
 });
 
 function newReference(simulatedQuantity?: number, isOfficialPrice?: boolean): string {
@@ -58,10 +55,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email, firstName, lastName, phone, day1, day2, quantity, attendees, affiliateCode, useTestingFee } = parsed.data;
-  const testingStatus = await getTestingFeeStatus();
-  const isTestMode = typeof useTestingFee === "boolean" ? useTestingFee : testingStatus.enabled;
-  const unitPriceNgn = isTestMode ? DAY3_VVIP_TESTING_PRICE_NGN : DAY3_VVIP_OFFICIAL_PRICE_NGN;
+  const { email, firstName, lastName, phone, day1, day2, quantity, attendees, affiliateCode } = parsed.data;
+  // Official brochure pricing is permanent and server-controlled. A client
+  // can never influence what is charged.
+  const unitPriceNgn = DAY3_VVIP_OFFICIAL_PRICE_NGN;
   const amountNgn = quantity * unitPriceNgn;
   const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
   const secret = getEffectivePaystackSecret();
@@ -91,7 +88,7 @@ export async function POST(req: Request) {
         { status: 503 },
       );
     }
-    const reference = newReference(quantity, !isTestMode);
+    const reference = newReference(quantity, true);
     callback.searchParams.set("payment_ref", reference);
     return NextResponse.json({
       status: "success",

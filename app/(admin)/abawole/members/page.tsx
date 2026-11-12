@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { RegistrationApprovals } from "@/components/admin/registration-approvals";
+import { connection } from "next/server";
 
 export default function AdminMembersPage() {
   return (
@@ -22,6 +23,11 @@ async function MembersQueue() {
   if (!isSupabaseConfigured()) return <NotConfigured />;
 
   try {
+    // Prerender fix: defer the session read to request time. The auth-js
+    // session load calls Date.now() for token expiry, which Next rejects as an
+    // unstable value while prerendering.
+    await connection();
+
     await requirePermission("registration.manage");
   } catch (error) {
     if (error instanceof PermissionError) return <PermissionDenied />;

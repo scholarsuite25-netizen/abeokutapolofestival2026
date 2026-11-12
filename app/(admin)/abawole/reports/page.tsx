@@ -12,6 +12,7 @@ import {
   QrCode, 
   Landmark
 } from "lucide-react";
+import { connection } from "next/server";
 
 export const metadata = {
   title: "Reports & Forensic Data Exports | 2026 Abeokuta Polo Festival",
@@ -69,6 +70,11 @@ async function ReportsContent() {
   if (!isSupabaseConfigured()) return <NotConfigured />;
 
   try {
+    // Prerender fix: defer the session read to request time. The auth-js
+    // session load calls Date.now() for token expiry, which Next rejects as an
+    // unstable value while prerendering.
+    await connection();
+
     await requirePermission("export.bulk");
   } catch (error) {
     if (error instanceof PermissionError) return <PermissionDenied />;

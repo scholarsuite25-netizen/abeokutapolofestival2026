@@ -79,21 +79,58 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
-    title: "Hospitality",
-    desc: "VIP suites, tables & enclosures",
+    title: "VIP Tables",
+    desc: "Exclusive hospitality packages & individual passes",
     items: [
       {
         href: "/tables",
-        label: "VIP Tables",
-        desc: "Day 3 VVIP tables of 10 & ₦50k option",
+        label: "All VIP Tables & Packages",
+        desc: "Kings, Royal, Queens, Premium & Regular Section",
         icon: Crown,
         isPriority: true,
       },
+      {
+        href: "/tables#kings_table",
+        label: "The Kings Table — ₦5M",
+        desc: "Ultra-exclusive 10-guest VIP experience",
+        icon: Crown,
+      },
+      {
+        href: "/tables#royal_table",
+        label: "The Royal Table — ₦3M",
+        desc: "Luxury 8-guest hospitality experience",
+        icon: Crown,
+      },
+      {
+        href: "/tables#queens_table",
+        label: "The Queens Table — ₦2M",
+        desc: "Signature 6-guest ladies' experience",
+        icon: Crown,
+      },
+      {
+        href: "/tables#premium_table",
+        label: "The Premium Table — ₦500k",
+        desc: "Premium 5-guest festival experience",
+        icon: Ticket,
+      },
+      {
+        href: "/register",
+        label: "Regular Section — ₦50k",
+        desc: "Individual general admission pass",
+        icon: Ticket,
+      },
+    ],
+  },
+  {
+    title: "Hospitality",
+    desc: "Enclosures, suites & club membership",
+    items: [
       {
         href: "/hospitality",
         label: "Enclosures",
         desc: "Royal Dais, chalets & suites",
         icon: Crown,
+        isPriority: true,
       },
       {
         href: "https://www.abeokutapoloclub.org.ng/register",

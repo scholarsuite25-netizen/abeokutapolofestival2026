@@ -17,6 +17,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AdminTopBadge } from "@/components/admin/admin-top-badge";
 import { requireUser } from "@/lib/auth/require";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 
 /**
  * Review finding M4: the console shell now enforces its own guard instead of
@@ -24,12 +25,25 @@ import { redirect } from "next/navigation";
  * are sent to sign-in; authenticated non-console roles (public/guest) are sent
  * to their own dashboard. Fine-grained permissions remain enforced per page.
  *
- * Rendering note: `requireUser` reads cookies via the session, so every
- * /abawole/* route renders at request time (the layout runs outside any
- * Suspense boundary) instead of being prerendered with an unstable session
- * value.
+ * Rendering note (Next 16 Cache Components): `requireUser` reads cookies via
+ * the session, and a session read outside `<Suspense>` is a BUILD ERROR — a
+ * layout cannot wrap itself in a boundary. Per the docs' `[block]` fix
+ * (`authentication-with-cache-components.md` / `blocking-prerender-dynamic`),
+ * `instant = false` lets this segment keep blocking on the server: every
+ * /abawole/* route renders at request time instead of being prerendered with
+ * an unstable session value. The admin console has no meaningful static shell
+ * (it is fully authenticated), so nothing is lost.
  */
+export const instant = false;
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Prerender fix: stop prerendering before the session is read. The auth-js
+  // session load calls `Date.now()` for token expiry, which Next rejects as an
+  // unstable value during (on-demand) prerendering. `connection()` defers the
+  // whole /abawole/* subtree to request time, so the session is only ever read
+  // while serving a real request.
+  await connection();
+
   const session = await requireUser("/abawole");
   const isConsoleRole = session.actor.roles.some(
     (role) => role !== "public" && role !== "guest",
