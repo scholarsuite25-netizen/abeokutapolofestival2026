@@ -56,15 +56,25 @@ async function runBackup(req: NextRequest) {
       }
     }
 
-    // 2. Discover the tables through PostgREST.
+    // 2. Discover the tables through the PostgREST schema document.
+    //    The root endpoint returns an OpenAPI document; the relations are its
+    //    "definitions" keys (each named after a table).
     const root = await fetch(`${process.env.SUPABASE_URL}/rest/v1/`, {
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
         Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
       },
     });
-    const exposed = await root.json();
-    const tableNames = Object.keys(exposed).filter((t) => !SKIP.has(t));
+    const schema = (await root.json()) as {
+      definitions?: Record<string, { properties?: Record<string, unknown> }>;
+    };
+    const tableNames = Object.keys(schema.definitions || {})
+      .filter((name) => {
+        const definition = schema.definitions?.[name];
+        // A relation definition carries column properties.
+        return Boolean(definition?.properties && Object.keys(definition.properties).length);
+      })
+      .filter((name) => !SKIP.has(name));
 
     // 3. Export each table.
     const payload: Record<string, unknown[]> = {};
