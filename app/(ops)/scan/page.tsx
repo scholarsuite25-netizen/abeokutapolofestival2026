@@ -55,11 +55,6 @@ export default function GateScanPage() {
     }));
   };
 
-  const simulateSampleScan = (sampleCode: string) => {
-    setPassInput(sampleCode);
-    handleScan(sampleCode);
-  };
-
   return (
     <div className="flex w-full min-h-[calc(100vh-80px)] flex-col bg-forest-deep text-ivory p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-4xl w-full space-y-6">
@@ -205,41 +200,7 @@ export default function GateScanPage() {
               </Button>
             </form>
 
-            {/* Quick Test Codes */}
-            <div className="pt-2 text-[11px] text-ivory/60 flex flex-wrap items-center gap-2">
-              <span>Quick Test:</span>
-              <button
-                type="button"
-                onClick={() => simulateSampleScan("ABK-2026-LAWN4")}
-                className="underline hover:text-gold"
-              >
-                Sample Pass 1
-              </button>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={() => simulateSampleScan("ABK-2026-FB01")}
-                className="underline hover:text-gold"
-              >
-                Corporate Pass
-              </button>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={() => simulateSampleScan("ABK-2026-X7K9")}
-                className="underline hover:text-gold"
-              >
-                VIP Guest Pass
-              </button>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={() => simulateSampleScan("ABK-2026-UNVERIFIED-PASS")}
-                className="underline text-amber-400 hover:text-amber-300 font-semibold"
-              >
-                Unverified Bank Pass
-              </button>
-            </div>
+            
           </div>
 
           {/* Validation Result Feedback Panel */}
