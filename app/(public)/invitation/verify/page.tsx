@@ -15,8 +15,10 @@ import {
   verifyInvitationToken,
   ROYAL_SECURITY_SEAL,
 } from "@/lib/invitations/issuance";
-import { getInvitationByCode } from "@/lib/invitations/storage";
+import { getInvitationByCode, bindInvitationToDevice } from "@/lib/invitations/storage";
+import { verifyPassDeviceBinding } from "@/lib/security/device-binding";
 import type { ComplimentaryInvitation } from "@/lib/invitations/types";
+import { PortraitInvitationDeviceGuard } from "@/components/shared/portrait-invitation-card";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 
 interface VerifyPageProps {
@@ -121,6 +123,19 @@ async function VerifyContent({ searchParams }: VerifyPageProps) {
       "Distinguished Guest"
     : "Distinguished Guest";
 
+  async function bindDeviceOnVerifyAction(deviceId: string) {
+    "use server";
+    if (!invitation) {
+      return { authorized: false, status: "not_found", message: "Invitation not found." };
+    }
+    try {
+      await verifyPassDeviceBinding(invitation.invitationCode, deviceId, dignitaryName);
+    } catch {
+      // Non-fatal fallback
+    }
+    return await bindInvitationToDevice(invitation.invitationCode, deviceId);
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#060503] text-[#FCF9F8] p-4 sm:p-6">
       <div className="w-full max-w-lg space-y-4">
@@ -139,7 +154,11 @@ async function VerifyContent({ searchParams }: VerifyPageProps) {
         </div>
 
         {isValid && invitation ? (
-          /* ── AUTHENTIC ROYAL SEAL CARD ── */
+          <PortraitInvitationDeviceGuard
+            invitation={invitation}
+            onBindDevice={bindDeviceOnVerifyAction}
+          >
+          {/* ── AUTHENTIC ROYAL SEAL CARD ── */}
           <div className="rounded-3xl border-2 border-[#C9A84C]/90 bg-gradient-to-b from-[#161208] via-[#0E0C06] to-[#050402] p-6 sm:p-8 shadow-[0_0_50px_rgba(201,168,76,0.25)] text-center relative overflow-hidden">
             {/* Background filigree / crest glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 size-72 bg-[#C9A84C]/10 rounded-full blur-3xl pointer-events-none" />
@@ -238,6 +257,7 @@ async function VerifyContent({ searchParams }: VerifyPageProps) {
               </NextLink>
             </div>
           </div>
+          </PortraitInvitationDeviceGuard>
         ) : (
           /* ── VERIFICATION REJECTION SCREEN ── */
           <div className="rounded-3xl border-2 border-red-500/60 bg-[#140606] p-6 sm:p-8 shadow-2xl text-center space-y-4">

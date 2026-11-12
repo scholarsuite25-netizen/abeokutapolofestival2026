@@ -11,10 +11,8 @@ import {
   ShieldCheck,
   RotateCcw,
   Users,
-  Download,
 } from "lucide-react";
 import type { ComplimentaryInvitation } from "@/lib/invitations/types";
-import { downloadPrintableInvitationPng } from "@/components/shared/portrait-invitation-card";
 import { siteUrl } from "@/lib/site";
 import {
   resetInvitationDeviceBindingAction,
@@ -349,24 +347,13 @@ export function InvitationsTable({
                           )}
                         </button>
 
-                        {/* Download Print-Ready 300 DPI PNG */}
-                        <button
-                          type="button"
-                          onClick={() => void downloadPrintableInvitationPng(inv)}
-                          className="inline-flex items-center gap-1 rounded-md border border-forest/50 bg-forest px-2 py-1 text-[11px] font-semibold text-ivory transition hover:bg-forest-deep cursor-pointer"
-                          title="Download 300 DPI Printable Card (PNG — A5 / 5×7 in Portrait)"
-                        >
-                          <Download className="h-3 w-3 text-gold" />
-                          <span className="hidden md:inline">Print Card</span>
-                        </button>
-
-                        {/* Open Card Preview (Admin mode — does not lock to laptop) */}
+                        {/* Open Card Preview */}
                         <a
-                          href={`/invitation/${inv.invitationCode}?preview=admin`}
+                          href={`/invitation/${inv.invitationCode}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 rounded-md border border-gold/60 bg-gold/10 px-2 py-1 text-[11px] font-semibold text-gold-deep transition hover:bg-gold/25"
-                          title="Preview & Print Dignitary Invitation Card"
+                          title="Open Dignitary Invitation Card"
                         >
                           <ExternalLink className="h-3 w-3" />
                           <span className="hidden md:inline">View Card</span>

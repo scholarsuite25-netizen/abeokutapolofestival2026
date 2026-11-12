@@ -155,26 +155,28 @@ export async function saveInvitation(
 
 /**
  * Retrieves a complimentary invitation by code or ID.
+ *
+ * Queries Supabase FIRST when configured so device bindings are durable and
+ * consistent across all serverless instances, falling back to in-memory store
+ * for offline/unit-test environments.
  */
 export async function getInvitationByCode(codeOrId: string): Promise<ComplimentaryInvitation | null> {
   if (!codeOrId) return null;
-  const normalized = codeOrId.trim().toUpperCase();
+  const trimmed = codeOrId.trim();
+  const normalized = trimmed.toUpperCase();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
 
-  // 1. Check in-memory store
-  const memoryHit = memoryInvitations.get(normalized) || memoryInvitations.get(codeOrId.trim());
-  if (memoryHit) return memoryHit;
-
-  // 2. Check Supabase
+  // 1. Check Supabase first so device locks are authoritative across instances
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
 
-      // Try `invitations` table first
-      const { data: invData } = await supabase
-        .from("invitations")
-        .select("*")
-        .or(`invitation_code.ilike.${normalized},id.eq.${codeOrId.trim()}`)
-        .maybeSingle<InvitationDbRow>();
+      // Try `invitations` table first (avoid passing non-UUID codes into id.eq)
+      const invQuery = supabase.from("invitations").select("*");
+      const { data: invData } = await (isUuid
+        ? invQuery.or(`invitation_code.ilike.${normalized},id.eq.${trimmed}`)
+        : invQuery.ilike("invitation_code", normalized)
+      ).maybeSingle<InvitationDbRow>();
 
       if (invData) {
         const item: ComplimentaryInvitation = {
@@ -201,11 +203,11 @@ export async function getInvitationByCode(codeOrId: string): Promise<Complimenta
       }
 
       // Fallback: check `credentials` table
-      const { data: credData } = await supabase
-        .from("credentials")
-        .select("*")
-        .or(`pass_code.ilike.${normalized},id.eq.${codeOrId.trim()}`)
-        .maybeSingle<CredentialDbRow>();
+      const credQuery = supabase.from("credentials").select("*");
+      const { data: credData } = await (isUuid
+        ? credQuery.or(`pass_code.ilike.${normalized},id.eq.${trimmed}`)
+        : credQuery.ilike("pass_code", normalized)
+      ).maybeSingle<CredentialDbRow>();
 
       if (credData && credData.pass_type === "complimentary") {
         const item: ComplimentaryInvitation = {
@@ -230,9 +232,13 @@ export async function getInvitationByCode(codeOrId: string): Promise<Complimenta
         return item;
       }
     } catch {
-      // In-memory fallback
+      // Fall back to in-memory store below
     }
   }
+
+  // 2. Fallback to in-memory store (used in unit tests or offline mode)
+  const memoryHit = memoryInvitations.get(normalized) || memoryInvitations.get(trimmed);
+  if (memoryHit) return memoryHit;
 
   return null;
 }
