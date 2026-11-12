@@ -13,11 +13,13 @@ import {
   RefreshCw,
   Crown,
   FileCheck2,
+  Download,
 } from "lucide-react";
 import {
   STANDARD_INVITATION_CATEGORIES,
   type ComplimentaryInvitation,
 } from "@/lib/invitations/types";
+import { downloadPrintableInvitationPng } from "@/components/shared/portrait-invitation-card";
 import { issueInvitationAction } from "@/app/(admin)/abawole/invitations/actions";
 import { siteUrl } from "@/lib/site";
 
@@ -187,14 +189,23 @@ export function InvitationIssuanceForm({
                 </div>
 
                 <div className="flex sm:flex-col items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => void downloadPrintableInvitationPng(createdInvitation)}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-gold bg-gold px-4 py-2 text-xs font-bold text-black transition hover:bg-gold-light shadow-md cursor-pointer"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Download Print Card (PNG)</span>
+                  </button>
+
                   <a
-                    href={`/invitation/${createdInvitation.invitationCode}`}
+                    href={`/invitation/${createdInvitation.invitationCode}?preview=admin`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-gold bg-gold px-4 py-2 text-xs font-bold text-black transition hover:bg-gold-light shadow-md"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-gold/60 bg-black/50 px-4 py-2 text-xs font-semibold text-gold transition hover:bg-black/80"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    <span>Open Card</span>
+                    <span>Open &amp; Print Card</span>
                   </a>
 
                   <button

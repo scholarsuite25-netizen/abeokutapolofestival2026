@@ -107,7 +107,7 @@ async function InvitationContent({ params }: InvitationPageProps) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#060503] text-[#FCF9F8] py-6 sm:py-10 px-3 sm:px-4 print:py-0 print:bg-white print:text-black">
+    <div className="flex min-h-screen flex-col items-center bg-[#060503] text-[#FCF9F8] py-6 sm:py-10 px-3 sm:px-4 print:py-0 print:bg-[#060503] print:text-[#FCF9F8] [-webkit-print-color-adjust:exact] [print-color-adjust:exact]">
       {/* Top Header / Breadcrumb navigation */}
       <div className="w-full max-w-[480px] mb-4 flex items-center justify-between text-xs text-[#C9A84C] print:hidden">
         <Link
