@@ -100,7 +100,7 @@ describe("Credential verify rate limiting (L1 + L2)", () => {
       const res = await consumeRateLimit("test:durable-deny");
       expect(res.allowed).toBe(false);
       expect(h.rpcCalls).toHaveLength(1);
-      expect(h.rpcCalls[0].p_bucket).toBe("test:durable-deny");
+      expect(h.rpcCalls[0].p_bucket).toBe("test:durable-deny:60s:30");
       expect(h.rpcCalls[0].p_window_seconds).toBe(60);
       expect(h.rpcCalls[0].p_max_attempts).toBe(RATE_LIMIT_MAX_ATTEMPTS);
     });

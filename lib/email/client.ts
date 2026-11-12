@@ -1,5 +1,6 @@
 import "server-only";
 import { requireServerEnv } from "@/lib/env";
+import { recordNotification } from "@/lib/notifications/notification-log";
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -38,6 +39,25 @@ function stripHtmlToPlainText(html: string): string {
  * Dispatches transactional email through Resend or EmailBump API.
  */
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
+  const result = await dispatchEmail(options);
+
+  // Delivery proof: every message is logged so the Secretariat can prove
+  // what was sent and what the provider replied.
+  const recipients = Array.isArray(options.to) ? options.to : [options.to];
+  void recordNotification({
+    channel: "email",
+    recipient: recipients.join(", "),
+    subject: options.subject,
+    status: result.success ? "sent" : result.error ? "failed" : "skipped",
+    provider: result.success ? "resend" : undefined,
+    providerId: result.messageId,
+    error: result.error,
+  });
+
+  return result;
+}
+
+async function dispatchEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   const env = requireServerEnv();
   const resendApiKey = env.RESEND_API_KEY || process.env.RESEND_API_KEY;
   const emailBumpApiKey = env.EMAILBUMP_API_KEY || process.env.EMAILBUMP_API_KEY;

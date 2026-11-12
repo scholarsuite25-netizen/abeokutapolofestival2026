@@ -1,17 +1,18 @@
 import Link from "next/link";
-import { 
-  ShieldCheck, 
-  LayoutDashboard, 
-  Users2, 
-  Landmark, 
-  QrCode, 
+import {
+  ShieldCheck,
+  LayoutDashboard,
+  Users2,
+  Landmark,
+  QrCode,
   FileSpreadsheet,
   ExternalLink,
   Printer,
   UserCog,
   BadgeCheck,
   KeyRound,
-  ArrowLeft
+  ArrowLeft,
+  Ticket
 } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AdminTopBadge } from "@/components/admin/admin-top-badge";
@@ -57,6 +58,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { label: "Participants", href: "/abawole/registrations", icon: Users2 },
     { label: "Offline Finance", href: "/abawole/finance", icon: Landmark },
     { label: "Verification Queue", href: "/abawole/members", icon: BadgeCheck },
+    { label: "VIP Invitations", href: "/abawole/invitations", icon: Ticket },
     { label: "Reports & Export", href: "/abawole/reports", icon: FileSpreadsheet },
     { label: "Admin Hierarchy", href: "/abawole/admins", icon: UserCog },
     { label: "Change Password", href: "/abawole/change-password", icon: KeyRound },

@@ -6,6 +6,7 @@ import {
   DAY3_VVIP_OFFICIAL_PRICE_NGN,
 } from "@/lib/config/checkout-config";
 import { getEffectivePaystackSecret } from "@/lib/paystack/verify";
+import { isFeatureEnabled } from "@/lib/config/feature-flags";
 
 const attendeeSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
@@ -52,6 +53,16 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "Invalid request." },
       { status: 400 },
+    );
+  }
+
+  // Online card checkout is governed by an administrator-controlled flag
+  // (never a guest-facing switch). It stays off until the club activates the
+  // card account, and every change is recorded in feature_flag_history.
+  if (!(await isFeatureEnabled("online_card_payments", false))) {
+    return NextResponse.json(
+      { error: "Online card payment is not available right now. Please use Direct Bank Transfer." },
+      { status: 503 },
     );
   }
 

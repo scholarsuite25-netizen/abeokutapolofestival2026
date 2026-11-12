@@ -3,6 +3,14 @@ import { POST as initRoute } from "@/app/api/paystack/initialize/route";
 import { GET as verifyRoute } from "@/app/api/paystack/verify/route";
 import { DAY3_VVIP_PRICE_NGN } from "@/lib/config/checkout-config";
 
+// Online card checkout is behind an administrator-controlled flag. The mock
+// lets each test decide whether card checkout is switched on.
+const flags = vi.hoisted(() => ({ online_card_payments: true }));
+vi.mock("@/lib/config/feature-flags", () => ({
+  isFeatureEnabled: async (key: string, fallback = false) =>
+    key in flags ? Boolean(flags[key as keyof typeof flags]) : fallback,
+}));
+
 const post = (body: unknown) =>
   new Request("http://localhost:3000/api/paystack/initialize", {
     method: "POST",
@@ -16,6 +24,25 @@ afterEach(() => {
 });
 
 describe("Initialize Route (/api/paystack/initialize)", () => {
+  describe("feature flag gate", () => {
+    beforeEach(() => {
+      vi.stubEnv("PAYSTACK_SECRET_KEY", "");
+    });
+
+    afterEach(() => {
+      flags.online_card_payments = true;
+    });
+
+    it("refuses card checkout while the administrator flag is off", async () => {
+      flags.online_card_payments = false;
+      const res = await initRoute(post({ email: "attendee@example.com" }));
+      const data = await res.json();
+
+      expect(res.status).toBe(503);
+      expect(data.error).toContain("not available");
+    });
+  });
+
   describe("development simulation (no PAYSTACK_SECRET_KEY, not production)", () => {
     beforeEach(() => {
       vi.stubEnv("PAYSTACK_SECRET_KEY", "");

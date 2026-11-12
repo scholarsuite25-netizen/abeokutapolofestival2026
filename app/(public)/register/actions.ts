@@ -32,6 +32,8 @@ import type { StoredPass } from "@/lib/storage/pass-storage";
 import { validateWhatsAppPhone } from "@/lib/utils/phone";
 import { notifySecretariatOfBankPayment } from "@/lib/notifications/secretariat";
 import { registerUnverifiedPasses } from "@/lib/storage/unverified-passes";
+import { consumeRateLimit, currentRequestIp } from "@/lib/security/rate-limit";
+import { raiseFraudAlert } from "@/lib/security/fraud-alerts";
 
 const registrationSchema = z.object({
   firstName: z.string().trim().min(2, "First name must be at least 2 characters."),
@@ -152,6 +154,28 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
     };
   }
 
+  // Abuse control: the registration form is public, so it is throttled per
+  // caller with the same durable limiter that protects the credential oracle.
+  // This stops a bot from flooding the database and the Secretariat's inbox.
+  const callerIp = await currentRequestIp();
+  const limit = await consumeRateLimit(`registration:${callerIp}`, {
+    windowSeconds: 300,
+    maxAttempts: 20,
+  });
+  if (!limit.allowed) {
+    void raiseFraudAlert({
+      category: "rate_limited",
+      severity: "low",
+      subjectType: "registration",
+      details: { ip: callerIp, flow: "registration" },
+    });
+    return {
+      success: false,
+      error:
+        "Too many registration attempts from this network. Please wait a few minutes, or contact the Secretariat on WhatsApp +234 818 188 8884.",
+    };
+  }
+
   const {
     firstName,
     lastName,
@@ -174,6 +198,44 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
   // If none explicitly ticked, default to Day 1 (Free) for backward compatibility
   if (!day1 && !day2 && !day3) {
     day1 = true;
+  }
+
+  // One live pass per person per event. A second live registration for the
+  // same email is refused so the same guest cannot be issued several passes
+  // (the Secretariat can still amend or delete a registration from the
+  // console). Day-3 invitation redemptions are exempt — an invitation is a
+  // single-use complimentary pass and may follow a Day 1/2 registration.
+  const isInvitationRedemption = Boolean(day3InvitationCode?.trim());
+  if (!isInvitationRedemption && isSupabaseConfigured()) {
+    try {
+      const { data: existing } = await createAdminClient()
+        .from("registrations")
+        .select("id, category, status")
+        .eq("email", email)
+        .in("status", [
+          "confirmed",
+          "pending_approval",
+          "pending_bank_verification",
+          "pending_verification",
+        ])
+        .limit(1);
+      if (existing && existing.length > 0) {
+        void raiseFraudAlert({
+          category: "duplicate_registration",
+          severity: "low",
+          subjectType: "registration",
+          subjectId: existing[0].id,
+          details: { email, category: existing[0].category, status: existing[0].status },
+        });
+        return {
+          success: false,
+          error:
+            "A registration already exists for this email address. Please use the pass you already have, or contact the Secretariat to have your registration amended.",
+        };
+      }
+    } catch {
+      // Never block a legitimate guest because the lookup failed.
+    }
   }
 
   // Day 3 Grand Finale admission is sold with VIP Table packages (see
@@ -796,6 +858,27 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       };
     }
 
+    // Abuse control: table reservations are public, so they are throttled per
+    // caller with the durable limiter.
+    const callerIp = await currentRequestIp();
+    const limit = await consumeRateLimit(`table-booking:${callerIp}`, {
+      windowSeconds: 300,
+      maxAttempts: 20,
+    });
+    if (!limit.allowed) {
+      void raiseFraudAlert({
+        category: "rate_limited",
+        severity: "low",
+        subjectType: "table_booking",
+        details: { ip: callerIp, flow: "table-booking" },
+      });
+      return {
+        success: false,
+        error:
+          "Too many reservation attempts from this network. Please wait a few minutes, or contact the Secretariat on WhatsApp +234 818 188 8884.",
+      };
+    }
+
     const {
       packageId: rawPackageId,
       tableSerial,
@@ -825,6 +908,37 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
     let verifiedPaymentRef: string | null = null;
     let bankTransferRef: string | null = null;
     let paidAmountNgn: number = pkg.officialPriceNgn;
+
+    // A table serial may only be sold once. The application check gives the
+    // guest a friendly message; the unique index in migration 0018 is the
+    // race-proof backstop (two simultaneous bookings cannot both win).
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: taken } = await createAdminClient()
+          .from("table_bookings")
+          .select("id")
+          .eq("package_id", packageId)
+          .eq("table_serial", tableSerial)
+          .limit(1);
+        if (taken && taken.length > 0) {
+          void raiseFraudAlert({
+            category: "table_double_booking",
+            severity: "high",
+            subjectType: "table",
+            subjectId: `${packageId}:${tableSerial}`,
+            details: { packageId, tableSerial, buyerEmail },
+          });
+          return {
+            success: false,
+            error:
+              "That table has already been reserved. Please choose another available table.",
+          };
+        }
+      } catch {
+        // Never block a legitimate booking because the lookup failed — the
+        // unique index still protects the table from being sold twice.
+      }
+    }
 
     if (isBankTransfer) {
       bankTransferRef = (inputBankRef || generateWemaTransferReference()).trim().toUpperCase();
@@ -957,7 +1071,7 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
         const bookingStatus = isBankTransfer ? "pending_bank_verification" : "confirmed";
 
         // 1. Insert into table_bookings
-        await adaptiveInsert(supabase, "table_bookings", {
+        const bookingInsert = await adaptiveInsert(supabase, "table_bookings", {
           edition_id: edition?.id ?? null,
           package_id: packageId,
           package_name: pkg.name,
@@ -974,6 +1088,16 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
           affiliate_code: affiliateCode || null,
           attendees: attendeesList,
         });
+
+        // 23505 = unique violation: the table serial (or the transfer
+        // reference) was taken between the availability check and this insert.
+        if (bookingInsert.error && bookingInsert.error.code === "23505") {
+          return {
+            success: false,
+            error:
+              "That table has just been reserved by another guest. Please choose another available table.",
+          };
+        }
 
         // 2. Insert primary buyer into registrations table
         const { data: reg } = await adaptiveInsert(supabase, "registrations", {

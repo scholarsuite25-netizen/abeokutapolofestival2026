@@ -25,8 +25,10 @@ export async function GET(
     return new NextResponse("Database not configured", { status: 503 });
   }
 
+  let exportedBy: string | null = null;
   try {
-    await requirePermission("export.bulk");
+    const session = await requirePermission("export.bulk");
+    exportedBy = session.user.id;
   } catch (error) {
     if (error instanceof PermissionError) {
       return new NextResponse("Permission denied. Requires export.bulk privilege.", {
@@ -192,6 +194,20 @@ export async function GET(
   }
 
   const csvContent = csvRows.join("\r\n");
+
+  // Export audit: every download of guest data is recorded (who, which
+  // report, how many rows) so the club can evidence its data handling.
+  try {
+    await supabase.from("report_exports").insert({
+      report_id: id,
+      requested_by: exportedBy,
+      format: "csv",
+      row_count: csvRows.length,
+      filters: {} as Record<string, unknown>,
+    });
+  } catch {
+    // Never block an export because the audit write failed.
+  }
 
   return new NextResponse(csvContent, {
     status: 200,
