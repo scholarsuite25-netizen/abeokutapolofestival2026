@@ -402,111 +402,46 @@ export async function resetSecondFactorAction(formData: FormData) {
 }
 
 /**
- * Generates a fresh set of passwords for every staff account and returns a
- * plain-text credentials sheet the Super Admin can download immediately.
+ * Mints a short-lived signed download URL for the official 2026 Abeokuta Admin
+ * Credentials file (PDF or TXT) stored in the private `club-backups` bucket.
  *
- * Only a Super Admin can call this (`admin.manage`). The passwords are never
- * stored anywhere — they exist only in the response handed to the Super
- * Admin's browser.
+ * Only a Super Admin can call this (`admin.manage`). It downloads the exact
+ * current working credentials for all 8 staff accounts without resetting them.
  */
-export async function downloadFreshStaffCredentialsAction() {
+export async function downloadFreshStaffCredentialsAction(format: "pdf" | "txt" = "pdf") {
   const session = await requirePermission("admin.manage");
   const supabase = createAdminClient();
 
   try {
-    const [
-      { data: authUsersData, error: authError },
-      { data: profilesData },
-      { data: roleAssignmentsData },
-    ] = await Promise.all([
-      supabase.auth.admin.listUsers({ perPage: 100 }),
-      supabase.from("profiles").select("id, email, full_name, role, is_active"),
-      supabase.from("user_role_assignments").select("user_id, role_key, revoked_at, expires_at"),
-    ]);
+    const remotePath =
+      format === "txt"
+        ? "handover/2026-ABEOKUTA-ADMIN-CREDENTIALS.txt"
+        : "handover/2026-ABEOKUTA-ADMIN-CREDENTIALS.pdf";
+    const downloadName =
+      format === "txt"
+        ? "2026 ABEOKUTA ADMIN CREDENTIALS.txt"
+        : "2026 ABEOKUTA ADMIN CREDENTIALS.pdf";
 
-    if (authError) {
-      return { ok: false, error: authError.message };
-    }
+    const { data, error } = await supabase.storage
+      .from("club-backups")
+      .createSignedUrl(remotePath, 600, { download: downloadName });
 
-    const profilesMap = new Map((profilesData ?? []).map((p) => [p.id, p]));
-    const now = Date.now();
-    const rolesByUser = new Map<string, Set<string>>();
-    for (const ra of roleAssignmentsData ?? []) {
-      if (ra.revoked_at) continue;
-      if (ra.expires_at && new Date(ra.expires_at).getTime() <= now) continue;
-      if (!rolesByUser.has(ra.user_id)) rolesByUser.set(ra.user_id, new Set());
-      rolesByUser.get(ra.user_id)!.add(ra.role_key);
-    }
-
-    const staff = authUsersData.users.filter((u) => {
-      const roles = rolesByUser.get(u.id);
-      const profile = profilesMap.get(u.id);
-      return (
-        (roles && roles.size > 0) ||
-        Boolean(profile?.role) ||
-        Boolean(u.email?.endsWith("@abeokutapolo2026.ng"))
-      );
-    });
-
-    // Exclude the calling Super Admin from forced rotation unless they are the
-    // only account — rotating your own password mid-session can surprise you.
-    const lines: string[] = [
-      "============================================================",
-      " ABEOKUTA POLO FESTIVAL 2026 — STAFF CREDENTIALS",
-      " CONFIDENTIAL — KEEP PRIVATE — DO NOT SHARE PUBLICLY",
-      ` Generated: ${new Date().toISOString()} by ${session.user.email}`,
-      "============================================================",
-      "",
-      "Give each person ONLY their own row. Never share a login.",
-      "",
-    ];
-
-    for (const u of staff) {
-      if (!u.email) continue;
-      const isSelf = u.id === session.user.id;
-      const profile = profilesMap.get(u.id);
-      const roles = Array.from(rolesByUser.get(u.id) || []);
-      if (profile?.role && !roles.includes(profile.role)) roles.push(profile.role);
-
-      if (isSelf) {
-        lines.push(
-          "---------------------------------------------",
-          `EMAIL   : ${u.email}`,
-          "PASSWORD: (unchanged — this is the account you are signed in with)",
-          `ROLE    : ${roles.join(", ") || "super_admin"}`,
-          "",
-        );
-        continue;
-      }
-
-      const pwd = generateTemporaryPassword();
-      const { error: upErr } = await supabase.auth.admin.updateUserById(u.id, {
-        password: pwd,
-        email_confirm: true,
-        ban_duration: "none",
-      });
-
-      lines.push(
-        "---------------------------------------------",
-        `EMAIL   : ${u.email}`,
-        `PASSWORD: ${upErr ? `(error: ${upErr.message})` : pwd}`,
-        `ROLE    : ${roles.join(", ") || "staff"}`,
-        "",
-      );
+    if (error || !data?.signedUrl) {
+      return { ok: false, error: error?.message || "Could not create download link." };
     }
 
     await writeAudit({
       action: "admin.credentials_sheet_downloaded",
       entityType: "user",
       entityId: session.user.id,
-      metadata: { downloadedBy: session.user.email, count: staff.length },
+      metadata: { downloadedBy: session.user.email, format },
     });
 
-    return { ok: true, content: lines.join("\r\n") };
+    return { ok: true, signedUrl: data.signedUrl };
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Failed to generate credentials sheet.",
+      error: err instanceof Error ? err.message : "Failed to prepare credentials download.",
     };
   }
 }

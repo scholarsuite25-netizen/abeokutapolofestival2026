@@ -247,34 +247,27 @@ export function AdminManagementClient({
     }
   };
 
-  const handleDownloadCredentialsSheet = async () => {
-    if (
-      !confirm(
-        "Generate and download a fresh credentials file for all staff accounts?\n\n" +
-          "This rotates every other staff account's password to a new one and downloads the sheet to your computer. Your own password is left unchanged.",
-      )
-    )
-      return;
+  const handleDownloadCredentialsSheet = async (format: "pdf" | "txt" = "pdf") => {
     setIsSubmitting(true);
     setStatusMsg(null);
-    const res = await downloadFreshStaffCredentialsAction();
+    const res = await downloadFreshStaffCredentialsAction(format);
     setIsSubmitting(false);
-    if (!res.ok || !res.content) {
-      setStatusMsg({ type: "error", text: res.error || "Could not generate the credentials file." });
+    if (!res.ok || !res.signedUrl) {
+      setStatusMsg({ type: "error", text: res.error || "Could not prepare the credentials download." });
       return;
     }
-    const blob = new Blob([res.content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "ABEOKUTA ADMIN CREDENTIALS - KEEP PRIVATE.txt";
+    a.href = res.signedUrl;
+    a.download =
+      format === "txt"
+        ? "2026 ABEOKUTA ADMIN CREDENTIALS.txt"
+        : "2026 ABEOKUTA ADMIN CREDENTIALS.pdf";
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
     setStatusMsg({
       type: "success",
-      text: "Fresh staff credentials file downloaded. Hand each person only their own row.",
+      text: `2026 Abeokuta Admin Credentials (${format.toUpperCase()}) download started.`,
     });
   };
 
@@ -326,12 +319,21 @@ export function AdminManagementClient({
             </a>
             <button
               type="button"
-              onClick={handleDownloadCredentialsSheet}
+              onClick={() => handleDownloadCredentialsSheet("pdf")}
               disabled={isSubmitting}
               className="inline-flex items-center gap-1.5 rounded-lg bg-forest px-3 py-1.5 text-xs font-semibold text-ivory hover:bg-forest-light transition-colors disabled:opacity-50"
             >
               <KeyRound className="h-3.5 w-3.5 text-gold" />
-              <span>Download Fresh Credentials (.txt)</span>
+              <span>Download Admin Credentials (PDF)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDownloadCredentialsSheet("txt")}
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-card px-3 py-1.5 text-xs font-semibold text-forest hover:bg-sage/40 transition-colors disabled:opacity-50"
+            >
+              <KeyRound className="h-3.5 w-3.5 text-gold-deep" />
+              <span>Download Admin Credentials (.txt)</span>
             </button>
           </div>
         </div>
