@@ -161,11 +161,13 @@ Download them into a folder named for the event day, e.g. `Day3 — 20 Dec 2026`
 
 ## 8. Admin Hierarchy (`/abawole/admins`) — Super Admins only
 
+- **Approve (next to each administrator's name)** — if any staff member has a password or sign-in problem (forgotten password, deactivated account, suspended login, or revoked role), simply click **Approve** on their row. It immediately reactivates the account, restores their role, and pops up a fresh one-time password you can copy and hand over in person.
+- **Club Handover Documents & Staff Credentials (top bar)** — one-click buttons to **Download Handover (PDF)**, **Download Walkthrough (PDF)**, or **Download Fresh Credentials (.txt)** (which rotates all staff passwords and saves a fresh private sheet to your computer).
 - **Create New Admin** — add a staff login with a full name, phone number and a **Role Classification** (President, General Secretary, Gate Marshal, Financial Secretary, Accreditation Officer, and others).
 - **Edit Administrator Details** — change a name, phone or role.
 - **Actions** — deactivate an admin who has left (do not delete: the audit trail must stay intact).
 - **Change My Password** — the shortcut in the same screen.
-- **Assigned Staff Logins** (top of the page) lists each person's login URL and email. **Passwords are never displayed anywhere in the console** — if someone needs a new one, use the "Reset password" action on their row.
+- **Assigned Staff Logins** lists each person's login URL and email. **Passwords are never stored or displayed in the console** — use **Approve** or the lock button on their row whenever someone needs a new one.
 
 > Roles decide what each person can open. Give the money people the *Financial Secretary* role, marshals the *Gate Marshal* role, and keep **Admin Hierarchy** itself to Super Admins only.
 

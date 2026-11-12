@@ -2,28 +2,32 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { 
-  ShieldCheck, 
-  UserPlus, 
-  KeyRound, 
-  Edit3, 
-  Copy, 
-  Check, 
-  Trash2, 
-  ShieldAlert, 
-  Crown, 
-  QrCode, 
+import {
+  ShieldCheck,
+  UserPlus,
+  KeyRound,
+  Edit3,
+  Copy,
+  Check,
+  Trash2,
+  ShieldAlert,
+  Crown,
+  QrCode,
   FileText,
   Lock,
-  Landmark
+  Landmark,
+  BadgeCheck,
+  UserCheck
 } from "lucide-react";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
-import { 
-  createAdminAccountAction, 
-  updateAdminDetailsAction, 
+import {
+  createAdminAccountAction,
+  updateAdminDetailsAction,
   resetAdminPasswordAction,
   resetSecondFactorAction,
-  revokeAdminRoleAction 
+  revokeAdminRoleAction,
+  approveAdminAccessAction,
+  downloadFreshStaffCredentialsAction
 } from "@/app/(admin)/abawole/admins/actions";
 
 export interface AdminUserRecord {
@@ -34,6 +38,10 @@ export interface AdminUserRecord {
   roles: string[];
   createdAt: string;
   isActive: boolean;
+  /** True when the account can actually be used to sign in. */
+  isApproved: boolean;
+  /** Plain-English reason the account needs approval, when it does. */
+  accessProblem: string | null;
 }
 
 const PRESET_CREDENTIALS = [
@@ -108,6 +116,11 @@ export function AdminManagementClient({
   const [newPassword, setNewPassword] = useState("");
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [approvedResult, setApprovedResult] = useState<{
+    email: string;
+    password: string;
+    name: string;
+  } | null>(null);
 
   const copyToClipboard = (key: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -200,6 +213,71 @@ export function AdminManagementClient({
     }
   };
 
+  /**
+   * Approves a staff member whose access is broken: the account is restored
+   * and a one-time password is issued for the Super Admin to hand over.
+   */
+  const handleApproveAccess = async (adm: AdminUserRecord) => {
+    const problem = adm.accessProblem ? ` (${adm.accessProblem})` : "";
+    if (
+      !confirm(
+        `Approve access for ${adm.fullName || adm.email}${problem}?\n\n` +
+          `This reactivates the account and issues a one-time password for you to hand over in person. ` +
+          `Any password they were using stops working.`,
+      )
+    )
+      return;
+
+    setIsSubmitting(true);
+    setStatusMsg(null);
+    const formData = new FormData();
+    formData.append("userId", adm.id);
+    const res = await approveAdminAccessAction(formData);
+    setIsSubmitting(false);
+
+    if (res.ok) {
+      setStatusMsg({ type: "success", text: res.message || "Access approved." });
+      setApprovedResult({
+        email: res.email || adm.email,
+        password: res.temporaryPassword || "",
+        name: adm.fullName,
+      });
+    } else {
+      setStatusMsg({ type: "error", text: res.error || "Failed to approve access." });
+    }
+  };
+
+  const handleDownloadCredentialsSheet = async () => {
+    if (
+      !confirm(
+        "Generate and download a fresh credentials file for all staff accounts?\n\n" +
+          "This rotates every other staff account's password to a new one and downloads the sheet to your computer. Your own password is left unchanged.",
+      )
+    )
+      return;
+    setIsSubmitting(true);
+    setStatusMsg(null);
+    const res = await downloadFreshStaffCredentialsAction();
+    setIsSubmitting(false);
+    if (!res.ok || !res.content) {
+      setStatusMsg({ type: "error", text: res.error || "Could not generate the credentials file." });
+      return;
+    }
+    const blob = new Blob([res.content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ABEOKUTA ADMIN CREDENTIALS - KEEP PRIVATE.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setStatusMsg({
+      type: "success",
+      text: "Fresh staff credentials file downloaded. Hand each person only their own row.",
+    });
+  };
+
   return (
     <div className="space-y-8">
       {/* Alert / Status Toast */}
@@ -214,6 +292,50 @@ export function AdminManagementClient({
           {statusMsg.text}
         </div>
       )}
+
+      {/* 0. Club Handover Documents & Staff Credentials Download */}
+      <div className="rounded-2xl border border-gold/40 bg-forest/5 p-5 shadow-xs">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-gold-deep" />
+              <h2 className="font-display text-base font-bold text-forest">
+                Club Handover Documents &amp; Staff Credentials
+              </h2>
+            </div>
+            <p className="mt-0.5 text-xs text-muted-brand">
+              Download the official PDF guides for the Club, or generate a fresh private credentials sheet.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/docs/HANDOVER.pdf"
+              download="Abeokuta Polo Festival 2026 - Handover Document.pdf"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-card px-3 py-1.5 text-xs font-semibold text-forest hover:bg-sage/40 transition-colors"
+            >
+              <FileText className="h-3.5 w-3.5 text-gold-deep" />
+              <span>Download Handover (PDF)</span>
+            </a>
+            <a
+              href="/docs/CONSOLE_WALKTHROUGH.pdf"
+              download="Abeokuta Polo Festival 2026 - Console Walkthrough.pdf"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-card px-3 py-1.5 text-xs font-semibold text-forest hover:bg-sage/40 transition-colors"
+            >
+              <FileText className="h-3.5 w-3.5 text-gold-deep" />
+              <span>Download Walkthrough (PDF)</span>
+            </a>
+            <button
+              type="button"
+              onClick={handleDownloadCredentialsSheet}
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-forest px-3 py-1.5 text-xs font-semibold text-ivory hover:bg-forest-light transition-colors disabled:opacity-50"
+            >
+              <KeyRound className="h-3.5 w-3.5 text-gold" />
+              <span>Download Fresh Credentials (.txt)</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* 1. Quick Copy Credentials Deck */}
       <div className="rounded-2xl border border-line bg-card p-6 shadow-xs">
@@ -363,8 +485,31 @@ export function AdminManagementClient({
                 return (
                   <tr key={adm.id} className="hover:bg-sage/15 transition-colors">
                     <td className="py-3.5 pr-4">
-                      <div className="font-medium text-ink">{adm.fullName || adm.email}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium text-ink">{adm.fullName || adm.email}</div>
+                        {adm.isApproved ? (
+                          <span
+                            title="This account is active and can sign in"
+                            className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800"
+                          >
+                            <BadgeCheck className="h-3 w-3" />
+                            Approved
+                          </span>
+                        ) : (
+                          <span
+                            title={adm.accessProblem || "Access needs approval"}
+                            className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900"
+                          >
+                            Needs approval
+                          </span>
+                        )}
+                      </div>
                       <div className="font-mono text-[11px] text-muted-brand">{adm.email}</div>
+                      {!adm.isApproved && adm.accessProblem ? (
+                        <div className="mt-1 text-[11px] font-medium text-amber-800">
+                          {adm.accessProblem}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="py-3.5 pr-4">
                       <div className="flex flex-wrap gap-1">
@@ -416,6 +561,24 @@ export function AdminManagementClient({
                     </td>
                     <td className="py-3.5 text-right">
                       <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleApproveAccess(adm)}
+                          disabled={isSubmitting}
+                          title={
+                            adm.isApproved
+                              ? "Approve access — restore this account and issue a one-time password"
+                              : `Approve access — ${adm.accessProblem || "restore this account"}`
+                          }
+                          className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors disabled:opacity-50 ${
+                            adm.isApproved
+                              ? "border-forest/30 bg-forest/5 text-forest hover:bg-forest/15"
+                              : "border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-200"
+                          }`}
+                        >
+                          <UserCheck className="h-3.5 w-3.5" />
+                          Approve
+                        </button>
+
                         <button
                           onClick={() => setEditingAdmin(adm)}
                           title="Edit Profile & Designation"
@@ -531,6 +694,63 @@ export function AdminManagementClient({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Approved Access — One-Time Password Modal */}
+      {approvedResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-forest-deep/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-card p-6 shadow-2xl">
+            <div className="flex items-center gap-2">
+              <BadgeCheck className="h-5 w-5 text-emerald-700" />
+              <h3 className="font-display text-base font-bold text-forest">
+                Access Approved for {approvedResult.name || approvedResult.email}
+              </h3>
+            </div>
+            <p className="mt-2 text-xs text-muted-brand leading-relaxed">
+              The account for <span className="font-mono">{approvedResult.email}</span> is active and
+              can sign in now. Give them this one-time password <strong>in person</strong> — the
+              console does not store it, so it will not be shown again once you close this box.
+            </p>
+
+            <div className="mt-4 rounded-xl border border-forest/30 bg-forest/5 p-3.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-brand">
+                One-time password
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="font-mono text-sm font-bold tracking-wider text-forest select-all">
+                  {approvedResult.password}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard("approved-password", approvedResult.password)}
+                  className="inline-flex items-center gap-1 rounded-md border border-forest/30 bg-card px-2.5 py-1 text-xs font-semibold text-forest hover:bg-sage/40"
+                >
+                  {copiedKey === "approved-password" ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-700" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-end border-t border-line pt-3">
+              <button
+                type="button"
+                onClick={() => setApprovedResult(null)}
+                className="rounded-lg bg-forest px-4 py-1.5 text-xs font-semibold text-ivory hover:bg-forest-light"
+              >
+                I have written it down
+              </button>
+            </div>
           </div>
         </div>
       )}

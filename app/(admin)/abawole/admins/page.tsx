@@ -125,6 +125,13 @@ async function AdminsContent() {
     const isTargetDomain = u.email?.endsWith("@abeokutapolo2026.ng") || u.email?.includes("admin");
 
     if (hasAdminRole || isTargetDomain) {
+      // An account is "approved" when it can actually be used: it is
+      // confirmed, not banned, active, and still holds a live role.
+      const isBanned = Boolean(u.banned_until && new Date(u.banned_until).getTime() > now);
+      const isConfirmed = Boolean(u.email_confirmed_at);
+      const isActive = profile?.is_active ?? true;
+      const hasLiveRole = Array.from(rolesByUser.get(u.id) || []).length > 0 || Boolean(profileRole);
+
       adminList.push({
         id: u.id,
         email: u.email || "",
@@ -136,7 +143,18 @@ async function AdminsContent() {
         phone: (u.user_metadata?.phone as string) || profile?.phone || null,
         roles: Array.from(allRoles),
         createdAt: u.created_at,
-        isActive: profile?.is_active ?? true,
+        isActive,
+        isApproved: isConfirmed && !isBanned && isActive && hasLiveRole,
+        accessProblem:
+          !isConfirmed
+            ? "Email address was never confirmed"
+            : isBanned
+              ? "Account is suspended"
+              : !isActive
+                ? "Account has been deactivated"
+                : !hasLiveRole
+                  ? "All roles have been revoked"
+                  : null,
       });
     }
   }
