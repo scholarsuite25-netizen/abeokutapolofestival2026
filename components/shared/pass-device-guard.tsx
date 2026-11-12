@@ -96,6 +96,30 @@ export function getOrCreateMobileDeviceId(): string {
   }
 }
 
+/**
+ * Retrieves the persisted desktop device ID from localStorage,
+ * or generates and persists a new authoritative DESKTOP-${UUID} identifier.
+ *
+ * A laptop is a legitimate first claimant, so laptop users receive the same
+ * anti-forwarding protection as phone users: the pass is claimed for this
+ * machine and cannot be forwarded to another one.
+ */
+export function getOrCreateDesktopDeviceId(): string {
+  if (typeof window === "undefined") return `DESKTOP-${crypto.randomUUID()}`;
+
+  try {
+    const existing = localStorage.getItem("abk_desktop_device_id");
+    if (existing && existing.startsWith("DESKTOP-")) {
+      return existing;
+    }
+    const newId = `DESKTOP-${crypto.randomUUID()}`;
+    localStorage.setItem("abk_desktop_device_id", newId);
+    return newId;
+  } catch {
+    return `DESKTOP-${crypto.randomUUID()}`;
+  }
+}
+
 export interface MobileBindingStationProps {
   passCode: string;
   holderName?: string;
@@ -347,22 +371,26 @@ export function PassDeviceGuard({
 
       // ── DESKTOP SESSION ──
       if (!isMobile) {
+        // A laptop receives the SAME protection as a phone: the pass is claimed
+        // for this device (so it can never be forwarded to another machine).
+        // The claim stays provisional, so the guest may still activate it on
+        // their phone for contactless turnstile use.
+        const desktopId = getOrCreateDesktopDeviceId();
         try {
-          // Check if pass is already bound to a mobile device
-          const binding = await verifyPassDeviceBinding(passCode, "");
+          const res = await verifyPassDeviceBinding(passCode, desktopId, holderName);
           if (!isMounted) return;
 
-          if (binding.status === "forwarding_blocked") {
-            // Mobile-bound pass accessed on desktop -> Reject with access lock screen
+          if (res.status === "forwarding_blocked") {
+            // The pass is held by another device -> refuse this machine.
             setAuthStatus("desktop_locked");
             setErrorMessage(
-              binding.message ||
-                "Pass is non-transferable and locked to another device. Under Abeokuta Polo Festival anti-scalping security protocol, this pass is bound exclusively to the attendee's mobile phone."
+              res.message ||
+                "This pass is locked to another device. Under Abeokuta Polo Festival anti-scalping security protocol, a claimed pass cannot be opened on a second device.",
             );
             return;
           }
 
-          // Unbound pass viewed on desktop -> Display Mobile Binding Station
+          // Claimed on this device (or already ours) — offer phone activation.
           setAuthStatus("desktop_unbound");
         } catch {
           if (isMounted) setAuthStatus("desktop_unbound");

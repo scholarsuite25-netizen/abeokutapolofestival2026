@@ -208,15 +208,18 @@ function RegisterContent() {
       setResult(res);
       setIssuedPasses(res.passes);
 
-      if (isMobileBrowser()) {
-        // 1. Persist to mobile phone storage (localStorage, sessionStorage, and 365-day cookie)
-        persistRegisteredPass(res.passes);
+      // Persist on EVERY device (phone or laptop) so a laptop registrant keeps
+      // their pass and can retrieve it later. The pass itself is claimed by
+      // whichever device opens it first — the same anti-forwarding rule for
+      // laptops as for phones.
+      persistRegisteredPass(res.passes);
 
-        // 2. Automatically download offline ID Card HTML pass(es) on mobile
+      if (isMobileBrowser()) {
+        // Automatically download offline ID Card HTML pass(es) on mobile
         forceDownloadAllPasses(res.passes);
         setDownloadTriggered(true);
       } else {
-        // Desktop session: pass remains UNBOUND to laptop browser session
+        // Laptop: the pass is shown on screen and can be downloaded on demand.
         setDownloadTriggered(false);
       }
     } else {

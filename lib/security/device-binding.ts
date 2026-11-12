@@ -22,6 +22,28 @@ export interface DeviceBindingRecord {
   passCode: string;
   holderName?: string;
   claimedAt: string;
+  /**
+   * True when the binding is FINAL (a mobile device holds the pass). A
+   * desktop claim is provisional until the guest activates it on their phone.
+   */
+  isLockedToDevice?: boolean;
+}
+
+/**
+ * Device classes.
+ *
+ * A laptop is a legitimate first claimant (guests register and pay on a
+ * laptop), so a desktop claim is allowed — but it is PROVISIONAL: the pass
+ * may still be handed over, exactly once, to the guest's phone (which becomes
+ * the final device). After that the pass is locked, exactly like a pass
+ * claimed on a phone from the start.
+ */
+export function isDesktopDeviceId(deviceId: string): boolean {
+  return deviceId.startsWith("DESKTOP-");
+}
+
+export function isMobileDeviceId(deviceId: string): boolean {
+  return deviceId.startsWith("MOBILE-");
 }
 
 // In-memory device binding registry for rapid turnstile & client verification
@@ -60,7 +82,7 @@ export async function getPassBindingRecord(passCodeInput: string): Promise<Devic
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("credentials")
-        .select("id, bound_device_id, holder_name, created_at, claimed_at")
+        .select("id, bound_device_id, holder_name, created_at, claimed_at, is_locked_to_device")
         .eq("pass_code", passCode)
         .maybeSingle();
 
@@ -71,6 +93,7 @@ export async function getPassBindingRecord(passCodeInput: string): Promise<Devic
             passCode,
             holderName: data.holder_name,
             claimedAt: (data as any).claimed_at || data.created_at,
+            isLockedToDevice: Boolean((data as any).is_locked_to_device),
           };
           memoryBindingRegistry.set(passCode, record);
           return record;
@@ -153,6 +176,7 @@ export async function verifyPassDeviceBinding(
       passCode,
       holderName,
       claimedAt: new Date().toISOString(),
+      isLockedToDevice: !isDesktopDeviceId(deviceId),
     };
 
     if (isSupabaseConfigured()) {
@@ -166,7 +190,9 @@ export async function verifyPassDeviceBinding(
           .from("credentials")
           .update({
             bound_device_id: deviceId,
-            is_locked_to_device: true,
+            // A desktop claim is PROVISIONAL (the guest may still activate it
+            // on their phone). A mobile claim is final from the start.
+            is_locked_to_device: !isDesktopDeviceId(deviceId),
             claimed_at: record.claimedAt,
           } as any)
           .eq("pass_code", passCode)
@@ -213,6 +239,87 @@ export async function verifyPassDeviceBinding(
         // The binding is already durable; an audit hiccup must not revoke it.
         console.error(
           `[device-binding] Audit write failed for pass.device_bound ("${passCode}"):`,
+          auditErr,
+        );
+      }
+    }
+
+    return {
+      isAuthorized: true,
+      status: "newly_bound",
+      boundDeviceId: deviceId,
+    };
+  }
+
+  // Case B2: The pass was claimed provisionally on a desktop and the guest is
+  // now activating it on their phone. This handover is allowed exactly once —
+  // the phone becomes the final device and the pass is locked from then on.
+  if (
+    isDesktopDeviceId(existing.deviceId) &&
+    existing.isLockedToDevice !== true &&
+    isMobileDeviceId(deviceId)
+  ) {
+    const handoverAt = new Date().toISOString();
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createAdminClient();
+        const { data, error } = await supabase
+          .from("credentials")
+          .update({
+            bound_device_id: deviceId,
+            is_locked_to_device: true,
+            claimed_at: handoverAt,
+          } as any)
+          .eq("pass_code", passCode)
+          .select("id");
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          console.warn(
+            `[device-binding] Refused activation for "${passCode}": no credential row to update.`,
+          );
+          return {
+            isAuthorized: false,
+            status: "persistence_failed",
+            boundDeviceId: deviceId,
+            message:
+              "This pass could not be securely activated right now. Please try again in a moment or visit the Secretariat desk for accreditation.",
+          };
+        }
+      } catch (err) {
+        console.error(
+          `[device-binding] Failed to activate pass "${passCode}" on the mobile device:`,
+          err,
+        );
+        return {
+          isAuthorized: false,
+          status: "persistence_failed",
+          boundDeviceId: deviceId,
+          message:
+            "This pass could not be securely activated right now. Please try again in a moment or visit the Secretariat desk for accreditation.",
+        };
+      }
+    }
+
+    memoryBindingRegistry.set(passCode, {
+      deviceId,
+      passCode,
+      holderName,
+      claimedAt: handoverAt,
+      isLockedToDevice: true,
+    });
+
+    if (isSupabaseConfigured()) {
+      try {
+        await writeAudit({
+          action: "pass.device_activated_on_mobile",
+          entityType: "credential",
+          entityId: passCode,
+          metadata: { previousDeviceId: existing.deviceId, deviceId, passCode },
+        });
+      } catch (auditErr) {
+        console.error(
+          `[device-binding] Audit write failed for pass.device_activated_on_mobile ("${passCode}"):`,
           auditErr,
         );
       }
