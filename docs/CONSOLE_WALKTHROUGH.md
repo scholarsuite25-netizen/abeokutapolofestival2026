@@ -148,15 +148,25 @@ Download them into a folder named for the event day, e.g. `Day3 — 20 Dec 2026`
 
 > Roles decide what each person can open. Give the money people the *Financial Secretary* role, marshals the *Gate Marshal* role, and keep **Admin Hierarchy** itself to Super Admins only.
 
-### Two-factor authentication (2FA)
+### Two-factor authentication (2FA) — one extra step when you sign in
 
-Each console account should carry a second factor (an authenticator app on your phone):
+This is the "second lock" on the console. It is optional **per person** and you can choose whichever method suits you — nothing to install on your phone is required.
 
-1. Sign in as usual, then open **https://www.abeokutapolofestival2026.org.ng/mfa-setup**.
-2. Scan the QR code with Google Authenticator, Microsoft Authenticator or 1Password, then type the 6-digit code it shows.
-3. You are taken into the console with two-factor protection switched on.
+**Step 1 — open https://www.abeokutapolofestival2026.org.ng/mfa-setup** and pick one of the three options on the page:
 
-Once **every** console account has enrolled, a Super Admin turns on the `mfa_required_for_console` setting — after that the console refuses anyone who signs in without a second factor.
+| Choose this | What you do | Good for |
+|---|---|---|
+| **Use my phone** | Install a free app — Google Authenticator, Microsoft Authenticator, Authy or 1Password. Scan the QR code with the phone's camera, then type the 6-digit code the app shows. | Anyone with a smartphone |
+| **Use this laptop** | Exactly the same 6-digit code, but the app runs on the computer: Microsoft Authenticator (Windows), the 1Password or Bitwarden browser extension, or Authy desktop. Scan the QR with the laptop's webcam (or type the setup key), and the extension fills the code in for you. | Staff who work on a computer, or who do not carry a phone |
+| **Use my fingerprint or a USB key** | Your laptop asks for your fingerprint, face or PIN (Windows Hello / Touch ID), or you plug in a USB/NFC security key. There is no code to read or type. | Anyone who prefers a tap to a code |
+
+The page walks you through each option with plain instructions, and the QR code is large enough to scan from a printed copy.
+
+**If you cannot do any of them:** that is fine. Ask the Super Admin — they can enrol you at the desk, or simply leave second-factor sign-in switched off for your account while the strong password policy applies.
+
+**Lost your phone or laptop?** A Super Admin can clear your second factor from **Admin Hierarchy** (the shield button on your row) and you set it up again.
+
+**Turning it on for everyone:** once each console account has enrolled, a Super Admin switches on the `mfa_required_for_console` setting — after that the console refuses anyone who signs in without a second factor. Until then, nothing changes for anyone.
 
 ---
 

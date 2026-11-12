@@ -21,7 +21,8 @@ import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter
 import { 
   createAdminAccountAction, 
   updateAdminDetailsAction, 
-  resetAdminPasswordAction, 
+  resetAdminPasswordAction,
+  resetSecondFactorAction,
   revokeAdminRoleAction 
 } from "@/app/(admin)/abawole/admins/actions";
 
@@ -160,6 +161,26 @@ export function AdminManagementClient({
       setNewPassword("");
     } else {
       setStatusMsg({ type: "error", text: res.error || "Failed to reset password." });
+    }
+  };
+
+  const handleResetSecondFactor = async (userId: string, email: string) => {
+    if (
+      !confirm(
+        `Clear the second factor (MFA) for ${email}?\n\nUse this when a staff member has lost their phone or laptop. They will be signed out and can set it up again at /mfa-setup.`,
+      )
+    )
+      return;
+    setIsSubmitting(true);
+    setStatusMsg(null);
+    const formData = new FormData();
+    formData.append("userId", userId);
+    const res = await resetSecondFactorAction(formData);
+    setIsSubmitting(false);
+    if (res.ok) {
+      setStatusMsg({ type: "success", text: res.message || "Second factor cleared." });
+    } else {
+      setStatusMsg({ type: "error", text: res.error || "Failed to clear the second factor." });
     }
   };
 
@@ -421,6 +442,16 @@ export function AdminManagementClient({
                             className="rounded-md border border-line bg-card p-1.5 text-muted-brand hover:text-red-600 hover:bg-red-50 transition-colors"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+
+                        {isSuper && (
+                          <button
+                            onClick={() => handleResetSecondFactor(adm.id, adm.email)}
+                            title="Clear second factor (lost phone or laptop)"
+                            className="rounded-md border border-line bg-card p-1.5 text-muted-brand hover:text-gold-deep hover:bg-sage/40 transition-colors"
+                          >
+                            <ShieldAlert className="h-3.5 w-3.5" />
                           </button>
                         )}
                       </div>

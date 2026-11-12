@@ -202,8 +202,63 @@ export async function resetAdminPasswordAction(formData: FormData) {
   }
 }
 
-export async function revokeAdminRoleAction(formData: FormData) {
+/**
+ * Clears a staff member's second factor (MFA).
+ *
+ * The recovery path for someone who loses their phone or laptop: a Super Admin
+ * clears the factor here and the member enrols again at /mfa-setup. Supabase
+ * also signs the member out of active sessions when the factor is removed.
+ */
+export async function resetSecondFactorAction(formData: FormData) {
   const session = await requirePermission("admin.manage");
+
+  const userId = formData.get("userId") as string;
+  if (!userId) {
+    return { ok: false, error: "Missing userId." };
+  }
+
+  const supabase = createAdminClient();
+
+  try {
+    const { data, error } = await supabase.auth.admin.mfa.listFactors({ userId });
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    const factors = data?.factors ?? [];
+    for (const factor of factors) {
+      const { error: deleteError } = await supabase.auth.admin.mfa.deleteFactor({
+        id: factor.id,
+        userId,
+      });
+      if (deleteError) {
+        return { ok: false, error: deleteError.message };
+      }
+    }
+
+    await writeAudit({
+      action: "admin.reset_second_factor",
+      entityType: "user",
+      entityId: userId,
+      metadata: { resetBy: session.user.id, factorsRemoved: factors.length },
+    });
+
+    return {
+      ok: true,
+      message:
+        factors.length > 0
+          ? "Second factor cleared. The member can now set it up again."
+          : "That account had no second factor.",
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to clear the second factor.",
+    };
+  }
+}
+
+export async function revokeAdminRoleAction(formData: FormData) {  const session = await requirePermission("admin.manage");
 
   const userId = formData.get("userId") as string;
   const roleKey = formData.get("roleKey") as string;
