@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { formatWhatsAppUrl, validateWhatsAppPhone } from "@/lib/utils/phone";
 import { isTablePassCode, verifyPassDeviceBinding } from "@/lib/security/device-binding";
-import { submitRegistration } from "@/app/(public)/register/actions";
+import { submitRegistration, submitTableRegistration } from "@/app/(public)/register/actions";
 import { GALLERY_DATA } from "@/components/design/public/gallery-showcase";
 
 /**
@@ -671,8 +671,11 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
       expect(tableActions).toContain("submitTableRegistration");
     });
 
-    it("3.5: Day 3 strict paywall: Unverified bank transfer registrations strictly receive provisional status and cannot bind active gate passes", async () => {
-      const reg = await submitRegistration({
+    it("3.5: Day 3 strict paywall: a standalone Day 3 purchase is refused, and an unverified bank transfer for a table yields only a provisional claim slip", async () => {
+      // (a) Day 3 Grand Finale admission is sold with a VIP Table package, so a
+      //     hand-crafted standalone Day-3 request on the registration page must
+      //     be refused outright and pointed at the Tables page.
+      const standalone = await submitRegistration({
         firstName: "Taofeek",
         lastName: "Balogun",
         email: "taofeek.balogun@example.com",
@@ -685,16 +688,38 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
         bankTransferRef: "ABK-WEMA-TEST-001",
       });
 
+      expect(standalone.success).toBe(false);
+      expect(standalone.error).toContain("VIP Table");
+      expect(standalone.error).toContain("/tables");
+      expect(standalone.passes).toBeUndefined();
+
+      // (b) The paid Day-3 path is the table booking. An unverified bank
+      //     transfer there must produce a Provisional Claim Slip only —
+      //     never an active VVIP pass.
+      const reg = await submitTableRegistration({
+        packageId: "individual_vip",
+        tableSerial: "Regular Pass 01",
+        buyerFirstName: "Taofeek",
+        buyerLastName: "Balogun",
+        buyerEmail: "taofeek.balogun@example.com",
+        buyerPhone: "+234 803 777 8888",
+        paymentMethod: "bank_transfer",
+        bankTransferRef: "ABK-WEMA-TEST-001",
+        attendees: [{ seat: 1, name: "Taofeek Balogun" }],
+      });
+
       expect(reg.success).toBe(true);
-      expect(reg.status).toBe("pending_verification");
+      expect(reg.status).toBe("pending_bank_verification");
       expect(reg.passes).toBeDefined();
       expect(reg.passes!.length).toBe(1);
 
       const pass = reg.passes![0];
-      // Day 3 bank transfer must be strictly provisional pending bursary reconciliation
+      // Day 3 bank transfer must be strictly provisional pending Accounts reconciliation
       expect(pass.status).toBe("pending_verification");
+      expect(pass.day3Status).toBe("pending_verification");
       expect(pass.isVvip).toBe(false);
-      expect(pass.category).toContain("Provisional Claim (Pending Accounts Verification)");
+      expect(pass.category).toContain("Provisional");
+      expect(pass.bankTransferRef).toBe("ABK-WEMA-TEST-001");
     });
 
     it("3.6: Mobile binding station QR payload encodes /pass/[code]?bind=mobile matching turnstile format", () => {

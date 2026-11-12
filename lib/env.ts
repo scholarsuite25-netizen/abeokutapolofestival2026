@@ -28,6 +28,7 @@ const serverSchema = z.object({
   PAYSTACK_SECRET_KEY: z.string().min(1).optional(),
   PAYSTACK_DEMO_MODE: z.string().optional(),
   VVIP_INVITATION_CODES: z.string().optional(),
+  SIGNIN_CODE_SHARED_MAILBOX: z.string().email().optional(),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 });
 

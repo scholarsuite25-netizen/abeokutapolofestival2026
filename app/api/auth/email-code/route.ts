@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/client";
+import { deliveryAddressFor, sharedMailbox } from "@/lib/email/shared-mailbox";
 import { consumeRateLimit, getClientIp } from "@/lib/security/rate-limit";
 
 /**
@@ -75,9 +76,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ sent: true });
     }
 
+    const deliverTo = deliveryAddressFor(email);
+
     const minutes = 15;
     const delivery = await sendEmail({
-      to: email,
+      to: deliverTo,
       subject: "Your Abeokuta Polo Festival console sign-in code",
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #141f18; background-color: #faf8f5; border-radius: 12px; border: 1px solid #dcd5c2;">
@@ -103,6 +106,11 @@ export async function POST(req: NextRequest) {
               <li>Type the code above and press <strong>Enter code</strong>.</li>
             </ol>
             <p style="margin: 12px 0 0;">The code works once and expires in about ${minutes} minutes. If you did not ask for it, you can ignore this email — nobody can sign in without it.</p>
+            ${
+              deliverTo.toLowerCase() === email.toLowerCase()
+                ? ""
+                : `<p style="margin: 8px 0 0;"><strong>Note:</strong> club addresses share one mailbox, so this code was sent to <strong>${sharedMailbox()}</strong>. Ask the Secretariat if you cannot see it.</p>`
+            }
           </div>
 
           <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #727973;">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,14 @@ import { Label } from "@/components/ui/label";
 /**
  * Staff sign-in.
  *
- * Two simple routes:
- *   • "Email me a code" — the club's own mailer sends a one-time 6-digit code
- *     to the member's club address. No app, no phone, nothing to remember.
- *   • "Use my password" — the fallback when email is not to hand.
+ * Simple routes, in the order the club prefers them:
+ *   • "Use my password" — the club's primary method.
+ *   • "Email me a code"  — a one-time 6-digit code, nothing to remember.
+ *   • "Text me a code"   — offered only when the project has phone sign-in
+ *                          switched on, so the button never dead-ends.
  */
 
-type Mode = "code" | "password";
+type Mode = "code" | "password" | "sms";
 
 export function SignInForm() {
   const router = useRouter();
@@ -26,9 +27,20 @@ export function SignInForm() {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [smsSent, setSmsSent] = useState(false);
+  const [phoneEnabled, setPhoneEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // SMS sign-in is only offered when the project has phone sign-in switched on.
+  useEffect(() => {
+    void fetch("/api/auth/phone-status")
+      .then((r) => r.json())
+      .then((d) => setPhoneEnabled(Boolean(d?.phoneEnabled)))
+      .catch(() => undefined);
+  }, []);
 
   /** Sends the club member to the right place once they are signed in. */
   async function routeOnward(userEmail?: string) {
@@ -128,6 +140,58 @@ export function SignInForm() {
         return;
       }
 
+      await routeOnward(data.user?.email);
+      router.refresh();
+    } catch {
+      setError("We could not confirm your code just now. Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function requestSms(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    setPending(true);
+    try {
+      const supabase = createClient();
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        phone: phone.trim(),
+        options: { shouldCreateUser: false },
+      });
+      if (otpError) {
+        setError(
+          "We could not send a text message to that number. Check the number, or use your email or password instead.",
+        );
+        return;
+      }
+      setSmsSent(true);
+      setNotice(
+        `If ${phone.trim()} is registered to a club account, a sign-in code is on its way by text. It works once and expires shortly.`,
+      );
+    } catch {
+      setError("We could not reach the server. Please try again shortly.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function submitSms(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setPending(true);
+    try {
+      const supabase = createClient();
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        phone: phone.trim(),
+        token: code.trim(),
+        type: "sms",
+      });
+      if (verifyError) {
+        setError("That code was not accepted. It may have expired — send yourself a new one.");
+        return;
+      }
       await routeOnward(data.user?.email);
       router.refresh();
     } catch {
@@ -249,6 +313,100 @@ export function SignInForm() {
                 className="self-center text-xs font-medium text-forest-interactive underline-offset-4 hover:underline"
               >
                 Use my password instead
+              </button>
+              {phoneEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("sms");
+                    setError(null);
+                    setNotice(null);
+                  }}
+                  className="self-center text-xs font-medium text-forest-interactive underline-offset-4 hover:underline"
+                >
+                  Text me a code instead
+                </button>
+              ) : null}
+            </form>
+          )}
+        </>
+      ) : mode === "sms" ? (
+        <>
+          {smsSent ? (
+            <form onSubmit={submitSms} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="smsCode">6-digit text code</Label>
+                <Input
+                  id="smsCode"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="000000"
+                  className="text-center font-mono text-lg tracking-[0.35em]"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                />
+              </div>
+              {notice ? (
+                <p className="rounded border border-forest/30 bg-forest/5 px-3 py-2 text-sm text-forest">
+                  {notice}
+                </p>
+              ) : null}
+              {error ? (
+                <p role="alert" className="rounded border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+                  {error}
+                </p>
+              ) : null}
+              <Button type="submit" disabled={pending || code.trim().length < 6} className="w-full">
+                {pending ? "Checking…" : "Enter code"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSmsSent(false);
+                  setCode("");
+                  setNotice(null);
+                  setError(null);
+                }}
+                className="self-center text-xs font-medium text-forest-interactive underline-offset-4 hover:underline"
+              >
+                Send a new text
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={requestSms} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="phone">Mobile number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="+234 803 000 0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              {notice ? (
+                <p className="rounded border border-forest/30 bg-forest/5 px-3 py-2 text-sm text-forest">
+                  {notice}
+                </p>
+              ) : null}
+              {error ? (
+                <p role="alert" className="rounded border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+                  {error}
+                </p>
+              ) : null}
+              <Button type="submit" disabled={pending} className="w-full">
+                {pending ? "Sending…" : "Text me a sign-in code"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("code");
+                  setError(null);
+                }}
+                className="self-center text-xs font-medium text-forest-interactive underline-offset-4 hover:underline"
+              >
+                Use my email code instead
               </button>
             </form>
           )}

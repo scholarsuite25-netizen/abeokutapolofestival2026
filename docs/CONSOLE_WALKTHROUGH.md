@@ -10,35 +10,43 @@ This guide is written for Club staff — no technical knowledge needed.
 
 ## 1. Signing in
 
-Go to **https://www.abeokutapolofestival2026.org.ng/abawole** — you are redirected to **Sign In**, where you have two choices. Use whichever you prefer:
+Go to **https://www.abeokutapolofestival2026.org.ng/abawole** — you are redirected to **Sign In**.
 
-**Option A — email me a code (nothing to remember)**
-1. Type the club email address you were given.
-2. Press **Email me a sign-in code**.
-3. A 6-digit code arrives in that mailbox. Type it on the same page and press **Enter code**.
-4. The code works once and expires after about 15 minutes. If it does not arrive, press **Send a new code**, or use Option B.
+**The normal way in — your password**
 
-**Option B — use your password**
-1. Type your email address.
+1. Type your club email address.
 2. Press **Use my password instead**.
 3. Enter your password and press **Sign in**.
 
-After either route you land on the **Executive Command Centre** (or the Turnstile Scanner, for marshals).
+You land on the **Executive Command Centre** (or the Turnstile Scanner, for marshals).
 
-> **Important:** change these passwords before the event (see §9) and never share one login between two people — every action is recorded against the individual who signed in. If you are asked for a code by anyone, do not send it to them.
+**If you would rather not type a password**
+
+1. Type your club email address and press **Email me a sign-in code**.
+2. A 6-digit code arrives. Type it on the same page and press **Enter code**.
+
+Club email addresses are **login identities, not mailboxes**, so every code for a club address is sent to the club's **one shared mailbox** (`abeokutapolo@gmail.com`). Ask the Secretariat if a code does not arrive for you. A code works once and expires after about 15 minutes; press **Send a new code** for another.
+
+**If the club switches on text-message codes**, a **Text me a code instead** button will appear on the Sign In page. It stays hidden while the feature is switched off, so nobody will press a button that cannot work.
+
+**If you forget your password**
+
+Press **Forgot password?** on the Sign In page. You are emailed a one-time reset code (again to the shared mailbox for club addresses); type the code, choose a new password, and you are back in. A Super Admin can also reset your password for you from **Admin Hierarchy**.
+
+> **Important:** change your own password before the event (see §11) and never share one login between two people — every action is recorded against the individual who signed in. If you are asked for a code by anyone, do not send it to them.
 
 ### Who has which login
 
 | Login | Who it is for | What they can do |
 |---|---|---|
 | `superadmin@abeokutapolo2026.ng` | System owner | Everything, including creating and removing other admins |
+| `admin@abeokutapolo2026.ng` | Second super admin | Everything, including creating and removing other admins |
 | `president@abeokutapolo2026.ng` | Club President | Everything operational: participants, finance, gates, reports, invitations |
 | `secretary@abeokutapolo2026.ng` | General Secretary | Everything operational: participants, finance, gates, reports, invitations |
 | `finsec@abeokutapolo2026.ng` | Financial Secretary / Accounts | Participants, finance ledger, gate checks, reports, invitations |
 | `gate@`, `gate1@`, `gate2@` | Gate Marshals | **Turnstile Scanner only** — they cannot open the console or the finance ledger |
-| `admin@abeokutapolo2026.ng` | Second super admin | Everything, including creating and removing other admins |
 
-> **Important:** change these passwords before the event (see §9) and never share one login between two people — every action is recorded against the individual who signed in.
+The Secretariat holds each person's password and hands it over **in person**. The console never displays a password, and no password appears in the website's source code.
 
 ---
 
@@ -161,9 +169,9 @@ Download them into a folder named for the event day, e.g. `Day3 — 20 Dec 2026`
 
 > Roles decide what each person can open. Give the money people the *Financial Secretary* role, marshals the *Gate Marshal* role, and keep **Admin Hierarchy** itself to Super Admins only.
 
-### Two-factor authentication (2FA) — optional, and currently off
+### Two-factor authentication (2FA) — not used by the club
 
-The club has decided **not** to use an authenticator app, so nothing asks you to set one up and you will never be blocked by it. Sign-in works with the email code or your password.
+The club has decided **not** to use an authenticator app, so nothing asks you to set one up, nothing prompts you at sign-in, and no account is blocked. You sign in with your password (or a code).
 
 If the club ever changes its mind, each person can enrol a second factor at **https://www.abeokutapolofestival2026.org.ng/mfa-setup**, choosing **phone app**, **this laptop**, or **fingerprint / USB key**, and a Super Admin then switches on the `mfa_required_for_console` setting to require it for everyone.
 

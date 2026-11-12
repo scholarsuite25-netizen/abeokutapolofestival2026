@@ -31,7 +31,9 @@ A public website that sells and administers admission to the festival: guests re
 | Club bank | WEMA BANK · ABEOKUTA POLO CLUB · 0126769779 |
 | Secretariat | +234 818 188 8884 · 0803 681 8916 · abeokutapolo@gmail.com |
 
-**Also in the repository:** `docs/CONSOLE_WALKTHROUGH.md` (the Club-facing operating guide for every console screen) and `ARCHITECTURE_PLAN.md` (the technical design).
+**For the Club, in PDF:** `docs/HANDOVER.pdf` (this document) and `docs/CONSOLE_WALKTHROUGH.pdf` (the operating guide for every console screen, written for staff with no technical knowledge). Both are print-ready and can be shared, signed and filed.
+
+**Also in the repository:** `docs/CONSOLE_WALKTHROUGH.md` and `docs/HANDOVER.md` (the source of the two PDFs), `ARCHITECTURE_PLAN.md` (the technical design), and `scripts/build-docs-pdf.mjs` (regenerates both PDFs from the markdown).
 
 ---
 
@@ -106,7 +108,7 @@ Full instructions are in `docs/CONSOLE_WALKTHROUGH.md`. The short version:
 SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase/APPLY_ALL_MIGRATIONS.sql`.
 
 - **0011 – 0017** — applied.
-- **0018 – 0019** — *must be applied* (booking integrity + the operational schema). Run them in the Supabase SQL Editor, in order.
+- **0018 – 0019** — **applied and verified** (booking integrity + the operational schema: 30 tables, row-level security on, `anon` and `authenticated` revoked). Re-applying them is harmless, but there is nothing outstanding.
 
 **Rule for the future: never edit the live database by hand.** Every schema change is a numbered migration file, committed to the repository, and applied in order. A change made only in the database will be silently lost at the next deploy.
 
@@ -133,16 +135,18 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 
 **How staff sign in (no authenticator app required)**
 
-- **Email code** — the sign-in page offers "Email me a sign-in code": a single-use 6-digit code is emailed through the club's own mailer (not Supabase's quota), then exchanged for a session in the browser. It works for any address that reaches a real inbox.
-- **Password** — the equal fallback, and the recommended route. Staff passwords are 20-character random strings, rotated out of band, never stored in the repository or shown in the console.
+- **Password — the club's primary method.** The sign-in page asks for an email address and a password. Staff passwords are 20-character random strings, rotated out of band and handed over in person from the credentials file. They are never stored in the repository and never displayed in the console.
+- **Email code — the fallback.** The sign-in page also offers "Email me a sign-in code": a single-use 6-digit code, emailed through the club's own mailer (Resend, not Supabase's email quota), then exchanged for a session in the browser.
+- **Text message (SMS) — implemented, waiting on one switch.** The sign-in page will offer "Text me a code instead" as soon as the Supabase project has phone sign-in enabled. Until then the button is hidden, so nobody is offered a route that cannot work. Turning it on needs the Supabase dashboard (Authentication → Sign In / Providers → Phone) and the club's own Twilio account; the club's real phone numbers must also be attached to the staff accounts.
 - **Two-factor authentication is deliberately OFF.** The `/mfa-setup` page and the `mfa_required_for_console` flag remain in place should the club ever change its mind, but nothing prompts anyone and no account is blocked.
 
-**Mail routing for the club's own addresses**
+**Where codes and reset messages are delivered — one shared mailbox**
 
-`abeokutapolofestival2026.org.ng` is now registered with Resend and **verified**, with receiving enabled and the MX, SPF, DKIM and sending records published through Cloudflare. Before this, the club's addresses could not receive mail at all — which silently broke staff password resets. For a club-address code to reach a human inbox, either:
+The club's staff logins live on `abeokutapolo2026.ng`. **That name is not a registered domain**, so no mail can ever be delivered to it directly. The club's decision is therefore that every code and reset message for a club address is delivered to **one shared mailbox** — `abeokutapolo@gmail.com`, set with `SIGNIN_CODE_SHARED_MAILBOX`. Each person collects their code there; a personal (non-club) address receives its code directly.
 
-1. each staff member gets their own real mailbox and the console login uses that address, or
-2. one Resend inbound route is added (Resend dashboard → Receive) forwarding `abeokutapolofestival2026.org.ng` to a mailbox the club controls — note that all codes then land in that one inbox, so passwords are the better choice for those accounts.
+A forgotten password is recovered the same way: **Forgot password?** emails a one-time reset code which the member types in before choosing a new password. A Super Admin can also reset any account from Admin Hierarchy.
+
+The website's own domain, `abeokutapolofestival2026.org.ng`, is separately registered with Resend and **verified**, with receiving enabled and the MX, SPF, DKIM and sending records published through Cloudflare. That fixed a silent failure: before it, no club address could receive mail at all, so password resets bounced. Guest-facing mail (passes, receipts, payment alerts) continues to go to the guest's own address.
 
 **Protections that are in place**
 
@@ -159,11 +163,12 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 
 **Known gaps — please close these**
 
-1. **Multi-factor authentication is available but switched off.** Each console account can enrol a second factor at `/mfa-setup` (phone app, laptop, or fingerprint/USB key); a Super Admin can turn on the `mfa_required_for_console` flag and clear a member's factor from Admin Hierarchy if they lose their device. The club has decided not to use it, so nothing is enforced today.
-2. **Rotate the admin passwords at handover** — they were issued out of band (see the credentials file) and must be changed by each person.
-3. **Old sessions stay valid until they expire.** After a password rotation, sign out other sessions (Supabase → Auth → Users → "Sign out all sessions") so nobody stays signed in with a pre-rotation session.
-4. **Dependency advisories** exist in the tree (`npm audit`): all are in build-time/CLI tooling, and the runtime ones (`zod`) are already on a patched version. Re-run `npm audit` before each release.
-5. **No automated security scanning** in CI.
+1. **Text-message (SMS) sign-in is implemented but not yet switched on.** It needs one dashboard action the engineering team cannot perform without dashboard access: Supabase → Authentication → Sign In / Providers → **Phone**, plus the club's own Twilio account credentials and each staff member's real number attached to their account. The button on the sign-in page stays hidden until then, so nothing is broken in the meantime.
+2. **Multi-factor authentication is available but switched off.** Each console account can enrol a second factor at `/mfa-setup` (phone app, laptop, or fingerprint/USB key); a Super Admin can turn on the `mfa_required_for_console` flag and clear a member's factor from Admin Hierarchy if they lose their device. The club has decided not to use it, so nothing is enforced today.
+3. **Rotate the admin passwords at handover** — they were issued out of band (see the credentials file) and must be changed by each person.
+4. **Old sessions stay valid until they expire.** After a password rotation, sign out other sessions (Supabase → Auth → Users → "Sign out all sessions") so nobody stays signed in with a pre-rotation session.
+5. **Dependency advisories** exist in the tree (`npm audit`): all are in build-time/CLI tooling, and the runtime ones (`zod`) are already on a patched version. Re-run `npm audit` before each release.
+6. **No automated security scanning** in CI.
 
 ---
 
@@ -212,16 +217,18 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 
 ## 12. Launch checklist
 
-- [ ] Migrations 0018 and 0019 applied on Supabase
+- [ ] Migrations 0018 and 0019 confirmed applied on Supabase *(done — verified 30 tables, RLS on, `anon` blocked)*
 - [ ] Point-in-time recovery / backups confirmed, and a restore rehearsed once
-- [ ] Admin passwords rotated; passwords removed from the public repository
-- [ ] MFA enabled for `admin@`, `superadmin@`, `president@`, `secretary@`, `finsec@`
+- [ ] Every staff member has changed the password they were given in person
+- [ ] Old sessions signed out (Supabase → Auth → Users → "Sign out all sessions")
+- [ ] SMS codes switched on — Supabase → Authentication → Sign In / Providers → Phone, plus the club's Twilio account and each person's real number attached to their account *(optional)*
 - [ ] Dress rehearsal: one real booking on a phone, on mobile data, at a real gate
 - [ ] Load test: 100 simultaneous registrations and 200 scans in 10 minutes
 - [ ] Staging environment created with a copy of the data, and the Club has rehearsed there
 - [ ] Printed gate roster exported (Master Accreditation Roster) and given to each marshal
 - [ ] Bank account details on the printed material confirmed current
-- [ ] Every staff member has read `docs/CONSOLE_WALKTHROUGH.md`
+- [ ] Every staff member has read `docs/CONSOLE_WALKTHROUGH.pdf`
+- [ ] The shared mailbox (`abeokutapolo@gmail.com`) is watched by the Secretariat throughout the event
 
 ---
 

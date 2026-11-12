@@ -8,7 +8,7 @@ export default function ForgotPasswordPage() {
       <CardHeader>
         <CardTitle className="font-display text-forest">Reset your password</CardTitle>
         <CardDescription>
-          We will email you a secure link to set a new password.
+          We will email you a one-time reset code, then you choose a new password.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
