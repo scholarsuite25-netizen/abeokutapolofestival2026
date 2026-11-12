@@ -11,12 +11,14 @@ import {
   ShieldCheck,
   RotateCcw,
   Users,
+  Edit3,
 } from "lucide-react";
 import type { ComplimentaryInvitation } from "@/lib/invitations/types";
 import { siteUrl } from "@/lib/site";
 import {
   resetInvitationDeviceBindingAction,
   getWhatsAppInvitationTextAction,
+  updateInvitationAction,
 } from "@/app/(admin)/abawole/invitations/actions";
 
 interface InvitationsTableProps {
@@ -33,6 +35,7 @@ export function InvitationsTable({
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [copiedWhatsAppCode, setCopiedWhatsAppCode] = useState<string | null>(null);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [editingInv, setEditingInv] = useState<ComplimentaryInvitation | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const getGuestUrl = (code: string) => {
@@ -86,6 +89,28 @@ export function InvitationsTable({
               : item
           )
         );
+      }
+    });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingInv) return;
+    const formData = new FormData(e.currentTarget);
+    formData.set("invitationCode", editingInv.invitationCode);
+    startTransition(async () => {
+      const res = await updateInvitationAction(formData);
+      if (res.ok && res.invitation) {
+        setInvitations((prev) =>
+          prev.map((item) =>
+            item.invitationCode.toUpperCase() === res.invitation!.invitationCode.toUpperCase()
+              ? res.invitation!
+              : item
+          )
+        );
+        setResetMessage(res.message || "Invitation updated.");
+        setTimeout(() => setResetMessage(null), 4000);
+        setEditingInv(null);
       }
     });
   };
@@ -347,6 +372,17 @@ export function InvitationsTable({
                           )}
                         </button>
 
+                        {/* Edit Dignitary Details */}
+                        <button
+                          type="button"
+                          onClick={() => setEditingInv(inv)}
+                          className="inline-flex items-center gap-1 rounded-md border border-line bg-paper px-2 py-1 text-[11px] font-medium text-ink transition hover:border-forest hover:text-forest"
+                          title="Edit Dignitary Name, Designation or Category"
+                        >
+                          <Edit3 className="h-3 w-3 text-muted-brand" />
+                          <span className="hidden md:inline">Edit</span>
+                        </button>
+
                         {/* Open Card Preview */}
                         <a
                           href={`/invitation/${inv.invitationCode}`}
@@ -381,6 +417,76 @@ export function InvitationsTable({
           </table>
         )}
       </div>
+
+      {/* Edit Invitation Modal */}
+      {editingInv && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-forest-deep/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-card p-6 shadow-2xl">
+            <h3 className="font-display text-base font-bold text-forest">
+              Edit Invitation · <span className="font-mono text-sm">{editingInv.invitationCode}</span>
+            </h3>
+            <p className="mt-1 text-xs text-muted-brand">
+              Updates the dignitary&apos;s name, designation, or category and re-signs the Aare Elesin seal.
+            </p>
+            <form onSubmit={handleEditSubmit} className="mt-4 space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold text-forest mb-1">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  defaultValue={editingInv.firstName || ""}
+                  className="w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs text-ink"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-forest mb-1">Surname</label>
+                <input
+                  type="text"
+                  name="surname"
+                  defaultValue={editingInv.surname || ""}
+                  className="w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs text-ink"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-forest mb-1">Designation</label>
+                <input
+                  type="text"
+                  name="designation"
+                  required
+                  defaultValue={editingInv.designation}
+                  className="w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs text-ink"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-forest mb-1">Category</label>
+                <input
+                  type="text"
+                  name="category"
+                  required
+                  defaultValue={editingInv.category}
+                  className="w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs text-ink"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
+                <button
+                  type="button"
+                  onClick={() => setEditingInv(null)}
+                  className="rounded-lg border border-line px-3.5 py-1.5 font-medium text-muted-brand hover:bg-sage/40"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="rounded-lg bg-forest px-4 py-1.5 font-semibold text-ivory hover:bg-forest-light disabled:opacity-50"
+                >
+                  {isPending ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

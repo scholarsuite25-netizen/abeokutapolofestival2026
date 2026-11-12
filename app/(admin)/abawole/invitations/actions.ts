@@ -5,6 +5,9 @@ import { requirePermission } from "@/lib/auth/require";
 import { writeAudit } from "@/lib/supabase/audit";
 import {
   createInvitationPayload,
+  generateSignedInvitationToken,
+  buildInvitationVerificationUrl,
+  ROYAL_SECURITY_SEAL,
   generateWhatsAppInvitationText,
 } from "@/lib/invitations/issuance";
 import {
@@ -183,6 +186,98 @@ export async function resetInvitationDeviceBindingAction(
       message,
     };
   }
+}
+
+/**
+ * Server action to edit an existing invitation's name, designation, or category,
+ * re-signing the cryptographic Aare Elesin seal while preserving its pass code
+ * and device binding.
+ */
+export async function updateInvitationAction(formData: FormData): Promise<{
+  ok: boolean;
+  invitation?: ComplimentaryInvitation;
+  message?: string;
+  error?: string;
+}> {
+  let session;
+  try {
+    session = await requirePermission("credential.issue");
+  } catch (err: unknown) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Unauthorized.",
+    };
+  }
+
+  const invitationCode = (formData.get("invitationCode") as string)?.trim().toUpperCase();
+  const firstName = (formData.get("firstName") as string)?.trim() || null;
+  const surname = (formData.get("surname") as string)?.trim() || null;
+  const designation = (formData.get("designation") as string)?.trim();
+  const category = (formData.get("category") as string)?.trim();
+
+  if (!invitationCode || !designation || !category) {
+    return { ok: false, error: "Invitation code, designation, and category are required." };
+  }
+
+  const existing = await getInvitationByCode(invitationCode);
+  if (!existing) {
+    return { ok: false, error: "Invitation not found." };
+  }
+
+  const holderName =
+    [firstName, surname].filter(Boolean).join(" ") || designation || "Distinguished Guest";
+  const isCustomCategory = !(STANDARD_INVITATION_CATEGORIES as readonly string[]).includes(
+    category.toUpperCase()
+  );
+
+  const qrToken = generateSignedInvitationToken({
+    credentialId: existing.invitationCode,
+    holderName,
+    passType: "complimentary",
+    category,
+    designation,
+    securitySeal: ROYAL_SECURITY_SEAL,
+    editionYear: 2026,
+    issuedAt: new Date(existing.createdAt).getTime(),
+  });
+  const qrPayload = buildInvitationVerificationUrl(existing.invitationCode, qrToken);
+
+  const updated = await saveInvitation({
+    ...existing,
+    firstName,
+    surname,
+    designation,
+    category,
+    isCustomCategory,
+    qrToken,
+    qrPayload,
+  });
+
+  try {
+    await writeAudit({
+      action: "invitation.update",
+      entityType: "invitation",
+      entityId: updated.invitationCode,
+      metadata: {
+        invitationCode: updated.invitationCode,
+        firstName: updated.firstName,
+        surname: updated.surname,
+        designation: updated.designation,
+        category: updated.category,
+        updatedBy: session?.user?.email,
+      },
+    });
+  } catch {
+    // Non-fatal
+  }
+
+  revalidatePath("/abawole/invitations");
+  revalidatePath(`/invitation/${updated.invitationCode}`);
+  return {
+    ok: true,
+    invitation: updated,
+    message: `Invitation ${updated.invitationCode} updated to ${holderName}.`,
+  };
 }
 
 /**
