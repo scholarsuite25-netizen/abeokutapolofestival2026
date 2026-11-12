@@ -144,8 +144,19 @@ Download them into a folder named for the event day, e.g. `Day3 — 20 Dec 2026`
 - **Edit Administrator Details** — change a name, phone or role.
 - **Actions** — deactivate an admin who has left (do not delete: the audit trail must stay intact).
 - **Change My Password** — the shortcut in the same screen.
+- **Assigned Staff Logins** (top of the page) lists each person's login URL and email. **Passwords are never displayed anywhere in the console** — if someone needs a new one, use the "Reset password" action on their row.
 
-> Roles decide what each person can open. Give the Accounts the *Financial Secretary* role, marshals the *Gate Marshal* role, and keep **Admin Hierarchy** itself to Super Admins only.
+> Roles decide what each person can open. Give the money people the *Financial Secretary* role, marshals the *Gate Marshal* role, and keep **Admin Hierarchy** itself to Super Admins only.
+
+### Two-factor authentication (2FA)
+
+Each console account should carry a second factor (an authenticator app on your phone):
+
+1. Sign in as usual, then open **https://www.abeokutapolofestival2026.org.ng/mfa-setup**.
+2. Scan the QR code with Google Authenticator, Microsoft Authenticator or 1Password, then type the 6-digit code it shows.
+3. You are taken into the console with two-factor protection switched on.
+
+Once **every** console account has enrolled, a Super Admin turns on the `mfa_required_for_console` setting — after that the console refuses anyone who signs in without a second factor.
 
 ---
 

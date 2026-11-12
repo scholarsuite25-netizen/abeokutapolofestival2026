@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { writeAudit } from "@/lib/supabase/audit";
 import { sendEmail } from "@/lib/email/client";
 import { siteUrl } from "@/lib/site";
+import { isDesktopDeviceId, isMobileDeviceId } from "@/lib/security/device-class";
 
 export type DeviceType = "mobile" | "desktop" | "tablet";
 
@@ -30,21 +31,9 @@ export interface DeviceBindingRecord {
 }
 
 /**
- * Device classes.
- *
- * A laptop is a legitimate first claimant (guests register and pay on a
- * laptop), so a desktop claim is allowed — but it is PROVISIONAL: the pass
- * may still be handed over, exactly once, to the guest's phone (which becomes
- * the final device). After that the pass is locked, exactly like a pass
- * claimed on a phone from the start.
+ * Device classes live in lib/security/device-class (they are plain
+ * predicates, usable from server and client code alike).
  */
-export function isDesktopDeviceId(deviceId: string): boolean {
-  return deviceId.startsWith("DESKTOP-");
-}
-
-export function isMobileDeviceId(deviceId: string): boolean {
-  return deviceId.startsWith("MOBILE-");
-}
 
 // In-memory device binding registry for rapid turnstile & client verification
 const memoryBindingRegistry = new Map<string, DeviceBindingRecord>();

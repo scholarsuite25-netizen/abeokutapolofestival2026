@@ -118,6 +118,7 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 |---|---|---|
 | Weekly guest reminders | Mondays 08:00 | Vercel cron |
 | Daily guest reminders | 06:00 on 18, 19, 20 Dec | Vercel cron |
+| **Database backup** | **Nightly 02:00** | Vercel cron → `/api/ops/backup`; writes a full JSON export to the private `club-backups` storage bucket, keeping 14 days |
 | Pass issuance & verification | Instant | On registration / booking |
 | Gate admission decisions | Instant | At the scanner |
 | CSV report generation | On demand | Reports & Export |
@@ -134,19 +135,20 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 
 - **Passes are cryptographically sealed** (HMAC-SHA256) and verified on the server; a forged or edited pass is rejected at the gate.
 - **Payment references are single-use** — a replayed reference fails on a database constraint.
-- **Passes are device-locked** — they lock to the first phone that opens them and cannot be forwarded or resold.
+- **Passes are device-locked** — they lock to the first device that opens them and cannot be forwarded or resold. A laptop is treated exactly like a phone: the laptop claims the pass, and the guest may hand it over to their phone **once** (audited as `pass.device_activated_on_mobile`), after which every other device is refused.
 - **Default-deny permissions** — every console action is checked against a role, and a missing permission means "no".
 - **Row-level security everywhere** — the browser cannot read guest data even if it is compromised.
 - **Rate limiting is durable** — stored in the database, so it survives redeploys and applies across every server instance. The credential oracle allows 30 attempts a minute; the public registration and booking forms are throttled per caller.
 - **Fail-closed defaults** — an unspecified status is an *unpaid* booking, never a confirmed one.
 - **Audit trails** — every state change, every email, every data export, every manual gate override is recorded with who did it and when.
-- **Transport & headers** — HSTS (with preload), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, a restrictive `Permissions-Policy`, and `no-store` on exports.
+- **Transport & headers** — HSTS (with preload), a Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, a restrictive `Permissions-Policy`, and `no-store` on exports.
+- **Passwords are never in the repository or in the console** — they are rotated through the Supabase admin API and issued to staff out of band.
 
 **Known gaps — please close these**
 
-1. **Admin passwords were committed to the public repository.** Rotate them (Console → Change Password), then delete the passwords from `scripts/create_admin_user.mjs`.
-2. **No multi-factor authentication** on admin accounts. Turn it on in Supabase for the four senior accounts.
-3. **No Content-Security-Policy header.** Worth adding before the event.
+1. **Multi-factor authentication is available but not yet enforced.** Each console account can enrol a second factor at `/mfa-setup`; a Super Admin then turns on the `mfa_required_for_console` flag to require it.
+2. **Rotate the admin passwords at handover** — they were issued out of band (see the credentials file) and must be changed by each person.
+3. **Old sessions stay valid until they expire.** After a password rotation, sign out other sessions (Supabase → Auth → Users → "Sign out all sessions") so nobody stays signed in with a pre-rotation session.
 4. **Dependency advisories** exist in the tree (`npm audit`): all are in build-time/CLI tooling, and the runtime ones (`zod`) are already on a patched version. Re-run `npm audit` before each release.
 5. **No automated security scanning** in CI.
 
@@ -154,17 +156,20 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 
 ## 9. Backup & recovery ⚠️ *action required*
 
-**There is currently no backup process defined by the project.** Supabase provides automated daily backups and point-in-time recovery *on paid plans* — **confirm this is active on your project today**, because it is the only thing standing between the Club and the loss of its guest list.
+**There are now two independent layers of protection:**
 
-**Recommended procedure (one-off setup, then automatic):**
+1. **Nightly export (implemented).** A Vercel cron runs `/api/ops/backup` every night at 02:00. It exports every public table to a single JSON file and stores it in a **private** Supabase Storage bucket (`club-backups`), keeping the last 14 days. Each run is recorded in the audit log as `system.database_backup`.
+   - Run one by hand: `curl -X POST https://www.abeokutapolofestival2026.org.ng/api/ops/backup -H "Authorization: Bearer $CRON_SECRET"`
+   - Inspect the backups: `node scripts/restore-from-backup.mjs` (dry run — prints what it would restore)
+   - Restore: `node scripts/restore-from-backup.mjs --confirm` (and `--file <name>.json` for a specific night)
+2. **Provider-side recovery.** Supabase provides automated daily backups and point-in-time recovery *on paid plans* — **confirm this is active on your project today**, because it is the second layer.
 
-1. Confirm Point-in-Time Recovery is enabled on the Supabase project.
-2. Create a nightly dump to storage the Club controls:
-   `supabase db dump --db-url "$SUPABASE_DB_URL" -f backup-$(date +%F).sql` (Supabase CLI) → upload to a private bucket or an external drive.
+**Still to do by the Club:**
+
 3. **Rehearse a restore once a month** into a scratch project and check the guest count. A backup that has never been restored is not a backup.
 4. Write down who holds the credentials for the Supabase account, the Vercel account and the GitHub repository — in a sealed envelope or a password manager the Club controls, not in the repository.
 
-**If the database is lost:** restore the latest dump (or use point-in-time recovery to the last good moment), then re-deploy the site from GitHub — the schema is fully described by the migration files, so a restored database and the code always match.
+**If the database is lost:** restore the latest backup with `scripts/restore-from-backup.mjs --confirm` (or use point-in-time recovery to the last good moment), then re-deploy the site from GitHub — the schema is fully described by the migration files, so a restored database and the code always match.
 
 ---
 

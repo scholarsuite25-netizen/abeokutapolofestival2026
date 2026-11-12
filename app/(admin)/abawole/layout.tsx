@@ -19,6 +19,7 @@ import { AdminTopBadge } from "@/components/admin/admin-top-badge";
 import { requireUser } from "@/lib/auth/require";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { isFeatureEnabled } from "@/lib/config/feature-flags";
 
 /**
  * Review finding M4: the console shell now enforces its own guard instead of
@@ -46,6 +47,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await connection();
 
   const session = await requireUser("/abawole");
+
+  // Optional two-factor gate for the console. It is OFF by default so no one
+  // is locked out before enrolling; switch on the administrator-controlled
+  // "mfa_required_for_console" flag once every staff member has enrolled a
+  // second factor.
+  if (await isFeatureEnabled("mfa_required_for_console", false)) {
+    const assurance = (session.user as { aal?: string }).aal;
+    if (assurance !== "aal2") {
+      redirect("/mfa-setup");
+    }
+  }
   const isConsoleRole = session.actor.roles.some(
     (role) => role !== "public" && role !== "guest",
   );
