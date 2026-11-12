@@ -694,7 +694,7 @@ describe("Abeokuta Polo Festival 2026: Production Fixes & Security Test Suite", 
       // Day 3 bank transfer must be strictly provisional pending bursary reconciliation
       expect(pass.status).toBe("pending_verification");
       expect(pass.isVvip).toBe(false);
-      expect(pass.category).toContain("Provisional Claim (Pending Bursary Verification)");
+      expect(pass.category).toContain("Provisional Claim (Pending Accounts Verification)");
     });
 
     it("3.6: Mobile binding station QR payload encodes /pass/[code]?bind=mobile matching turnstile format", () => {

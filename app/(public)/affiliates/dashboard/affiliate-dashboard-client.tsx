@@ -143,7 +143,7 @@ export function AffiliateDashboardClient() {
               Affiliate Partner Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-ivory/80">
-              Real-time referral performance, 10% commission ledger, and Secretariat bursary disbursements.
+              Real-time referral performance, 10% commission ledger, and Secretariat accounts disbursements.
             </p>
           </div>
 
@@ -247,7 +247,7 @@ export function AffiliateDashboardClient() {
                 ₦{(dashboardData.metrics?.confirmedCommissionNgn ?? 0).toLocaleString()}
               </p>
               <span className="text-[10px] text-emerald-400 font-bold block">
-                Ready for Secretariat Bursary payout
+                Ready for Secretariat Accounts payout
               </span>
             </div>
           </div>
@@ -338,7 +338,7 @@ export function AffiliateDashboardClient() {
                 ₦{(dashboardData?.metrics?.availableBalanceNgn ?? 0).toLocaleString()}
               </p>
               <p className="text-xs text-ivory/70">
-                Disbursements are processed directly by the Abeokuta Polo Club Secretariat Bursary.
+                Disbursements are processed directly by the Abeokuta Polo Club Secretariat Accounts.
               </p>
             </div>
 

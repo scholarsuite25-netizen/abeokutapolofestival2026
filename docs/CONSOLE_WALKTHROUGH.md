@@ -21,7 +21,7 @@ This guide is written for Club staff — no technical knowledge needed.
 | `superadmin@abeokutapolo2026.ng` | System owner | Everything, including creating and removing other admins |
 | `president@abeokutapolo2026.ng` | Club President | Everything operational: participants, finance, gates, reports, invitations |
 | `secretary@abeokutapolo2026.ng` | General Secretary | Everything operational: participants, finance, gates, reports, invitations |
-| `bursar@abeokutapolo2026.ng` / `finsec@abeokutapolo2026.ng` | Bursary / Finance | Participants, finance ledger, gate checks, reports, invitations |
+| `finsec@abeokutapolo2026.ng` | Financial Secretary / Accounts | Participants, finance ledger, gate checks, reports, invitations |
 | `gate@`, `gate1@`, `gate2@` | Gate Marshals | **Turnstile Scanner only** — they cannot open the console or the finance ledger |
 | `admin@abeokutapolo2026.ng` | Second super admin | Everything, including creating and removing other admins |
 
@@ -37,13 +37,13 @@ Across the top of every console screen there is a bar of buttons:
 
 | Section | What it is for | Who can open it |
 |---|---|---|
-| **Command Centre** (`/abawole`) | Live dashboard: how many people are registered, how many passes issued, how many gate scans, capacity | President, Secretary, Bursary, Super Admins |
-| **Participants** (`/abawole/registrations`) | Everyone who has registered. Add someone by hand, edit, approve, decline | President, Secretary, Bursary, Super Admins |
-| **Verification Queue** (`/abawole/members`) | People waiting for a decision: new registrations and unpaid bank transfers | President, Secretary, Bursary, Super Admins |
-| **Offline Finance** (`/abawole/finance`) | The money ledger: commitments, sponsorships, table reservations and bank wires, and the one-click "verify" button | President, Secretary, Bursary, Super Admins |
-| **Reports & Export** (`/abawole/reports`) | Four CSV downloads for audit and for the Club's records | President, Secretary, Bursary, Super Admins |
+| **Command Centre** (`/abawole`) | Live dashboard: how many people are registered, how many passes issued, how many gate scans, capacity | President, Secretary, Accounts, Super Admins |
+| **Participants** (`/abawole/registrations`) | Everyone who has registered. Add someone by hand, edit, approve, decline | President, Secretary, Accounts, Super Admins |
+| **Verification Queue** (`/abawole/members`) | People waiting for a decision: new registrations and unpaid bank transfers | President, Secretary, Accounts, Super Admins |
+| **Offline Finance** (`/abawole/finance`) | The money ledger: commitments, sponsorships, table reservations and bank wires, and the one-click "verify" button | President, Secretary, Accounts, Super Admins |
+| **Reports & Export** (`/abawole/reports`) | Four CSV downloads for audit and for the Club's records | President, Secretary, Accounts, Super Admins |
 | **Admin Hierarchy** (`/abawole/admins`) | Create new admin logins, set their role, deactivate them | Super Admins only |
-| **Complimentary Invitations** (`/abawole/invitations`) | Issue sealed VIP/complimentary passes to dignitaries and guests | President, Secretary, Bursary, Super Admins |
+| **Complimentary Invitations** (`/abawole/invitations`) | Issue sealed VIP/complimentary passes to dignitaries and guests | President, Secretary, Accounts, Super Admins |
 | **Turnstile Scanner** (`/scan`) | The gate scanner on a phone — scan a guest's QR pass and admit or reject | Gate Marshals (and everyone above) |
 | **Venue QR Poster** (`/register/poster`) | Printable poster with the venue check-in QR code | Everyone signed in |
 
@@ -94,10 +94,10 @@ This is the **most important screen on Day 3**. It lists two groups:
 
 ### The one rule for Day 3
 
-> **A bank transfer is NOT a payment until the money is in the Club's account and the Bursary has verified it.**
+> **A bank transfer is NOT a payment until the money is in the Club's account and the Accounts has verified it.**
 > Until then the guest holds a **Provisional Claim Slip**, the slip is clearly marked *"Turnstile Admission Pending Verification"*, and **the turnstile must refuse entry**.
 
-So: **do not approve a bank transfer because the guest shows you a screenshot.** Approve only when the Bursary has confirmed the money has landed (see §6).
+So: **do not approve a bank transfer because the guest shows you a screenshot.** Approve only when the Accounts has confirmed the money has landed (see §6).
 
 ---
 
@@ -117,7 +117,7 @@ An unverified transfer shows **Amount Paid = 0** with status *Pending Bank Verif
 
 ### Verifying a transfer (the one-click button)
 
-When a guest pays by bank transfer, the Bursary gets a WhatsApp message from the system containing a verification link. That link opens this page and puts the guest's reference in the search box — all you do is press **Verify Table Transfer**. The pass then flips from *Pending* to *Confirmed* and the guest can pass the gate.
+When a guest pays by bank transfer, the Accounts gets a WhatsApp message from the system containing a verification link. That link opens this page and puts the guest's reference in the search box — all you do is press **Verify Table Transfer**. The pass then flips from *Pending* to *Confirmed* and the guest can pass the gate.
 
 If the link did not arrive, use the **Audit Reference** column to find the same record and verify it manually.
 
@@ -145,7 +145,7 @@ Download them into a folder named for the event day, e.g. `Day3 — 20 Dec 2026`
 - **Actions** — deactivate an admin who has left (do not delete: the audit trail must stay intact).
 - **Change My Password** — the shortcut in the same screen.
 
-> Roles decide what each person can open. Give the Bursary the *Financial Secretary* role, marshals the *Gate Marshal* role, and keep **Admin Hierarchy** itself to Super Admins only.
+> Roles decide what each person can open. Give the Accounts the *Financial Secretary* role, marshals the *Gate Marshal* role, and keep **Admin Hierarchy** itself to Super Admins only.
 
 ---
 
@@ -210,15 +210,15 @@ Every staff member should change their password at least once, and immediately i
 
 **At the gate**
 - Set the day and gate correctly **before** the first scan.
-- Watch for *Day Duplicate* and *Rejected*; keep a note of anything unusual for the Bursary.
+- Watch for *Day Duplicate* and *Rejected*; keep a note of anything unusual for the Accounts.
 
 **End of each day**
 - Export that day's **Daily Turnstile Attendance Log**.
-- The Bursary reconciles every bank transfer against the bank statement — unverified transfers stay *Pending* overnight, which is exactly right.
+- The Accounts reconciles every bank transfer against the bank statement — unverified transfers stay *Pending* overnight, which is exactly right.
 
 **Before Day 3**
 - Every table booking must show **Amount Paid = Official Value** and status *Wire-confirmed or fulfilled* before that table's guests are admitted.
-- Provisional slips are refused at the gate until the Bursary verifies.
+- Provisional slips are refused at the gate until the Accounts verifies.
 
 ---
 

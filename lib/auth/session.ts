@@ -99,7 +99,6 @@ export async function buildActor(
       } else if (normalized === "superadmin@abeokutapolo2026.ng" || normalized === "admin@abeokutapolo2026.ng") {
         roles.add("super_admin");
       } else if (
-        normalized === "bursar@abeokutapolo2026.ng" ||
         normalized === "finsec@abeokutapolo2026.ng" ||
         normalized === "finance@abeokutapolo2026.ng"
       ) {

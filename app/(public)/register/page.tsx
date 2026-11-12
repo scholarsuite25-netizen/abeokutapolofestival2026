@@ -405,7 +405,7 @@ function RegisterContent() {
                 }
               >
                 {result.paymentMethod === "bank_transfer"
-                  ? "⚠️ Pending Bursary Verification"
+                  ? "⚠️ Pending Accounts Verification"
                   : issuedPasses.length === 1
                   ? "ID Pass Issued & Saved"
                   : `${issuedPasses.length} ID Passes Issued & Saved`}
@@ -418,7 +418,7 @@ function RegisterContent() {
               <p className="text-sm text-muted-brand">
                 {result.paymentMethod === "bank_transfer" ? (
                   <>
-                    Welcome, <strong className="text-forest">{result.holderName}</strong>. Your bank wire payment claim (Ref: <strong className="font-mono text-amber-900">{result.bankTransferRef}</strong>) has been registered. Passes remain in <strong className="text-amber-900">pending_verification</strong> status until reconciled by Bursary.
+                    Welcome, <strong className="text-forest">{result.holderName}</strong>. Your bank wire payment claim (Ref: <strong className="font-mono text-amber-900">{result.bankTransferRef}</strong>) has been registered. Passes remain in <strong className="text-amber-900">pending_verification</strong> status until reconciled by Accounts.
                   </>
                 ) : (
                   <>

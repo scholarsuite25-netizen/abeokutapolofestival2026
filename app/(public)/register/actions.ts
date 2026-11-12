@@ -406,7 +406,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
         passCode,
         holderName: passHolderName,
         category: isBankTransfer
-          ? "Day 3 Individual VIP Table Provisional Claim (Pending Bursary Verification)"
+          ? "Day 3 Individual VIP Table Provisional Claim (Pending Accounts Verification)"
           : "Day 3 Individual VIP Table Seat Pass",
         affiliationType: isSponsored ? "guest_of" : affiliationType,
         hostName: isSponsored ? holderName : (hostName || null),
@@ -571,7 +571,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
           <p style="font-size: 12px; color: ${p.isVvip ? "#D4AF37" : "#55635A"}; margin: 2px 0;">
             ${p.daysCovered?.length === 2 ? "Valid for Day 1 (Fri 18) & Day 2 (Sat 19 Dec)" : p.daysCovered?.includes(3) ? "Day 3 Grand Finale (Sun 20 Dec)" : p.daysCovered?.includes(2) ? "Valid for Day 2 (Sat 19 Dec)" : "Valid for Day 1 (Fri 18 Dec)"}
           </p>
-          ${isBankTransfer ? `<p style="font-size: 11px; color: #F59E0B; margin-top: 8px; font-weight: bold;">Status: PENDING BURSARY VERIFICATION (Ref: ${bankTransferRef})</p>` : ""}
+          ${isBankTransfer ? `<p style="font-size: 11px; color: #F59E0B; margin-top: 8px; font-weight: bold;">Status: PENDING ACCOUNTS VERIFICATION (Ref: ${bankTransferRef})</p>` : ""}
           ${p.isSponsored ? `<p style="font-size: 11px; color: #E5C768; margin-top: 8px;">Guest Forwarding Link: <a href="${siteUrl(`/pass/${p.passCode}`)}" style="color: #F5D77F; text-decoration: underline;">${siteUrl(`/pass/${p.passCode}`)}</a></p>` : ""}
         </div>
       `,
@@ -597,7 +597,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
               <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin-bottom: 18px; color: #92400E; font-size: 13px; line-height: 1.5;">
                 <strong>⚠️ Immediate Action Required to Release Your Day 3 VVIP Passes:</strong><br />
                 We have registered your bank wire transfer claim for <strong>${day3TicketCount} Day 3 VVIP ticket(s)</strong> with unique reference <strong>${bankTransferRef}</strong>.<br /><br />
-                In accordance with festival gate security, passes remain in <strong>PENDING_VERIFICATION</strong> status and will deny turnstile admission until confirmed by the Bursary. Please send your bank payment debit slip to the Secretariat via WhatsApp (<a href="https://wa.me/2348181888884?text=Payment+Receipt+Ref+${bankTransferRef}" style="color: #92400E; font-weight: bold; text-decoration: underline;">+234 818 188 8884</a>) to verify and activate your passes.
+                In accordance with festival gate security, passes remain in <strong>PENDING_VERIFICATION</strong> status and will deny turnstile admission until confirmed by the Accounts. Please send your bank payment debit slip to the Secretariat via WhatsApp (<a href="https://wa.me/2348181888884?text=Payment+Receipt+Ref+${bankTransferRef}" style="color: #92400E; font-weight: bold; text-decoration: underline;">+234 818 188 8884</a>) to verify and activate your passes.
               </div>
             ` : `
               <p style="font-size: 14px; line-height: 1.6; color: #55635A;">
@@ -1238,7 +1238,7 @@ export async function submitTableRegistration(rawInput: unknown): Promise<TableB
       const statusBanner = isBankTransfer
         ? `<div style="background-color: #FEF3C7; border: 2px solid #F59E0B; border-radius: 8px; padding: 14px; margin: 16px 0; color: #78350F; font-size: 13px;">
             <strong>⏳ Provisional Table Reservation (Pending Bank Transfer Verification):</strong><br/>
-            Please transfer <strong>₦${paidAmountNgn.toLocaleString()}</strong> to <strong>${CLUB_BANK_DETAILS.bankName} — ${CLUB_BANK_DETAILS.accountNumber} (${CLUB_BANK_DETAILS.accountName})</strong> with reference <strong>${refDisplay}</strong>. Your ${capacity} turnstile pass${capacity > 1 ? "es" : ""} will activate immediately upon Bursary confirmation.
+            Please transfer <strong>₦${paidAmountNgn.toLocaleString()}</strong> to <strong>${CLUB_BANK_DETAILS.bankName} — ${CLUB_BANK_DETAILS.accountNumber} (${CLUB_BANK_DETAILS.accountName})</strong> with reference <strong>${refDisplay}</strong>. Your ${capacity} turnstile pass${capacity > 1 ? "es" : ""} will activate immediately upon Accounts confirmation.
           </div>`
         : `<div style="background-color: #ECFDF5; border: 2px solid #10B981; border-radius: 8px; padding: 14px; margin: 16px 0; color: #065F46; font-size: 13px;">
             <strong>✅ Online Payment Verified (Ref: ${refDisplay}):</strong><br/>
@@ -1655,7 +1655,7 @@ export async function requestAffiliatePayout(affiliateCode: string, amountNgn: n
 
     return {
       success: true,
-      message: `Payout request of ₦${amountNgn.toLocaleString()} received. The Secretariat Bursary reconciles and remits payouts weekly on Tuesdays and Fridays.`,
+      message: `Payout request of ₦${amountNgn.toLocaleString()} received. The Secretariat Accounts reconciles and remits payouts weekly on Tuesdays and Fridays.`,
     };
   } catch {
     return {

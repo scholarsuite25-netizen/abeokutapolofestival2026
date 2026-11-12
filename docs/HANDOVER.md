@@ -13,7 +13,7 @@ This document is written for a successor who did not build the system. It is hon
 
 A public website that sells and administers admission to the festival: guests register for the free Days 1 and 2, buy VIP Table packages for the Grand Finale on Day 3, receive sealed digital passes that unlock on their phone, and are admitted or refused at the turnstiles by a QR scanner. Behind it sits an operations console for the Club's staff, a money ledger, and an audit trail.
 
-**The one rule that governs everything:** *a guest has paid only when the Bursary has verified the money.* Until then they hold a **Provisional Claim Slip** and the gate refuses them.
+**The one rule that governs everything:** *a guest has paid only when the Accounts has verified the money.* Until then they hold a **Provisional Claim Slip** and the gate refuses them.
 
 ---
 
@@ -42,7 +42,7 @@ A public website that sells and administers admission to the festival: guests re
 | **Super Admin** (2 accounts) | `admin@`, `superadmin@` | The system itself: creating and removing admins, roles, flags, settings | Everything |
 | **Club President** | `president@` | The event: participants, finance, gates, reports, invitations | All operations |
 | **General Secretary** | `secretary@` | Guest-facing operations: registrations, invitations, communications, gate decisions | All operations |
-| **Bursary / Finance** (2 accounts) | `bursar@`, `finsec@` | **The money**: verifying bank transfers, the ledger, sponsor commitments, reports | Participants, finance, gates, reports, invitations |
+| **Financial Secretary / Accounts** | `finsec@` | **The money**: verifying bank transfers, the ledger, sponsor commitments, reports | Participants, finance, gates, reports, invitations |
 | **Gate Marshal** (3 accounts) | `gate@`, `gate1@`, `gate2@` | The gates on the day | **Scanner only** — no console, no finance |
 
 **Module ownership at handover:**
@@ -51,11 +51,11 @@ A public website that sells and administers admission to the festival: guests re
 |---|---|---|
 | Public website content & prices | President | General Secretary |
 | Registrations & guest passes | General Secretary | Secretariat desk |
-| **Bank transfers & the ledger** | **Bursary** | Bursary |
-| VIP Tables (incl. which table is sold) | Bursary | Secretariat desk (availability), Bursary (money) |
+| **Bank transfers & the ledger** | **Accounts** | Accounts |
+| VIP Tables (incl. which table is sold) | Accounts | Secretariat desk (availability), Accounts (money) |
 | **Complimentary VIP invitations** | **General Secretary** | Secretariat desk |
 | Turnstile scanning & gate incidents | President | Gate Marshals |
-| Reports & exports | President | Bursary |
+| Reports & exports | President | Accounts |
 | Admin accounts & permissions | Super Admin | Super Admin |
 | Database changes | Super Admin | Super Admin (always via a migration, never by hand) |
 
@@ -66,8 +66,8 @@ A public website that sells and administers admission to the festival: guests re
 Full instructions are in `docs/CONSOLE_WALKTHROUGH.md`. The short version:
 
 - **Day 1 & 2** — guests register free online; marshals scan at Gate 2; export the daily attendance log at close.
-- **Day 3** — the Bursary clears every pending bank transfer **before** the gate opens; any table still showing *Amount Paid = 0* stays refused; export the finance ledger and the master roster for the archive.
-- **Every evening** — Bursary reconciles the day's transfers against the bank statement.
+- **Day 3** — the Accounts clears every pending bank transfer **before** the gate opens; any table still showing *Amount Paid = 0* stays refused; export the finance ledger and the master roster for the archive.
+- **Every evening** — Accounts reconciles the day's transfers against the bank statement.
 
 ---
 
@@ -76,7 +76,7 @@ Full instructions are in `docs/CONSOLE_WALKTHROUGH.md`. The short version:
 1. **Day 3 admission is sold only with a VIP Table.** There is no standalone Day-3 ticket. The ₦50,000 Regular Section seat is sold on the Tables page only.
 2. **Official brochure prices only.** ₦5,000,000 Kings · ₦3,000,000 Royal · ₦2,000,000 Queens · ₦500,000 Premium · ₦50,000 Regular Section seat. There is no test price and no switch.
 3. **Prices are decided by the server.** The browser cannot influence what is charged — this is enforced in code and by the `price_list` table.
-4. **A bank transfer is not a payment until the Bursary verifies it.** Unverified transfers get a Provisional Claim Slip, are marked *Pending Bank Verification*, and are refused at the gate.
+4. **A bank transfer is not a payment until the Accounts verifies it.** Unverified transfers get a Provisional Claim Slip, are marked *Pending Bank Verification*, and are refused at the gate.
 5. **A table is sold once.** A unique database constraint prevents the same table from being sold twice, and one transfer cannot pay for two bookings.
 6. **Commission** is 10% and is only credited once a booking is verified.
 
@@ -121,7 +121,7 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 | Pass issuance & verification | Instant | On registration / booking |
 | Gate admission decisions | Instant | At the scanner |
 | CSV report generation | On demand | Reports & Export |
-| **Bank reconciliation** | ❌ **Manual** | The Bursary verifies each transfer by hand — deliberate, because only a human can read a bank statement |
+| **Bank reconciliation** | ❌ **Manual** | The Accounts verifies each transfer by hand — deliberate, because only a human can read a bank statement |
 | **Receipts & invoices** | ❌ **Manual** | Not yet generated automatically |
 | **Affiliate payout statements** | ❌ **Manual** | Commission accrues correctly; statements are not yet generated |
 | **Email delivery log** | ✅ Automatic | Every send recorded in `notification_log` |
@@ -197,7 +197,7 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 - [ ] Migrations 0018 and 0019 applied on Supabase
 - [ ] Point-in-time recovery / backups confirmed, and a restore rehearsed once
 - [ ] Admin passwords rotated; passwords removed from the public repository
-- [ ] MFA enabled for `admin@`, `superadmin@`, `president@`, `secretary@`, `bursar@`, `finsec@`
+- [ ] MFA enabled for `admin@`, `superadmin@`, `president@`, `secretary@`, `finsec@`
 - [ ] Dress rehearsal: one real booking on a phone, on mobile data, at a real gate
 - [ ] Load test: 100 simultaneous registrations and 200 scans in 10 minutes
 - [ ] Staging environment created with a copy of the data, and the Club has rehearsed there
@@ -213,7 +213,7 @@ SQL lives in `supabase/migrations/` (0011 → 0019) and a consolidated `supabase
 |---|---|
 | System access / roles / anything broken | Super Admin |
 | Guest complaints, invitations, passes | General Secretary |
-| Payments, refunds, transfers | Bursary |
+| Payments, refunds, transfers | Accounts |
 | Gate operation on the day | President |
 | Hosting, database, repository | Super Admin (engineer of record) |
 

@@ -36,7 +36,7 @@ describe("buildActor role authority (revocation is final)", () => {
       { role_key: "media_officer", expires_at: null, revoked_at: null },
     ];
 
-    const actor = await buildActor("user-1", "media_officer", "bursar@abeokutapolo2026.ng");
+    const actor = await buildActor("user-1", "media_officer", "finsec@abeokutapolo2026.ng");
     expect([...actor.roles].sort()).toEqual(["finance_officer", "media_officer"]);
   });
 

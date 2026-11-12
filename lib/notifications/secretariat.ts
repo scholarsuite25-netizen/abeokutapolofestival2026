@@ -83,12 +83,12 @@ export async function notifySecretariatOfBankPayment(payload: BankPaymentNotific
           <div style="background-color: #7F1D1D; color: #FEF2F2; padding: 20px; border-radius: 8px; text-align: center;">
             <p style="text-transform: uppercase; letter-spacing: 0.15em; font-size: 11px; margin: 0 0 6px 0; font-weight: bold; color: #FECACA;">⚡ Secretariat Immediate Action Required</p>
             <h1 style="margin: 0; font-size: 22px; font-weight: 700;">🚨 New Bank Payment Notification</h1>
-            <p style="margin: 6px 0 0 0; font-size: 13px; color: #FCA5A5;">Awaiting Bursary Confirmation & Pass Release</p>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #FCA5A5;">Awaiting Accounts Confirmation & Pass Release</p>
           </div>
 
           <div style="padding: 24px 0;">
             <p style="font-size: 15px; margin: 0 0 16px 0; line-height: 1.5;">
-              A buyer has submitted a direct bank wire transfer claim to the official <strong>Abeokuta Polo Club WEMA Bank</strong> account. Passes currently remain strictly <strong>UNVERIFIED</strong> until bursary confirmation.
+              A buyer has submitted a direct bank wire transfer claim to the official <strong>Abeokuta Polo Club WEMA Bank</strong> account. Passes currently remain strictly <strong>UNVERIFIED</strong> until accounts confirmation.
             </p>
 
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
@@ -126,7 +126,7 @@ export async function notifySecretariatOfBankPayment(payload: BankPaymentNotific
             </div>
 
             <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 12px; font-size: 12px; color: #92400E;">
-              <strong>🛡️ Anti-Fraud Protocol:</strong> Turnstiles will deny gate access for this pass until an administrator or bursary officer clicks Approve in the Command Centre.
+              <strong>🛡️ Anti-Fraud Protocol:</strong> Turnstiles will deny gate access for this pass until an administrator or accounts officer clicks Approve in the Command Centre.
             </div>
           </div>
 

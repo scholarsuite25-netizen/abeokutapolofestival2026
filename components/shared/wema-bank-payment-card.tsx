@@ -77,7 +77,7 @@ export function WemaBankPaymentCard({
     (phone ? `• *Phone:* ${phone}\n` : "") +
     (email ? `• *Email:* ${email}\n` : "") +
     `\n📎 *Attached:* My bank debit payment slip / transaction advice.\n\n` +
-    `Please reconcile with Bursary ledger and confirm activation.\n\n` +
+    `Please reconcile with Accounts ledger and confirm activation.\n\n` +
     `_Abeokuta Polo Club Secretariat_`;
 
   const waUrl = formatWhatsAppUrl(CLUB_BANK_DETAILS.secretariatWhatsApp, waReconciliationText);
@@ -173,7 +173,7 @@ export function WemaBankPaymentCard({
               Mandatory Payment Narration / Reference Code:
             </span>
             <p className="text-xs text-amber-900 mt-0.5">
-              You must enter this exact reference in your bank app transfer narration/remarks so Bursary can identify your payment.
+              You must enter this exact reference in your bank app transfer narration/remarks so Accounts can identify your payment.
             </p>
           </div>
           <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-amber-400 self-start sm:self-auto shadow-xs">
@@ -199,7 +199,7 @@ export function WemaBankPaymentCard({
         <AlertTriangle className="size-5 text-amber-700 shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p className="font-bold text-amber-900">
-            Anti-Fraud Protocol · Admission Pending Bursary Verification
+            Anti-Fraud Protocol · Admission Pending Accounts Verification
           </p>
           <p className="text-[11px] text-amber-900/90 leading-relaxed">
             Submitting a bank transfer claim does not grant active admission automatically. Your pass status strictly remains <code className="bg-white/80 px-1 py-0.5 rounded font-mono font-bold text-amber-950">pending_verification</code> with an amber warning badge. Optical gate turnstiles will deny entry until verified by the Secretariat accreditation desk.
@@ -211,7 +211,7 @@ export function WemaBankPaymentCard({
       <div className="mt-4 pt-3 border-t border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="text-xs text-muted-brand flex items-center gap-1.5">
           <ShieldAlert className="size-4 text-forest" />
-          <span>Need fast-track verification? Message Secretariat Bursary:</span>
+          <span>Need fast-track verification? Message Secretariat Accounts:</span>
         </div>
 
         <Button

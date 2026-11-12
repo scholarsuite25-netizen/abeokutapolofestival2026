@@ -71,14 +71,14 @@ async function processVerification(token: string, explicitSeal?: string) {
   const { normalized, seal: parsedSeal } = normalizeVerificationTarget(token);
   const sealToCheck = explicitSeal || parsedSeal;
 
-  // Instant check: unverified / pending bursary registry
+  // Instant check: unverified / pending accounts registry
   if (isPassPendingVerification(normalized)) {
     return NextResponse.json(
       {
         valid: false,
         status: "pending_verification",
-        error: "Admission Pending Bursary Verification",
-        message: "Admission Pending Bursary Verification",
+        error: "Admission Pending Accounts Verification",
+        message: "Admission Pending Accounts Verification",
       },
       { status: 403 },
     );
@@ -155,8 +155,8 @@ async function processVerification(token: string, explicitSeal?: string) {
           {
             valid: false,
             status: "pending_verification",
-            error: "Admission Pending Bursary Verification",
-            message: "Admission Pending Bursary Verification",
+            error: "Admission Pending Accounts Verification",
+            message: "Admission Pending Accounts Verification",
             passType: cred.pass_type,
             guestName: cred.holder_name,
           },
@@ -289,8 +289,8 @@ async function processVerification(token: string, explicitSeal?: string) {
             {
               valid: false,
               status: "pending_verification",
-              error: "Admission Pending Bursary Verification",
-              message: "Admission Pending Bursary Verification",
+              error: "Admission Pending Accounts Verification",
+              message: "Admission Pending Accounts Verification",
               passType: cred.pass_type,
               guestName: cred.holder_name,
             },

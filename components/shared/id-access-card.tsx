@@ -95,7 +95,7 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
     : "Day 1 Gate Access Pass";
 
   const admissionBadge = isPendingVerification
-    ? "⚠️ PENDING BURSARY VERIFICATION"
+    ? "⚠️ PENDING ACCOUNTS VERIFICATION"
     : isGold
     ? isSponsored
       ? (serialText ? `SPONSORED GUEST · ${serialText}` : "SPONSORED GUEST")
@@ -116,11 +116,11 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
             : "border-2 border-[#002F1A] bg-[#FCF9F8] text-[#1B1C1C] shadow-lg"
         }`}
       >
-        {/* Anti-Fraud Watermark for Pending Bursary Verification */}
+        {/* Anti-Fraud Watermark for Pending Accounts Verification */}
         {isPendingVerification && (
           <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center p-3">
             <div className="rotate-[-25deg] rounded-xl border-2 border-dashed border-red-600/90 bg-red-950/85 p-2 text-center text-[10px] font-black uppercase tracking-wider text-red-100 shadow-2xl backdrop-blur-xs">
-              ⚠️ PENDING BURSARY VERIFICATION
+              ⚠️ PENDING ACCOUNTS VERIFICATION
               <br />
               <span className="text-[8.5px] font-bold text-amber-300">NOT VALID FOR GATE ENTRY</span>
             </div>
@@ -224,7 +224,7 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
               <div className="flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500 text-amber-300 shadow-xs">
                 <AlertTriangle className="size-2.5 text-amber-400 shrink-0" />
                 <span className="text-[7.5px] font-bold tracking-wider uppercase text-amber-300">
-                  ⚠️ PENDING BURSARY VERIFICATION · NOT VALID FOR GATE ENTRY
+                  ⚠️ PENDING ACCOUNTS VERIFICATION · NOT VALID FOR GATE ENTRY
                 </span>
               </div>
             ) : isGold ? (
@@ -379,7 +379,7 @@ export function IdAccessCard({ pass, showActions = true, isBuyer = false, classN
           }`}
         >
           {isPendingVerification ? (
-            <span>⚠️ ADMISSION PENDING BURSARY VERIFICATION · ACCREDITATION DESK ACTION REQUIRED</span>
+            <span>⚠️ ADMISSION PENDING ACCOUNTS VERIFICATION · ACCREDITATION DESK ACTION REQUIRED</span>
           ) : isGold ? (
             <span>Turnstile accreditation required. Royal Gate Marshals on duty.</span>
           ) : (

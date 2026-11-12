@@ -40,7 +40,6 @@ const PRESET_CREDENTIALS = [
     title: "Super Admin (You)",
     designation: "Platform Governance & Owner",
     email: "superadmin@abeokutapolo2026.ng",
-    password: "PoloSuperAdmin2026#Apex",
     url: "/abawole",
     role: "super_admin",
     badge: "Super Admin",
@@ -52,7 +51,6 @@ const PRESET_CREDENTIALS = [
     title: "Admin 1: President",
     designation: "Club President",
     email: "president@abeokutapolo2026.ng",
-    password: "PoloPres2026!Executive",
     url: "/abawole",
     role: "president",
     badge: "Executive Admin",
@@ -64,7 +62,6 @@ const PRESET_CREDENTIALS = [
     title: "Admin 2: General Secretary",
     designation: "Club General Secretariat",
     email: "secretary@abeokutapolo2026.ng",
-    password: "PoloSec2026!Palace",
     url: "/abawole",
     role: "general_secretary",
     badge: "Executive Admin",
@@ -74,9 +71,8 @@ const PRESET_CREDENTIALS = [
   },
   {
     title: "Admin 3: Financial Secretary",
-    designation: "Financial Secretary & Treasury Operations",
-    email: "bursar@abeokutapolo2026.ng",
-    password: "PoloBursar2026!Treasury",
+    designation: "Financial Secretary & Accounts Operations",
+    email: "finsec@abeokutapolo2026.ng",
     url: "/abawole",
     role: "finance_officer",
     badge: "Financial Secretary",
@@ -88,7 +84,6 @@ const PRESET_CREDENTIALS = [
     title: "Gate Marshal (Turnstile)",
     designation: "Turnstile Ingress Security",
     email: "gate@abeokutapolo2026.ng",
-    password: "GateMarshal2026#Access",
     url: "/scan",
     role: "security_checkin_officer",
     badge: "Turnstile Only",
@@ -206,25 +201,26 @@ export function AdminManagementClient({
             <div className="flex items-center gap-2">
               <KeyRound className="h-5 w-5 text-gold-deep" />
               <h2 className="font-display text-lg font-bold text-forest">
-                Copy Assigned Admin &amp; Gate Credentials
+                Assigned Staff Logins
               </h2>
             </div>
             <p className="mt-1 text-xs text-muted-brand">
-              Assigned login URLs, emails, and passphrases for the 3 Administrators and the Gate Marshal. Click any field to copy.
+              Login URLs and emails for the Administrators and the Gate Marshal. Passwords are never
+              displayed here — reset them from the row below if an account needs a new one.
             </p>
           </div>
           <button
             onClick={() => {
               const summaryText = PRESET_CREDENTIALS.map(
                 (c) =>
-                  `${c.title} (${c.designation})\nURL: ${c.url}\nEmail: ${c.email}\nPassword: ${c.password}\nScope: ${c.scope}\n`
+                  `${c.title} (${c.designation})\nURL: ${c.url}\nEmail: ${c.email}\nScope: ${c.scope}\n`
               ).join("\n----------------------------------------\n\n");
               copyToClipboard("all", summaryText);
             }}
             className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-forest px-3.5 py-2 text-xs font-semibold text-ivory hover:bg-forest-light transition-colors self-start sm:self-auto shrink-0 shadow-xs"
           >
             {copiedKey === "all" ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5 text-gold" />}
-            <span>{copiedKey === "all" ? "All Credentials Copied!" : "Copy All 5 Accounts"}</span>
+            <span>{copiedKey === "all" ? "All Logins Copied!" : "Copy All 5 Logins"}</span>
           </button>
         </div>
 
@@ -280,21 +276,6 @@ export function AdminManagementClient({
                       >
                         <span>{cred.email}</span>
                         {copiedKey === `email-${cred.email}` ? (
-                          <Check className="h-3 w-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="h-3 w-3 text-muted-brand" />
-                        )}
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-muted-brand font-sans">Password:</span>
-                      <button
-                        onClick={() => copyToClipboard(`pass-${cred.email}`, cred.password)}
-                        className="inline-flex items-center gap-1 text-ink font-semibold hover:text-gold transition-colors"
-                      >
-                        <span>{cred.password}</span>
-                        {copiedKey === `pass-${cred.email}` ? (
                           <Check className="h-3 w-3 text-emerald-600" />
                         ) : (
                           <Copy className="h-3 w-3 text-muted-brand" />
@@ -541,7 +522,7 @@ export function AdminManagementClient({
                   minLength={8}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="e.g. PoloPres2026!Executive"
+                  placeholder="e.g. "
                   className="w-full rounded-lg border border-line bg-sage/20 px-3 py-2 text-xs font-mono text-ink focus:border-forest focus:outline-hidden"
                 />
                 <PasswordStrengthMeter password={newPassword} />

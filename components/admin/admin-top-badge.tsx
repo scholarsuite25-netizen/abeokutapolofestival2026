@@ -19,7 +19,7 @@ export function AdminTopBadge() {
           setRoleName("Club President");
         } else if (em.startsWith("gensec@") || em.startsWith("secretary@")) {
           setRoleName("General Secretary");
-        } else if (em.startsWith("finsec@") || em.startsWith("bursar@") || em.startsWith("finance@")) {
+        } else if (em.startsWith("finsec@") || em.startsWith("finance@")) {
           setRoleName("Financial Secretary");
         } else if (em.startsWith("marshal@") || em.startsWith("gate@") || em.startsWith("security@")) {
           setRoleName("Gate Marshal");

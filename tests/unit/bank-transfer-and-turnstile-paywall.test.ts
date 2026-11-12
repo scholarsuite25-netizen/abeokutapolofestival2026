@@ -67,7 +67,7 @@ describe("Bank Transfer & Turnstile Paywall Hardening", () => {
     const offlineHtml = generateOfflinePassHtml({
       passCode: "ABK-2026-VVIP-CLAIM99",
       holderName: "Alhaji Tester",
-      category: "Day 3 VVIP Provisional Claim (Pending Bursary Verification)",
+      category: "Day 3 VVIP Provisional Claim (Pending Accounts Verification)",
       affiliationType: "individual",
       status: "pending_verification",
       daysCovered: [3],
@@ -77,7 +77,7 @@ describe("Bank Transfer & Turnstile Paywall Hardening", () => {
     });
 
     expect(offlineHtml).toContain("PROVISIONAL BANK CLAIM SLIP");
-    expect(offlineHtml).toContain("PENDING BURSARY VERIFICATION · NOT VALID FOR GATE ENTRY");
+    expect(offlineHtml).toContain("PENDING ACCOUNTS VERIFICATION · NOT VALID FOR GATE ENTRY");
     expect(offlineHtml).toContain("NOT VALID FOR GATE ENTRY");
     // Must NOT claim royal admission
     expect(offlineHtml).not.toContain("👑 VVIP ACTIVE STATUS · ROYAL ADMISSION");

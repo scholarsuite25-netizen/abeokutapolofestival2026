@@ -307,7 +307,7 @@ export function generateOfflinePassHtml(pass: StoredPass): string {
     : `🛡️ CLASSIC HERITAGE BADGE${serialLabel ? ` · ${serialLabel.toUpperCase()}` : ""}`;
 
   const securityStatusHtml = isPending
-    ? `<div class="security-status" style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; font-weight: 800; font-size: 8px;">⚠️ PENDING BURSARY VERIFICATION · NOT VALID FOR GATE ENTRY</div>`
+    ? `<div class="security-status" style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; font-weight: 800; font-size: 8px;">⚠️ PENDING ACCOUNTS VERIFICATION · NOT VALID FOR GATE ENTRY</div>`
     : `<div class="security-status">${isGold ? "👑 VVIP ACTIVE STATUS · ROYAL ADMISSION" : "✓ EMERALD ACTIVE STATUS · HERITAGE ADMISSION"}</div>`;
 
   const htmlContent = `<!DOCTYPE html>
@@ -502,7 +502,7 @@ export function generateOfflinePassHtml(pass: StoredPass): string {
 
     ${isPending ? `
     <div style="position: absolute; top: 46%; left: 50%; transform: translate(-50%, -50%) rotate(-25deg); font-size: 13px; font-weight: 900; color: #991B1B; text-align: center; pointer-events: none; text-transform: uppercase; border: 3px dashed #DC2626; padding: 10px 14px; border-radius: 8px; width: 85%; z-index: 50; line-height: 1.35; background: rgba(254, 242, 242, 0.95); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-      ⚠️ PENDING BURSARY VERIFICATION · NOT VALID FOR GATE ENTRY
+      ⚠️ PENDING ACCOUNTS VERIFICATION · NOT VALID FOR GATE ENTRY
     </div>` : ""}
 
     <div class="qr-core"${isPending ? ' style="background: #FEF3C7; border-bottom: 1px solid #FDE68A;"' : ""}>
@@ -554,7 +554,7 @@ export function generateOfflinePassHtml(pass: StoredPass): string {
     </div>
 
     <div class="card-footer"${isPending ? ' style="background: #FEF3C7; color: #92400E; border-top: 1px solid #FDE68A;"' : ""}>
-      ${isPending ? "⚠️ PROVISIONAL CLAIM SLIP: Not valid for turnstile gate admission until bursary verification is complete." : isGold ? "Turnstile accreditation required. Royal Gate Marshals on duty." : "Turnstile accreditation required. Complimentary Heritage Entry."}
+      ${isPending ? "⚠️ PROVISIONAL CLAIM SLIP: Not valid for turnstile gate admission until accounts verification is complete." : isGold ? "Turnstile accreditation required. Royal Gate Marshals on duty." : "Turnstile accreditation required. Complimentary Heritage Entry."}
     </div>
   </div>
 </body>

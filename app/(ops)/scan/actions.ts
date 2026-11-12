@@ -149,7 +149,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
 
   // 2b. Check in-memory unverified pass registry (Anti-Fraud Gate Guard)
   if (isPassPendingVerification(identifier) || isPassPendingVerification(passIdentifier)) {
-    return rejected("Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.");
+    return rejected("Admission Pending Accounts Verification — Please proceed to Secretariat accreditation desk.");
   }
 
   // 3. Handle Complimentary Invitation Gate Admission (ABK-2026-INV- / "Aare Elesin")
@@ -372,7 +372,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
               gate,
               officer_id: officerId === "local-dev-officer" ? null : officerId,
               result: "unverified",
-              details: { reason: "Admission Pending Bursary Verification", eventDay },
+              details: { reason: "Admission Pending Accounts Verification", eventDay },
             });
           } catch {}
 
@@ -383,7 +383,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
             passType: directCred.pass_type,
             eventDay,
             gate,
-            message: "Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.",
+            message: "Admission Pending Accounts Verification — Please proceed to Secretariat accreditation desk.",
           };
         }
 
@@ -507,7 +507,7 @@ export async function processGateScan(rawInput: unknown): Promise<ScanResult> {
   // 6. Local simulation for testing valid demo codes
   if (identifier.startsWith("ABK-2026-") || decodedHolderName) {
     if (isPassPendingVerification(identifier) || isPassPendingVerification(passIdentifier)) {
-      return rejected("Admission Pending Bursary Verification — Please proceed to Secretariat accreditation desk.");
+      return rejected("Admission Pending Accounts Verification — Please proceed to Secretariat accreditation desk.");
     }
     const passKey = identifier;
     const history = localAttendanceCache.get(passKey) || {};

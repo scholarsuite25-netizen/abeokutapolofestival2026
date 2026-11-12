@@ -96,7 +96,7 @@ describe("Password Management & Evaluation Rules", () => {
     });
 
     it("classifies 8+ characters mixed-case + number + special symbol as Strong", () => {
-      const res = evaluatePassword("PoloPres2026!Executive");
+      const res = evaluatePassword("Aa1!Aa1!Aa1!");
       expect(res.score).toBe(4);
       expect(res.label).toBe("Strong");
       expect(res.criteria.minLength).toBe(true);

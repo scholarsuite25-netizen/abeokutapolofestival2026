@@ -55,7 +55,6 @@ export function SignInForm() {
             normalizedEmail === "secretary@abeokutapolo2026.ng" ||
             normalizedEmail === "president@abeokutapolo2026.ng" ||
             normalizedEmail === "superadmin@abeokutapolo2026.ng" ||
-            normalizedEmail === "bursar@abeokutapolo2026.ng" ||
             normalizedEmail === "finsec@abeokutapolo2026.ng" ||
             normalizedEmail === "finance@abeokutapolo2026.ng" ||
             normalizedEmail === "admin@abeokutapolo2026.ng";

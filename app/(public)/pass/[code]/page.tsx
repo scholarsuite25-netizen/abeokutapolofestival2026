@@ -187,7 +187,7 @@ async function PassContent({ params, searchParams }: PassPageProps) {
     }
 
     const passType = isPending
-      ? (isTable ? `${tablePkgName} Provisional Table Slip` : "Day 3 VVIP Provisional Claim (Pending Bursary Verification)")
+      ? (isTable ? `${tablePkgName} Provisional Table Slip` : "Day 3 VVIP Provisional Claim (Pending Accounts Verification)")
       : isTable
       ? `${tablePkgName} VIP Access`
       : isVvip
@@ -430,7 +430,7 @@ async function PassContent({ params, searchParams }: PassPageProps) {
               {isPendingVerification ? (
                 <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-500/25 border border-amber-400 text-amber-300">
                   <AlertTriangle className="size-2.5 text-amber-400" />
-                  Pending Bursary Verification
+                  Pending Accounts Verification
                 </span>
               ) : (
                 <span
@@ -669,7 +669,7 @@ async function PassContent({ params, searchParams }: PassPageProps) {
           <div className="rounded-2xl border-2 border-amber-500 bg-amber-50/90 p-4 text-center space-y-2.5 print:hidden">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
               <AlertTriangle className="size-3 text-white" />
-              <span>Pending Bursary Verification</span>
+              <span>Pending Accounts Verification</span>
             </div>
             <h3 className="font-serif text-base font-bold text-amber-950">
               Submit Payment Slip to Activate Pass

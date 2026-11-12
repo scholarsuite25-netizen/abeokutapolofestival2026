@@ -259,7 +259,7 @@ export function TablesBookingClient() {
             <p className="max-w-2xl mx-auto text-sm sm:text-base text-ivory/85">
               Welcome to the <strong>{bookingResult.packageName}</strong> ({bookingResult.tableSerial}). 
               All <strong>{bookingResult.passes.length} distinct VIP ID access card{bookingResult.passes.length > 1 ? "s" : ""}</strong> have been generated with cryptographic HMAC-256 signatures.
-              {isProvisional && " They remain provisional until the Secretariat Bursary reconciles your transfer."}
+              {isProvisional && " They remain provisional until the Secretariat Accounts reconciles your transfer."}
             </p>
           </div>
 
@@ -269,7 +269,7 @@ export function TablesBookingClient() {
             <div className="h-px w-full bg-gold/30 mt-0.5" />
           </div>
 
-          {/* Provisional Bursary Notice for Bank Transfers */}
+          {/* Provisional Accounts Notice for Bank Transfers */}
           {isProvisional && (
             <div className="rounded-2xl border-2 border-amber-500 bg-amber-950/80 p-5 text-amber-100 shadow-xl space-y-3">
               <div className="flex items-start gap-3">
@@ -280,7 +280,7 @@ export function TablesBookingClient() {
                   </h3>
                   <p className="text-xs sm:text-sm text-amber-200/90 leading-relaxed">
                     Transfer reference: <strong className="font-mono text-amber-300">{bookingResult.bankTransferRef}</strong>. 
-                    Please send your transfer receipt (₦{(bookingResult.amountNgn ?? selectedPkg.officialPriceNgn).toLocaleString()}) to the Secretariat Bursary via WhatsApp to activate {bookingResult.passes.length === 1 ? "your turnstile credential" : `all ${bookingResult.passes.length} turnstile credentials`} before the gates open on 20 Dec 2026.
+                    Please send your transfer receipt (₦{(bookingResult.amountNgn ?? selectedPkg.officialPriceNgn).toLocaleString()}) to the Secretariat Accounts via WhatsApp to activate {bookingResult.passes.length === 1 ? "your turnstile credential" : `all ${bookingResult.passes.length} turnstile credentials`} before the gates open on 20 Dec 2026.
                   </p>
                   {bookingResult.secretariatNotification?.whatsappUrl && (
                     <div className="pt-2">
@@ -800,7 +800,7 @@ export function TablesBookingClient() {
                   <CheckCircle2 className="size-4 text-gold" />
                 </div>
                 <p className="text-xs text-ivory/70 mt-1.5 leading-relaxed">
-                  Direct payment to Abeokuta Polo Club ({CLUB_BANK_DETAILS.accountNumber}). Issues Provisional Claim Slips with turnstiles activated upon Bursary verification.
+                  Direct payment to Abeokuta Polo Club ({CLUB_BANK_DETAILS.accountNumber}). Issues Provisional Claim Slips with turnstiles activated upon Accounts verification.
                 </p>
                 <span className="inline-block mt-2 font-mono text-xs font-bold text-gold">
                   Transfer Amount: {selectedPkg.officialPriceDisplay} (Official Brochure Rate)

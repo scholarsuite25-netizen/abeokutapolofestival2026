@@ -592,7 +592,7 @@ export function PortraitInvitationDeviceGuard({
           </div>
 
           <p className="text-[11px] text-[#FCF9F8]/60 leading-relaxed">
-            If you recently switched your mobile device or require secretariat re-assignment, please contact the Secretariat Bursary desk.
+            If you recently switched your mobile device or require secretariat re-assignment, please contact the Secretariat Accounts desk.
           </p>
 
           <div className="pt-2 flex flex-col gap-2">

@@ -16,10 +16,16 @@ const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+// Staff accounts to provision. PASSWORDS ARE NEVER STORED IN THE REPOSITORY —
+// supply them through the environment, e.g.
+//   ADMIN_PW_SUPERADMIN=... ADMIN_PW_PRESIDENT=... node scripts/create_admin_user.mjs
+// Any account without a password in the environment is skipped.
+const passwordFor = (key) => (process.env[`ADMIN_PW_${key}`] || "").trim();
+
 const ACCOUNTS_TO_PROVISION = [
   {
     email: 'superadmin@abeokutapolo2026.ng',
-    password: 'PoloSuperAdmin2026#Apex',
+    password: passwordFor('SUPERADMIN'),
     role: 'super_admin',
     fullName: 'Super Administrator (Executive Governance)',
     url: '/abawole',
@@ -27,7 +33,7 @@ const ACCOUNTS_TO_PROVISION = [
   },
   {
     email: 'president@abeokutapolo2026.ng',
-    password: 'PoloPres2026!Executive',
+    password: passwordFor('PRESIDENT'),
     role: 'president',
     fullName: 'Club President (Executive Operations)',
     url: '/abawole',
@@ -35,15 +41,23 @@ const ACCOUNTS_TO_PROVISION = [
   },
   {
     email: 'secretary@abeokutapolo2026.ng',
-    password: 'PoloSec2026!Palace',
+    password: passwordFor('SECRETARY'),
     role: 'general_secretary',
     fullName: 'General Secretary (Secretariat Operations)',
     url: '/abawole',
     scope: 'Full Operations: Registrations, Communications, Reports, Gate Checks',
   },
   {
+    email: 'finsec@abeokutapolo2026.ng',
+    password: passwordFor('FINSEC'),
+    role: 'finance_officer',
+    fullName: 'Financial Secretary (Accounts & Treasury Operations)',
+    url: '/abawole',
+    scope: 'Finance & Accounts: Bank Wire Reconciliations, Gate Fees, Commitments Ledger',
+  },
+  {
     email: 'gate@abeokutapolo2026.ng',
-    password: 'GateMarshal2026#Access',
+    password: passwordFor('GATE'),
     role: 'security_checkin_officer',
     fullName: 'Gate Marshal (Turnstile Ingress Officer)',
     url: '/scan',
@@ -168,18 +182,24 @@ async function main() {
   await ensureRolesAndPermissions();
 
   for (const acc of ACCOUNTS_TO_PROVISION) {
+    if (!acc.password) {
+      console.log(
+        `\nSKIPPED ${acc.email} — no password supplied (set ADMIN_PW_<ROLE> in the environment)`,
+      );
+      continue;
+    }
     await provisionAccount(acc);
   }
 
   console.log('\n========================================================================================');
-  console.log('ALL ADMINISTRATIVE & TURNSTILE ACCOUNTS PROVISIONED SUCCESSFULLY:');
+  console.log('ADMINISTRATIVE & TURNSTILE ACCOUNTS PROVISIONED:');
   console.log('========================================================================================');
   for (const acc of ACCOUNTS_TO_PROVISION) {
     console.log(`Persona:   ${acc.fullName}`);
     console.log(`Role:      ${acc.role}`);
     console.log(`Login URL: ${acc.url}`);
     console.log(`Email:     ${acc.email}`);
-    console.log(`Password:  ${acc.password}`);
+    console.log(`Password:  ${acc.password ? "(supplied via environment)" : "(not supplied — skipped)"}`);
     console.log(`Scope:     ${acc.scope}`);
     console.log('----------------------------------------------------------------------------------------');
   }

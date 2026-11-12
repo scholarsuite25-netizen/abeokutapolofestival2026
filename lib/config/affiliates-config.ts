@@ -134,7 +134,7 @@ export const TICKETING_AGENCIES: TicketingAgency[] = [
     keyStrengths: [
       "Ubiquitous reach through thousands of Nigerian bank ATMs and Quickteller kiosks",
       "Highest corporate enterprise trust for institutional transactions",
-      "Direct settlement into Abeokuta Polo Club WEMA Bank bursary account",
+      "Direct settlement into the Abeokuta Polo Club WEMA Bank operating account",
     ],
     integrationNote: "Recommended for corporate conglomerates buying Kings and Royal Tables by direct invoice.",
   },
