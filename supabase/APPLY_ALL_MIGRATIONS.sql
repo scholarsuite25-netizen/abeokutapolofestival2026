@@ -2505,9 +2505,9 @@ create index if not exists idx_help_requests_status on public.help_requests (sta
 insert into public.festival_days (edition_id, day_number, date, label, gates_open, status)
 select e.id, d.day_number, d.date::date, d.label, d.gates_open, d.status
 from (values
-  (1, '2026-12-18', 'Day 1 · Friday 18 December 2026', '10:00'),
-  (2, '2026-12-19', 'Day 2 · Saturday 19 December 2026', '10:00'),
-  (3, '2026-12-20', 'Day 3 · Grand Finale, Sunday 20 December 2026', '12:00')
+  (1, '2026-12-18', 'Day 1 · Friday 18 December 2026', '10:00', 'scheduled'),
+  (2, '2026-12-19', 'Day 2 · Saturday 19 December 2026', '10:00', 'scheduled'),
+  (3, '2026-12-20', 'Day 3 · Grand Finale, Sunday 20 December 2026', '12:00', 'scheduled')
 ) as d(day_number, date, label, gates_open, status)
 cross join lateral (
   select id from public.festival_editions where slug = '2026' limit 1
