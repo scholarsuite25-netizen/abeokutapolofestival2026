@@ -14,18 +14,24 @@ import { downloadFestivalCalendar } from "@/lib/calendar/event-ics";
 
 interface PassViewActionsProps {
   passData: StoredPass;
+  /**
+   * Day 1 & 2 free passes carry no device lock — the gift/lock callout is
+   * suppressed and sharing stays available. Day 3 keeps enforcement.
+   */
+  enforceDeviceLock?: boolean;
 }
 
-export function PassViewActions({ passData }: PassViewActionsProps) {
+export function PassViewActions({ passData, enforceDeviceLock = true }: PassViewActionsProps) {
   const [downloaded, setDownloaded] = useState(false);
   const [shared, setShared] = useState(false);
 
   const isGiftTicket = Boolean(
-    passData.isLockedToDevice ||
-    passData.isSponsored ||
-    (passData.ticketIndex && passData.ticketIndex > 1) ||
-    passData.holderName?.toLowerCase().startsWith("sponsored invitation") ||
-    passData.affiliationType === "guest_of"
+    enforceDeviceLock &&
+      (passData.isLockedToDevice ||
+        passData.isSponsored ||
+        (passData.ticketIndex && passData.ticketIndex > 1) ||
+        passData.holderName?.toLowerCase().startsWith("sponsored invitation") ||
+        passData.affiliationType === "guest_of"),
   );
 
   // Automatically save this pass to device storage (localStorage/sessionStorage/cookie) when viewed

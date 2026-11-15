@@ -293,6 +293,29 @@ async function PassContent({ params, searchParams }: PassPageProps) {
 
   const isGold = isTable || cred.pass_code.includes("VVIP") || cred.pass_type.toLowerCase().includes("vvip") || cred.pass_type.toLowerCase().includes("day 3");
 
+  // ── Day-aware device lock ───────────────────────────────────────────────
+  // Day 3 credentials — VVIP, the Regular Section (IVP), VIP table seats
+  // (KT/RT/QT/PT/TBL), Day 3 invitation redemptions and provisional bank
+  // slips — keep the anti-forwarding device lock. Days 1 & 2 free passes
+  // are issued without restriction: no lock screen, no binding handshake.
+  const passCodeUpper = cred.pass_code.toUpperCase();
+  const passTypeLower = cred.pass_type.toLowerCase();
+  const isDay3Credential =
+    isGold ||
+    isTable ||
+    isPendingVerification ||
+    passCodeUpper.includes("-IVP") ||
+    passCodeUpper.startsWith("ABK-2026-IVP") ||
+    passCodeUpper.startsWith("ABK-DAY3-") ||
+    passCodeUpper.startsWith("ABK-VVIP-") ||
+    passCodeUpper.startsWith("ABK-2026-INV-") ||
+    passTypeLower.includes("day 3") ||
+    passTypeLower.includes("regular section") ||
+    passTypeLower.includes("table") ||
+    passTypeLower.includes("complimentary") ||
+    passTypeLower.includes("invitation");
+  const enforceDeviceLock = isDay3Credential;
+
   const passStorageData: StoredPass = {
     passCode: cred.pass_code,
     holderName: cred.holder_name,
@@ -314,7 +337,7 @@ async function PassContent({ params, searchParams }: PassPageProps) {
     ticketIndex: ticketIdx,
     isSponsored,
     sponsorName: cred.host_name,
-    isLockedToDevice: isTableGuest || isSponsored,
+    isLockedToDevice: enforceDeviceLock && (isTableGuest || isSponsored),
     isBuyer: isTable ? ticketIdx === 1 : false,
   };
 
@@ -323,6 +346,7 @@ async function PassContent({ params, searchParams }: PassPageProps) {
       passCode={cred.pass_code}
       holderName={cred.holder_name}
       isTableGuest={isTableGuest}
+      enforceDeviceLock={enforceDeviceLock}
     >
       <div className="flex w-full max-w-full flex-col bg-ivory text-ink py-6 sm:py-10 print:py-0 print:bg-white overflow-x-clip min-w-0">
       <div className="mx-auto w-full max-w-md px-3 sm:px-4 space-y-4 min-w-0">
@@ -354,7 +378,7 @@ async function PassContent({ params, searchParams }: PassPageProps) {
         </div>
 
         {/* Action Bar (Download Offline Pass / Print / Share) */}
-        <PassViewActions passData={passStorageData} />
+        <PassViewActions passData={passStorageData} enforceDeviceLock={enforceDeviceLock} />
 
         {/* Access Card Container (CR80 Standard Physical ID-Card Ratio: max-w-[290px] sm:max-w-[305px]) */}
         <div
@@ -633,8 +657,8 @@ async function PassContent({ params, searchParams }: PassPageProps) {
           </div>
         </div>
 
-        {/* Anti-Leakage Guard: If gifted pass, show recipient device lock notification instead of viral share widget */}
-        {isSponsored ? (
+        {/* Anti-Leakage Guard: Day 3 gifted passes show the recipient device lock notification; free Day 1 & 2 passes have no lock so they keep the share widget */}
+        {isSponsored && enforceDeviceLock ? (
           <div className="rounded-2xl border-2 border-amber-500/70 bg-gradient-to-br from-amber-50 to-amber-100/50 p-4 text-amber-950 shadow-sm space-y-2 print:hidden">
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-xl bg-amber-600 text-white shrink-0 shadow-xs">

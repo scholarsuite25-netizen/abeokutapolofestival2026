@@ -338,6 +338,14 @@ interface PassDeviceGuardProps {
   isTableGuest?: boolean;
   userEmail?: string;
   userPhone?: string;
+  /**
+   * Day 3 credentials (VVIP, Regular Section, VIP tables, invitations,
+   * provisional bank slips) keep the full anti-forwarding device lock.
+   * Day 1 & 2 free passes set this to false and open freely for every
+   * registered attendee — there is no access restriction on Days 1 & 2.
+   * Defaults to true so a missing prop fails safe for paid credentials.
+   */
+  enforceDeviceLock?: boolean;
   children: ReactNode;
 }
 
@@ -347,6 +355,7 @@ export function PassDeviceGuard({
   isTableGuest = false,
   userEmail = "",
   userPhone = "+234 818 188 8884",
+  enforceDeviceLock = true,
   children,
 }: PassDeviceGuardProps) {
   const [authStatus, setAuthStatus] = useState<
@@ -363,6 +372,13 @@ export function PassDeviceGuard({
     let isMounted = true;
 
     async function evaluateDeviceSecurity() {
+      // Day 1 & 2 free passes carry no device lock: never claim, bind, or
+      // verify them — the registered attendee simply opens their card.
+      if (!enforceDeviceLock) {
+        if (isMounted) setAuthStatus("authorized");
+        return;
+      }
+
       const isMobile = isMobileBrowser();
       const isHost = passCode.toUpperCase().includes("-S01-");
 
@@ -429,7 +445,13 @@ export function PassDeviceGuard({
     return () => {
       isMounted = false;
     };
-  }, [passCode, holderName]);
+  }, [passCode, holderName, enforceDeviceLock]);
+
+  // Day 1 & 2 free passes: no lock screen, no handshake — open the card
+  // straight away for the registered attendee.
+  if (!enforceDeviceLock) {
+    return <>{children}</>;
+  }
 
   // 1. Loading / Verification Handshake
   if (authStatus === "checking") {
