@@ -285,41 +285,73 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full overflow-x-clip border-b border-gold/30 bg-forest-deep/95 backdrop-blur-xl supports-[backdrop-filter]:bg-forest-deep/90 text-ivory shadow-lg shadow-black/20 print:hidden transition-all duration-200">
-      <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between gap-1.5 sm:gap-4 px-2 sm:px-5 lg:px-6">
-        {/* ── 1. Event Brand Name: Royal Heritage Crest & Typography (Cute, Sharp, Compact) ── */}
-        <Link
-          href="/"
-          className="group flex items-center gap-1.5 sm:gap-2.5 transition-opacity hover:opacity-95 shrink-0"
-          aria-label="Abeokuta Polo Festival 2026 - The Blueprint"
-        >
-          <div className="relative flex size-7.5 sm:size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-forest-interactive to-forest-deep text-gold border border-gold/60 shadow-md shadow-forest-deep/40 transition-transform group-hover:scale-105">
-            <Shield className="size-3.5 sm:size-5 text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
-            <div className="absolute inset-0 rounded-xl bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <div className="flex flex-col justify-center whitespace-nowrap shrink-0">
-            <div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap whitespace-nowrap">
-              <span className="font-display text-xs sm:text-sm lg:text-base font-bold tracking-tight text-ivory whitespace-nowrap leading-tight">
-                Abeokuta Polo Festival
-              </span>
-              <span className="rounded bg-gold/20 px-1.5 py-0.5 text-[8.5px] sm:text-[10px] font-extrabold text-gold border border-gold/40 leading-none">
-                2026
-              </span>
+      <div className="mx-auto flex h-16 sm:h-20 max-w-[1700px] items-center justify-between gap-1.5 sm:gap-4 px-2 sm:px-5 lg:px-6">
+        {/* ── LEFT GROUP: Brand crest + the two Registration menus (1st: Day 1 & 2, 2nd: Day 3) ── */}
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
+          {/* ── 1. Event Brand Name: Royal Heritage Crest & Typography (Cute, Sharp, Compact) ── */}
+          <Link
+            href="/"
+            className="group flex items-center gap-1.5 sm:gap-2.5 transition-opacity hover:opacity-95 shrink-0"
+            aria-label="Abeokuta Polo Festival 2026 - The Blueprint"
+          >
+            <div className="relative flex size-7.5 sm:size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-forest-interactive to-forest-deep text-gold border border-gold/60 shadow-md shadow-forest-deep/40 transition-transform group-hover:scale-105">
+              <Shield className="size-3.5 sm:size-5 text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
+              <div className="absolute inset-0 rounded-xl bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="mt-0.5 flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-[10px] font-serif uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gold-light leading-none whitespace-nowrap">
-              <span>The Blueprint</span>
-              <span className="inline-block size-1 rounded-full bg-gold/60" />
-              <span className="font-sans tracking-normal font-normal text-ivory/70">
-                18–20 Dec
-              </span>
+            <div className="flex flex-col justify-center whitespace-nowrap shrink-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap whitespace-nowrap">
+                <span className="font-display text-xs sm:text-sm lg:text-base font-bold tracking-tight text-ivory whitespace-nowrap leading-tight">
+                  Abeokuta Polo Festival
+                </span>
+                <span className="rounded bg-gold/20 px-1.5 py-0.5 text-[8.5px] sm:text-[10px] font-extrabold text-gold border border-gold/40 leading-none">
+                  2026
+                </span>
+              </div>
+              <div className="mt-0.5 flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-[10px] font-serif uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gold-light leading-none whitespace-nowrap">
+                <span>The Blueprint</span>
+                <span className="inline-block size-1 rounded-full bg-gold/60" />
+                <span className="font-sans tracking-normal font-normal text-ivory/70">
+                  18–20 Dec
+                </span>
+              </div>
             </div>
-          </div>
-        </Link>
+          </Link>
+
+          {/* ── FIRST MENU: Register for Day 1 & Day 2 Events (100% Free) ── */}
+          <Button
+            asChild
+            className={`relative group overflow-hidden shrink-0 bg-gradient-to-r from-gold via-gold-light to-gold-deep text-forest-deep font-extrabold text-xs px-2 sm:px-3 py-1.5 sm:py-2 h-8 sm:h-9 shadow-md border border-gold-light/60 transition-all hover:scale-[1.02] cursor-pointer ${
+              storedPass ? "hidden sm:inline-flex" : "inline-flex"
+            }`}
+          >
+            <Link href="/register" className="flex items-center gap-1 sm:gap-1.5">
+              <Ticket className="size-3.5 text-forest-deep shrink-0 transition-transform group-hover:rotate-12" />
+              <span className="font-extrabold tracking-wide uppercase whitespace-nowrap">
+                <span className="hidden min-[350px]:inline lg:hidden">Register</span>
+                <span className="hidden lg:inline">Register for Day 1 &amp; 2 Events - Free</span>
+              </span>
+            </Link>
+          </Button>
+
+          {/* ── SECOND MENU: Register for Day 3 Events (VVIP Grand Finale) ── */}
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-gold/50 bg-forest text-gold font-semibold text-xs hover:bg-gold hover:text-forest-deep h-8.5 sm:h-9 px-3 shrink-0 hidden xl:inline-flex transition-all shadow-sm"
+          >
+            <Link href="/tables" className="flex items-center gap-1.5">
+              <Crown className="size-3.5 shrink-0" />
+              <span className="whitespace-nowrap">REGISTER FOR DAY 3 EVENTS - VVIP</span>
+            </Link>
+          </Button>
+        </div>
 
         {/* ── 2. Unified Premium Main Menu with Explicit Submenu Indicators ── */}
         <nav
           ref={navRef}
           aria-label="Main Navigation"
-          className="hidden xl:flex items-center gap-0.5 xl:gap-1"
+          className="hidden min-[1750px]:flex items-center gap-0.5 xl:gap-1"
         >
           {NAV_CATEGORIES.map((category) => {
             const isOpen = activeCategory === category.title;
@@ -477,44 +509,19 @@ export function PublicHeader() {
               size="sm"
               className="border-gold/60 bg-gold/10 text-gold font-semibold text-xs hover:bg-gold/20 hover:text-gold-light h-8 sm:h-9 px-2 sm:px-2.5 transition-colors"
             >
-              <Link href={`/pass/${storedPass.passCode}`} className="flex items-center gap-1 sm:gap-1.5">
+              <Link
+                href={`/pass/${storedPass.passCode}`}
+                className="flex items-center gap-1 sm:gap-1.5"
+                aria-label="Open my saved pass"
+              >
                 <ShieldCheck className="size-3.5 text-gold shrink-0" />
-                <span className="hidden min-[350px]:inline sm:inline">My Pass</span>
+                <span className="hidden sm:inline">My Pass</span>
               </Link>
             </Button>
           )}
 
-          {/* VIP Tables Direct CTA: visible on ultra-wide desktop where space is ample */}
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="border-gold/50 bg-forest text-gold font-semibold text-xs hover:bg-gold hover:text-forest-deep h-8.5 sm:h-9 px-3 hidden 2xl:inline-flex transition-all shadow-sm"
-          >
-            <Link href="/tables" className="flex items-center gap-1.5">
-              <Crown className="size-3.5 shrink-0" />
-              <span className="whitespace-nowrap">REGISTER FOR DAY 3 EVENTS - VVIP</span>
-            </Link>
-          </Button>
-
-          {/* Primary Registration CTA */}
-          <Button
-            asChild
-            className={`relative group overflow-hidden bg-gradient-to-r from-gold via-gold-light to-gold-deep text-forest-deep font-extrabold text-xs px-2 sm:px-3 py-1.5 sm:py-2 h-8 sm:h-9 shadow-md border border-gold-light/60 transition-all hover:scale-[1.02] cursor-pointer ${
-              storedPass ? "hidden sm:inline-flex" : "inline-flex"
-            }`}
-          >
-            <Link href="/register" className="flex items-center gap-1 sm:gap-1.5">
-              <Ticket className="size-3.5 text-forest-deep shrink-0 transition-transform group-hover:rotate-12" />
-              <span className="font-extrabold tracking-wide uppercase whitespace-nowrap">
-                <span className="hidden min-[350px]:inline sm:hidden">Register</span>
-                <span className="hidden sm:inline">Register for Day 1 &amp; 2 Events - Free</span>
-              </span>
-            </Link>
-          </Button>
-
-          {/* Mobile Drawer Trigger (Visible below xl breakpoint) */}
-          <div className="xl:hidden shrink-0">
+          {/* Mobile Drawer Trigger (Visible when the dropdown menu is hidden) */}
+          <div className="min-[1750px]:hidden shrink-0">
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -554,7 +561,7 @@ export function PublicHeader() {
                     </div>
                     <p className="font-bold text-sm text-ivory mt-2">{storedPass.holderName}</p>
                     <p className="text-xs text-emerald-100/80">
-                      Day 1: Free Entry · Day 2 &amp; 3: Through Ticket
+                      Day 1 &amp; 2: Free Entry · Saved on This Device
                     </p>
                     <div className="mt-3 space-y-2">
                       <SheetClose asChild>
@@ -581,7 +588,7 @@ export function PublicHeader() {
                         <Sparkle className="size-3" /> Priority Accreditation
                       </div>
                       <Badge variant="outline" className="border-gold text-gold text-[10px]">
-                        DAY 1 FREE
+                        DAYS 1 &amp; 2 FREE
                       </Badge>
                     </div>
 
@@ -589,7 +596,7 @@ export function PublicHeader() {
                       Official Gate Access Card
                     </h3>
                     <p className="mt-1 text-xs text-ivory/80 leading-relaxed">
-                      Day 1 is 100% Free Entry. Day 2 &amp; Day 3 admission is through ticket. Register now for your digital access card.
+                      Day 1 &amp; Day 2 are 100% free entry. Register now for your digital access card. Day 3 Grand Finale is reserved separately under VIP Tables.
                     </p>
 
                     <div className="mt-4 flex flex-col gap-2">

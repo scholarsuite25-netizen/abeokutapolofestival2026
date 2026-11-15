@@ -24,10 +24,10 @@ describe("Public Header Navigation & Layout Integrity", () => {
     );
   });
 
-  it("3. Desktop navbar switches cleanly at xl breakpoint (hidden xl:flex) and mobile trigger uses xl:hidden", () => {
-    expect(headerSource).toContain("hidden xl:flex items-center");
+  it("3. Desktop navbar switches cleanly at the 1750px breakpoint (hidden min-[1750px]:flex) and mobile trigger uses min-[1750px]:hidden", () => {
+    expect(headerSource).toContain("hidden min-[1750px]:flex items-center");
     expect(headerSource).not.toContain("hidden lg:flex items-center");
-    expect(headerSource).toContain("xl:hidden shrink-0");
+    expect(headerSource).toContain("min-[1750px]:hidden shrink-0");
   });
 
   it("4. Mobile drawer quick actions grid has 3 columns and NO duplicate Partnerships link", () => {
@@ -74,5 +74,25 @@ describe("Public Header Navigation & Layout Integrity", () => {
   it("8. Header CTA actions prevent mobile overflow and clipping when storedPass is present", () => {
     // Ensure Register CTA hides on mobile when storedPass is present to protect hamburger menu
     expect(headerSource).toContain('storedPass ? "hidden sm:inline-flex" : "inline-flex"');
+  });
+
+  it("9. Day 1 & 2 registration is the first menu and Day 3 registration the second, both inside the navbar container", () => {
+    // Wide enough container so logo + both registration menus + dropdown nav never clip
+    expect(headerSource).toContain("max-w-[1700px]");
+    expect(headerSource).not.toContain("max-w-7xl");
+
+    const leftGroupIdx = headerSource.indexOf(
+      'flex min-w-0 items-center gap-1.5 sm:gap-2.5'
+    );
+    const registerIdx = headerSource.indexOf('href="/register"');
+    const tablesIdx = headerSource.indexOf('href="/tables"');
+    const navIdx = headerSource.indexOf("<nav");
+
+    // Both registration menus live in the left group that opens the navbar
+    expect(leftGroupIdx).toBeGreaterThan(-1);
+    expect(registerIdx).toBeGreaterThan(leftGroupIdx);
+    // FIRST menu = Day 1 & 2, SECOND menu = Day 3, dropdown categories follow
+    expect(tablesIdx).toBeGreaterThan(registerIdx);
+    expect(navIdx).toBeGreaterThan(tablesIdx);
   });
 });
