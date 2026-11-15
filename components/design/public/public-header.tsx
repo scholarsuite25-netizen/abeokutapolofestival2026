@@ -492,8 +492,8 @@ export function PublicHeader() {
             className="border-gold/50 bg-forest text-gold font-semibold text-xs hover:bg-gold hover:text-forest-deep h-8.5 sm:h-9 px-3 hidden 2xl:inline-flex transition-all shadow-sm"
           >
             <Link href="/tables" className="flex items-center gap-1.5">
-              <Crown className="size-3.5" />
-              <span>VIP Tables</span>
+              <Crown className="size-3.5 shrink-0" />
+              <span className="whitespace-nowrap">REGISTER FOR DAY 3 EVENTS - VVIP</span>
             </Link>
           </Button>
 
@@ -506,12 +506,9 @@ export function PublicHeader() {
           >
             <Link href="/register" className="flex items-center gap-1 sm:gap-1.5">
               <Ticket className="size-3.5 text-forest-deep shrink-0 transition-transform group-hover:rotate-12" />
-              <span className="font-extrabold tracking-wide uppercase">
+              <span className="font-extrabold tracking-wide uppercase whitespace-nowrap">
                 <span className="hidden min-[350px]:inline sm:hidden">Register</span>
-                <span className="hidden sm:inline">Register for Pass</span>
-              </span>
-              <span className="rounded bg-forest-deep text-gold px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider hidden sm:inline-block">
-                Day 1 Free
+                <span className="hidden sm:inline">Register for Day 1 &amp; 2 Events - Free</span>
               </span>
             </Link>
           </Button>
