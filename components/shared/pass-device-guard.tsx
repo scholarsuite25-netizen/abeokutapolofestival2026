@@ -353,7 +353,10 @@ export function PassDeviceGuard({
     "checking" | "authorized" | "blocked" | "desktop_unbound" | "desktop_locked"
   >("checking");
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [showDesktopPreview, setShowDesktopPreview] = useState<boolean>(false);
+  // Open by default so a desktop registrant lands straight on their pass card
+  // with the Download / Print actions visible — no extra clicks after
+  // "Complete Registration & Get ID Pass". The binding station above stays.
+  const [showDesktopPreview, setShowDesktopPreview] = useState<boolean>(true);
   const [isNewlyBound, setIsNewlyBound] = useState<boolean>(false);
 
   useEffect(() => {

@@ -183,7 +183,8 @@ function RegisterContent() {
       // laptops as for phones.
       persistRegisteredPass(res.passes);
 
-      if (isMobileBrowser()) {
+      const isPhone = isMobileBrowser();
+      if (isPhone) {
         // Automatically download offline ID Card HTML pass(es) on mobile
         forceDownloadAllPasses(res.passes);
         setDownloadTriggered(true);
@@ -191,6 +192,15 @@ function RegisterContent() {
         // Laptop: the pass is shown on screen and can be downloaded on demand.
         setDownloadTriggered(false);
       }
+
+      // Automatically lead straight to the official ID pass page (download /
+      // print / QR) — no pass code, invitation code or lookup step in between.
+      // A short pause lets the success confirmation appear and the mobile
+      // auto-download start before the page switches.
+      const passPageUrl = `/pass/${encodeURIComponent(res.passes[0].passCode)}`;
+      window.setTimeout(() => {
+        window.location.href = passPageUrl;
+      }, 1200);
     } else {
       setErrorMsg(res.error || "Failed to process registration.");
     }
@@ -667,7 +677,7 @@ function RegisterContent() {
                         </h3>
                       </div>
 
-                      {/* 1-Click Dual Pass Button */}
+                      {/* 1-Click Dual Pass Button — compact 2-line design so it never overflows the row */}
                       <Button
                         type="button"
                         onClick={() => {
@@ -680,25 +690,25 @@ function RegisterContent() {
                           }
                         }}
                         size="sm"
-                        className={`font-bold text-xs cursor-pointer shadow-xs transition-all w-full sm:w-auto whitespace-normal h-auto py-1.5 px-3 text-center ${
+                        className={`font-bold text-xs cursor-pointer shadow-xs transition-all w-full sm:w-auto shrink-0 whitespace-normal h-auto py-1.5 px-3 text-center leading-tight ${
                           day1 && day2
                             ? "bg-emerald-700 hover:bg-emerald-800 text-ivory"
                             : "bg-forest hover:bg-forest-interactive text-ivory"
                         }`}
                       >
-                        {day1 && day2 ? (
+                        <span className="flex flex-col items-center justify-center gap-0.5">
                           <span className="inline-flex items-center justify-center gap-1.5">
-                            <Check className="size-3.5 stroke-[3] shrink-0" />
-                            <span className="sm:hidden">Combined Day 1 &amp; 2 Pass</span>
-                            <span className="hidden sm:inline">1 Combined Day 1 &amp; Day 2 Pass Selected</span>
+                            {day1 && day2 ? (
+                              <Check className="size-3.5 stroke-[3] shrink-0" />
+                            ) : (
+                              <Sparkles className="size-3.5 text-gold shrink-0" />
+                            )}
+                            <span>{day1 && day2 ? "Both Days Selected" : "Select Both Days"}</span>
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center justify-center gap-1.5">
-                            <Sparkles className="size-3.5 text-gold shrink-0" />
-                            <span className="sm:hidden">Select Both Days</span>
-                            <span className="hidden sm:inline">Select Both Days (1 Combined Pass)</span>
+                          <span className="text-[10px] font-semibold opacity-90">
+                            1 Combined Pass
                           </span>
-                        )}
+                        </span>
                       </Button>
                     </div>
 
