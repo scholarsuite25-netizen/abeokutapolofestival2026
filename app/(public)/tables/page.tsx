@@ -4,9 +4,9 @@ import { TablesBookingClient } from "./tables-booking-client";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 
 export const metadata: Metadata = {
-  title: "VIP Table Packages — Abeokuta Polo Festival 2026 Grand Finale",
+  title: "Day 3 Grand Finale — VIP Tables & VVIP Passes | Abeokuta Polo Festival 2026",
   description:
-    "Reserve private serial-numbered tables of 10 for the Grand Finale of Abeokuta Polo Festival 2026. Ultra-exclusive hospitality in Kings Arena, Royal Pavilion, Queens Lounge, and Clubhouse Terrace.",
+    "Register for Day 3 (Sunday 20 December 2026): reserve a private serial-numbered VIP table or an individual VVIP pass for the Royal Cup Grand Finale of Abeokuta Polo Festival 2026.",
 };
 
 export default function TablesPage() {

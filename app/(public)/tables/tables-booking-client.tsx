@@ -477,11 +477,11 @@ export function TablesBookingClient() {
         <div className="rounded-3xl border-2 border-gold-deep/80 bg-black p-6 sm:p-12 text-center space-y-5 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
           <div className="inline-flex items-center gap-2 rounded-full border border-gold-deep/80 bg-gold-deep/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-gold shadow-sm">
             <Crown className="size-4 text-gold" />
-            <span>18–20 DECEMBER 2026 · ABEOKUTA, OGUN STATE · GRAND FINALE 20 DEC</span>
+            <span>Sunday 20 December 2026 · Abeokuta, Ogun State · Royal Cup Grand Finale</span>
           </div>
 
           <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-black text-ivory tracking-tight leading-tight">
-            Exclusive Table &amp; Hospitality Packages
+            Day 3 Grand Finale — VVIP Tables &amp; Passes
           </h1>
 
           <p className="text-sm sm:text-base text-ivory/80 leading-relaxed max-w-3xl mx-auto">
@@ -923,14 +923,14 @@ export function TablesBookingClient() {
           <div className="h-px w-full bg-gold/30 mt-0.5" />
         </div>
 
-        {/* Individual Pass Fallback link */}
+        {/* Special VIP Invitation Code Redemption (Day 3 only) */}
         <div className="text-center pt-2 space-y-3">
           <p className="text-xs text-ivory/80">
-            Also registering for Free Complimentary Day 1 &amp; Day 2 Passes or Regular Section passes?
+            Received a printed Special VIP Invitation Code for the Grand Finale?
           </p>
           <Button asChild className="bg-gold-deep hover:bg-gold-light text-black font-bold border border-gold-deep text-xs px-6 py-2.5 shadow-md">
-            <Link href="/register">
-              Go to General Registration &amp; Day 3 Regular Section (₦50,000 Per Person) →
+            <Link href="/tables/invitation">
+              Redeem Special VIP Invitation Code →
             </Link>
           </Button>
         </div>
