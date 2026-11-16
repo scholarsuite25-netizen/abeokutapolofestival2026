@@ -79,12 +79,12 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
-    title: "VIP Tables",
-    desc: "Exclusive hospitality packages & individual passes",
+    title: "Day 3 Registration",
+    desc: "Grand Finale registration, VIP tables & passes",
     items: [
       {
         href: "/tables",
-        label: "All VIP Tables & Packages",
+        label: "All Day 3 Packages & Passes",
         desc: "Kings, Royal, Queens, Premium & Regular Section",
         icon: Crown,
         isPriority: true,
@@ -596,7 +596,7 @@ export function PublicHeader() {
                       Official Gate Access Card
                     </h3>
                     <p className="mt-1 text-xs text-ivory/80 leading-relaxed">
-                      Day 1 &amp; Day 2 are 100% free entry. Register now for your digital access card. Day 3 Grand Finale is reserved separately under VIP Tables.
+                      Day 1 &amp; Day 2 are 100% free entry. Register now for your digital access card. Day 3 Grand Finale is reserved separately under Day 3 Registration.
                     </p>
 
                     <div className="mt-4 flex flex-col gap-2">
@@ -623,7 +623,7 @@ export function PublicHeader() {
                   </div>
                 )}
 
-                {/* Mobile Quick Action Buttons: VIP Tables, Affiliates, Membership */}
+                {/* Mobile Quick Action Buttons: Day 3 Registration, Affiliates, Membership */}
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <SheetClose asChild>
                     <Link
@@ -631,7 +631,7 @@ export function PublicHeader() {
                       className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-white/5 p-3 text-center text-[11px] font-semibold text-ivory hover:bg-gold/15 hover:border-gold transition-colors"
                     >
                       <Crown className="size-4 text-gold" />
-                      <span>VIP Tables</span>
+                      <span>Day 3 Registration</span>
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>

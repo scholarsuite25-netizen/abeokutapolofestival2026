@@ -33,14 +33,14 @@ describe("Public Header Navigation & Layout Integrity", () => {
   it("4. Mobile drawer quick actions grid has 3 columns and NO duplicate Partnerships link", () => {
     // Check quick actions section
     const quickActionsRegex =
-      /{\/\* Mobile Quick Action Buttons: VIP Tables, Affiliates, Membership \*\/}\s*<div className="mt-4 grid grid-cols-3 gap-2">([\s\S]*?)<\/div>/;
+      /{\/\* Mobile Quick Action Buttons: Day 3 Registration, Affiliates, Membership \*\/}\s*<div className="mt-4 grid grid-cols-3 gap-2">([\s\S]*?)<\/div>/;
     const match = headerSource.match(quickActionsRegex);
     expect(match).not.toBeNull();
     const quickActionsBlock = match![1];
 
-    // Must contain VIP Tables, Affiliates, and Membership
+    // Must contain Day 3 Registration, Affiliates, and Membership
     expect(quickActionsBlock).toContain('href="/tables"');
-    expect(quickActionsBlock).toContain("VIP Tables");
+    expect(quickActionsBlock).toContain("Day 3 Registration");
     expect(quickActionsBlock).toContain('href="/affiliates"');
     expect(quickActionsBlock).toContain("Affiliates (10%)");
     expect(quickActionsBlock).toContain("Membership");
