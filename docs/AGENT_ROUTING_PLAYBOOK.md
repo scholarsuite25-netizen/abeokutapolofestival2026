@@ -34,6 +34,24 @@ Sources: Google Antigravity Plans docs (`antigravity.google/docs/plans`), Models
 - Check usage: **Settings → Models & Usage** (IDE) or `/usage` (CLI).
 - Community reset tracker (Google sometimes resets everyone early): `agyresets.com` / @_mohansolo on X.
 
+### A2. Local model router (installed 16 Nov 2026) — the workhorse
+`C:\Users\Registrar\antigravity-proxy\proxy.py` runs at logon (Startup shortcut) and serves:
+
+| Endpoint | Purpose |
+|---|---|
+| `POST http://127.0.0.1:8080/v1/chat/completions` | OpenAI-compatible (OpenCode, Cline, Roo, Continue, scripts) |
+| `POST http://127.0.0.1:8080/v1beta/models/<model>:generateContent` | Gemini-compatible (agy / any Gemini client) |
+| `GET /health`, `GET /stats` | Pool status, failovers, cache hits, tokens saved |
+
+- Pool: Gemini free tier + Groq (`gpt-oss-120b`, `gpt-oss-20b`, `qwen3.8-27b`) + OpenRouter free models.
+- Automatic failover on 429/500/503/timeout; SHA-256 response cache (10 min); 4096-token output clamp.
+- Keys: Windows user env only (`GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`) — never in the repo.
+- Current limit: `agy` itself is broken on this account (Google routes it to the AICode/CCPA backend, which
+  fails and never falls back; `GOOGLE_GEMINI_BASE_URL` is present in the binary but not applied). Every other
+  OpenAI-compatible client works through the router today.
+- Secret-leak guard: `tests/unit/secret-leak-guard.test.ts` fails the build if a credential pattern appears in a
+  tracked file (zero findings on the full history scan as of 16 Nov 2026).
+
 ### B. Antigravity CLI on a free Gemini API key — *official, works today*
 The CLI supports running against the Gemini API with your own key, completely separate from the Antigravity weekly quota:
 
