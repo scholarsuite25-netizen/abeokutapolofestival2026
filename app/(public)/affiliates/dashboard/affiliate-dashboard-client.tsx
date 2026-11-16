@@ -152,7 +152,7 @@ export function AffiliateDashboardClient() {
               <Link href="/affiliates">Affiliate Info & Promo Kit</Link>
             </Button>
             <Button asChild className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs border border-gold-deep px-4 py-2 shadow-sm">
-              <Link href="/tables">VIP Tables</Link>
+              <Link href="/tables">Day 3 Registration</Link>
             </Button>
           </div>
         </div>
@@ -271,7 +271,7 @@ export function AffiliateDashboardClient() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* VIP Tables Link */}
+            {/* Day 3 Registration Link */}
             <div className="space-y-2 rounded-xl bg-[#001A0E] p-4 border border-line/30">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-gold flex items-center gap-1.5">

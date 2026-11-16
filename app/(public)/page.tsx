@@ -362,7 +362,7 @@ export default function HomePage() {
                       <Link href="/register">Register Digital Pass →</Link>
                     </Button>
                     <Button asChild size="sm" variant="outline" className="border-gold/40 bg-white/10 text-ivory hover:bg-white/20 text-xs">
-                      <Link href="/tables">Day 3 VIP Tables</Link>
+                      <Link href="/tables">Day 3 Registration</Link>
                     </Button>
                   </div>
                 </div>
@@ -555,7 +555,7 @@ export default function HomePage() {
                   <Link href="/programme">View Day 3 Schedule →</Link>
                 </Button>
                 <Button asChild size="sm" className="bg-gold font-bold text-forest hover:bg-gold/90 text-[11px] h-7 px-2.5 shadow-xs">
-                  <Link href="/tables">VIP Tables &amp; Passes →</Link>
+                  <Link href="/tables">Day 3 Registration →</Link>
                 </Button>
               </div>
             </div>

@@ -30,7 +30,7 @@ import { getSiteOrigin } from "@/lib/site";
 
 /**
  * Day 3 only: complimentary Special VIP Invitation Code redemption.
- * Paid Day 3 admission is sold exclusively through the VIP Tables page.
+ * Paid Day 3 admission is sold exclusively through the Day 3 Registration page (/tables).
  */
 export function InvitationRedemptionClient() {
   const [loading, setLoading] = useState(false);
@@ -112,7 +112,7 @@ export function InvitationRedemptionClient() {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-gold hover:text-gold-light transition"
         >
           <ArrowLeft className="size-3.5" />
-          <span>Back to Day 3 VIP Tables</span>
+          <span>Back to Day 3 Registration</span>
         </Link>
 
         {/* Header */}
@@ -126,9 +126,9 @@ export function InvitationRedemptionClient() {
           </h1>
           <p className="text-sm text-ivory/75 max-w-xl mx-auto leading-relaxed">
             Enter the code printed on your official invitation to receive your complimentary
-            Day 3 VVIP gate pass. Paid Day 3 admission and VIP Tables are reserved on the{" "}
+            Day 3 VVIP gate pass. Paid Day 3 admission and VIP Table packages are reserved on the{" "}
             <Link href="/tables" className="text-gold underline hover:text-gold-light">
-              VIP Tables page
+              Day 3 Registration page
             </Link>
             .
           </p>

@@ -256,7 +256,7 @@ export async function submitRegistration(rawInput: unknown): Promise<RegisterRes
       return {
         success: false,
         error:
-          "Day 3 Grand Finale admission is issued with a VIP Table package (or a complimentary Special VIP Invitation Code). Please complete your table reservation on the VIP Tables page (/tables).",
+          "Day 3 Grand Finale admission is issued with a VIP Table package (or a complimentary Special VIP Invitation Code). Please complete your table reservation on the Day 3 Registration page (/tables).",
       };
     }
   }

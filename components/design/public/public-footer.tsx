@@ -24,7 +24,7 @@ const COLUMNS = [
     title: "Access",
     links: [
       { href: "/register", label: "Register for Pass (Free)" },
-      { href: "/tables", label: "VIP Table Enclosures (10 Guests)" },
+      { href: "/tables", label: "Day 3 Registration (Tables & Passes)" },
       { href: "https://www.abeokutapoloclub.org.ng/register", label: "Membership", external: true },
       { href: "/register/poster", label: "Venue QR Standee / Poster" },
       { href: "/pass/lookup", label: "Find My Access Card" },

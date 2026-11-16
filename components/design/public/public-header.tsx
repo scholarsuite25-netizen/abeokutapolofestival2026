@@ -326,7 +326,7 @@ export function PublicHeader() {
           >
             <Link href="/register" className="flex items-center gap-1 sm:gap-1.5">
               <Ticket className="size-3.5 text-forest-deep shrink-0 transition-transform group-hover:rotate-12" />
-              <span className="font-extrabold tracking-wide uppercase whitespace-nowrap">
+              <span className="font-extrabold tracking-wide whitespace-nowrap">
                 <span className="hidden min-[350px]:inline lg:hidden">Register</span>
                 <span className="hidden lg:inline">Register for Day 1 &amp; 2 Events - Free</span>
               </span>
@@ -342,7 +342,7 @@ export function PublicHeader() {
           >
             <Link href="/tables" className="flex items-center gap-1.5">
               <Crown className="size-3.5 shrink-0" />
-              <span className="whitespace-nowrap">REGISTER FOR DAY 3 EVENTS - VVIP</span>
+              <span className="whitespace-nowrap">Register for Day 3 Events - VVIP</span>
             </Link>
           </Button>
         </div>
@@ -365,7 +365,7 @@ export function PublicHeader() {
                 <button
                   type="button"
                   onClick={() => handleCategoryClick(category.title)}
-                  className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
+                  className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-xs font-semibold tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
                     isOpen ? "bg-white/10 text-gold" : ""
                   }`}
                   aria-expanded={isOpen}
@@ -399,7 +399,7 @@ export function PublicHeader() {
                   <div className="rounded-2xl border border-gold/40 bg-forest-deep/98 p-3 shadow-2xl shadow-black/80 backdrop-blur-2xl text-ivory">
                     <div className="px-3 pt-2 pb-2.5 border-b border-gold/25">
                       <div className="flex items-center justify-between">
-                        <p className="font-display text-[11px] font-bold uppercase tracking-widest text-gold flex items-center gap-1.5">
+                        <p className="font-display text-[11px] font-bold tracking-wide text-gold flex items-center gap-1.5">
                           <Sparkles className="size-3 text-gold" />
                           <span>{category.title} Submenus</span>
                         </p>
@@ -491,7 +491,7 @@ export function PublicHeader() {
             href="https://www.abeokutapoloclub.org.ng/register"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-lg px-1.5 xl:px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5"
+            className="flex items-center gap-1 rounded-lg px-1.5 xl:px-2 py-1.5 text-xs font-semibold tracking-wider transition-colors outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5"
             aria-label="Membership Enquiries at Abeokuta Polo Club (Opens in new tab)"
           >
             <span>Membership</span>
@@ -670,7 +670,7 @@ export function PublicHeader() {
                     <div key={category.title} className="rounded-2xl border border-gold/30 bg-white/5 p-3.5 shadow-md">
                       <div className="flex items-center justify-between border-b border-gold/20 pb-2 mb-2 px-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-display text-xs font-bold uppercase tracking-wider text-gold">
+                          <span className="font-display text-xs font-bold tracking-wider text-gold">
                             {category.title}
                           </span>
                           <span className="rounded-full bg-gold/15 px-1.5 py-0.2 text-[9px] font-mono text-gold-light border border-gold/30">

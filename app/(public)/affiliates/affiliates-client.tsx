@@ -738,7 +738,7 @@ export function AffiliatesCentreClient() {
                     </div>
                   </div>
                   <Button asChild size="sm" className="bg-gold-deep hover:bg-gold-light text-black font-bold text-xs border border-gold-deep shadow-sm">
-                    <Link href="/tables">Reserve VIP Table →</Link>
+                    <Link href="/tables">Day 3 Registration →</Link>
                   </Button>
                 </div>
 
@@ -747,7 +747,7 @@ export function AffiliatesCentreClient() {
                   <Label className="text-[11px] text-ivory/70">HTML Embed Snippet</Label>
                   <pre className="rounded-xl bg-[#001A0E] p-3 font-mono text-[11px] text-gold/90 whitespace-pre-wrap border border-line/30">
 {`<a href="${siteUrl}/tables?ref=${samplePromoCode}" target="_blank" style="display:inline-flex;align-items:center;padding:12px 20px;background:#002F1A;color:#C9A84C;border:2px solid #C9A84C;border-radius:12px;font-family:sans-serif;font-weight:bold;text-decoration:none;">
-  👑 Reserve VIP Tables — Abeokuta Polo Festival 2026
+  👑 Day 3 Registration — Abeokuta Polo Festival 2026
 </a>`}
                   </pre>
                 </div>

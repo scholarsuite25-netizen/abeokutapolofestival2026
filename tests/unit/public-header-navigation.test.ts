@@ -95,4 +95,14 @@ describe("Public Header Navigation & Layout Integrity", () => {
     expect(tablesIdx).toBeGreaterThan(registerIdx);
     expect(navIdx).toBeGreaterThan(tablesIdx);
   });
+
+  it("10. Navigation controls and menu items render consistently in Initial Caps (no jarring uppercase mixture)", () => {
+    // Both CTAs use consistent Initial Caps text
+    expect(headerSource).toContain("Register for Day 1 &amp; 2 Events - Free");
+    expect(headerSource).toContain("Register for Day 3 Events - VVIP");
+    expect(headerSource).not.toContain("REGISTER FOR DAY 3 EVENTS - VVIP");
+
+    // Nav category dropdown buttons do not force uppercase
+    expect(headerSource).not.toMatch(/px-1\.5 py-1\.5 text-xs font-semibold uppercase/);
+  });
 });
