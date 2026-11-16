@@ -351,7 +351,7 @@ export function PublicHeader() {
         <nav
           ref={navRef}
           aria-label="Main Navigation"
-          className="hidden min-[1750px]:flex items-center gap-0.5 xl:gap-1"
+          className="hidden min-[1750px]:flex items-center gap-0.5"
         >
           {NAV_CATEGORIES.map((category) => {
             const isOpen = activeCategory === category.title;
@@ -365,7 +365,7 @@ export function PublicHeader() {
                 <button
                   type="button"
                   onClick={() => handleCategoryClick(category.title)}
-                  className={`flex items-center gap-1 rounded-lg px-1.5 xl:px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
+                  className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all outline-none cursor-pointer text-ivory/85 hover:text-gold hover:bg-white/5 ${
                     isOpen ? "bg-white/10 text-gold" : ""
                   }`}
                   aria-expanded={isOpen}
@@ -378,7 +378,7 @@ export function PublicHeader() {
                       isOpen ? "rotate-180 text-gold" : ""
                     }`}
                   />
-                  <span className="ml-0.5 rounded-full bg-gold/15 px-1 py-0.2 text-[8.5px] font-mono text-gold-light border border-gold/30">
+                  <span className="rounded-full bg-gold/15 px-0.5 py-0.2 text-[8.5px] font-mono text-gold-light border border-gold/30">
                     {category.items.length}
                   </span>
                 </button>
